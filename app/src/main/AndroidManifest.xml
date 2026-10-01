@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The camera is optional: capture goes through the user's camera app via intents,
+         so the app never requests the CAMERA permission. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Local-first: Brokemon never talks to a server. Strip network permissions that
+         library manifests would otherwise merge in. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
+
+    <!-- Lets the app find a camera app to hand capture off to (Android 11+ package visibility). -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.VIDEO_CAPTURE" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".BrokemonApplication"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:enableOnBackInvokedCallback="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Brokemon.Starting"
+        tools:targetApi="36">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Ask Play services to download the QR scanner module at install time. -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="barcode_ui" />
+    </application>
+</manifest>
