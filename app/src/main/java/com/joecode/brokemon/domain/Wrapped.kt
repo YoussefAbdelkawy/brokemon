@@ -4,6 +4,7 @@ import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.Rarity
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 data class WrappedSummary(
@@ -20,10 +21,14 @@ data class WrappedSummary(
 object Wrapped {
     fun yearOf(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).year
 
-    fun availableYears(bros: List<Bro>): List<Int> {
-        val years = bros.map { yearOf(it.catchDate) } +
-            bros.flatMap { b -> b.memories.map { yearOf(it.date) } }
-        return years.distinct().sortedDescending()
+    /**
+     * Wrapped is a New Year thing: it shows up from Dec 20 through Jan 15 and
+     * recaps the year that's ending. Returns null outside that window.
+     */
+    fun seasonYear(today: LocalDate = LocalDate.now()): Int? = when {
+        today.monthValue == 12 && today.dayOfMonth >= 20 -> today.year
+        today.monthValue == 1 && today.dayOfMonth <= 15 -> today.year - 1
+        else -> null
     }
 
     fun summarize(bros: List<Bro>, year: Int): WrappedSummary {

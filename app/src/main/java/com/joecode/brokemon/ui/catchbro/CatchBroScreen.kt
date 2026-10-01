@@ -1,15 +1,10 @@
 package com.joecode.brokemon.ui.catchbro
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,6 +48,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.input.ImeAction
@@ -60,9 +56,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.Rarity
 import com.joecode.brokemon.ui.AppViewModelProvider
+import com.joecode.brokemon.ui.components.AvatarBuilder
 import com.joecode.brokemon.ui.components.BroSprite
 import com.joecode.brokemon.ui.components.DexScaffold
 import com.joecode.brokemon.ui.components.PixelButton
@@ -91,7 +89,7 @@ fun CatchBroScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                AvatarPreview(state, onReroll = viewModel::rerollAvatar)
+                AvatarPreview(state, onLookChanged = viewModel::onLookChanged, onRandomize = viewModel::randomizeLook)
                 IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged)
                 TypeSection(state, viewModel::onType1Selected, viewModel::onType2Selected)
                 RaritySection(state.rarity, viewModel::onRarityChanged)
@@ -130,34 +128,33 @@ fun CatchBroScreen(
 }
 
 @Composable
-private fun AvatarPreview(state: BroState, onReroll: () -> Unit) {
-    val type1 = state.type1 ?: BroType.CHILL
+private fun AvatarPreview(state: BroState, onLookChanged: (BroLook) -> Unit, onRandomize: () -> Unit) {
     val bob = rememberInfiniteTransition(label = "bob").animateFloat(
         initialValue = 0f,
-        targetValue = -8f,
+        targetValue = -6f,
         animationSpec = infiniteRepeatable(tween(700), RepeatMode.Reverse),
         label = "bobY",
     )
-    ScreenPanel(title = "Scanner", modifier = Modifier.rarityGlow(state.rarity)) {
+    ScreenPanel(title = "Character", modifier = Modifier.rarityGlow(state.rarity)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(128.dp), contentAlignment = Alignment.Center) {
-                AnimatedContent(
-                    targetState = state.avatarSeed,
-                    transitionSpec = { (scaleIn() + fadeIn()) togetherWith fadeOut() },
-                    label = "avatar",
-                ) { seed ->
-                    BroSprite(
-                        seed = seed,
-                        stage = 0,
-                        type1 = type1,
-                        type2 = state.type2,
-                        shiny = false,
-                        tint = if (state.type1 == null) DexColors.ScreenBorder else null,
-                        modifier = Modifier
-                            .size(120.dp)
-                            .graphicsLayer { translationY = bob.value },
-                    )
-                }
+            Box(
+                Modifier
+                    .size(132.dp)
+                    .background(
+                        Brush.radialGradient(
+                            listOf((state.type1?.color ?: DexColors.ScreenBorder).copy(alpha = 0.35f), Color.Transparent),
+                        ),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                BroSprite(
+                    look = state.look,
+                    stage = 0,
+                    shiny = false,
+                    modifier = Modifier
+                        .size(124.dp)
+                        .graphicsLayer { translationY = bob.value },
+                )
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
@@ -168,18 +165,20 @@ private fun AvatarPreview(state: BroState, onReroll: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    if (state.type1 == null) "Pick a type to scan this bro" else "Signal locked",
+                    "Make them look like the real thing.",
                     color = DexColors.TextMuted,
                     style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
                 )
                 Spacer(Modifier.height(8.dp))
-                TextButton(onClick = onReroll) {
+                TextButton(onClick = onRandomize) {
                     Icon(Icons.Filled.Casino, contentDescription = null, tint = DexColors.LedYellow)
                     Spacer(Modifier.width(6.dp))
-                    Text("NEW LOOK", style = PixelText.Tiny, color = DexColors.LedYellow)
+                    Text("RANDOM", style = PixelText.Tiny, color = DexColors.LedYellow)
                 }
             }
         }
+        Spacer(Modifier.height(12.dp))
+        AvatarBuilder(look = state.look, onLookChange = onLookChanged)
     }
 }
 
@@ -308,7 +307,7 @@ private fun RaritySection(rarity: Rarity, onRarityChanged: (Rarity) -> Unit) {
 
 @Composable
 private fun StatsSection(state: BroState, onStatChanged: (Int, Int) -> Unit, onReroll: () -> Unit) {
-    val color = (state.type1 ?: BroType.CHILL).color
+    val color = (state.type1 ?: BroType.CHILL_GUY).color
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             SectionTitle("Base stats", Modifier.weight(1f))
@@ -318,9 +317,15 @@ private fun StatsSection(state: BroState, onStatChanged: (Int, Int) -> Unit, onR
                 Text("ROLL", style = PixelText.Tiny, color = DexColors.LedYellow)
             }
         }
-        state.stats.asList().forEachIndexed { i, (label, value) ->
+        state.stats.asList().forEachIndexed { i, (info, value) ->
+            Text(
+                info.blurb,
+                color = DexColors.TextMuted,
+                style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.SansSerif),
+                modifier = Modifier.padding(top = 6.dp),
+            )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = PixelText.Tiny, color = DexColors.ScreenText, modifier = Modifier.width(64.dp))
+                Text(info.label, style = PixelText.Tiny, color = DexColors.ScreenText, modifier = Modifier.width(64.dp))
                 Text(value.toString(), style = PixelText.Tiny, color = DexColors.Text, modifier = Modifier.width(32.dp))
                 Slider(
                     value = value.toFloat(),

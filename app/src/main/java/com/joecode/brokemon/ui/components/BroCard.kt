@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -36,6 +38,7 @@ import com.joecode.brokemon.ui.theme.PixelText
 import com.joecode.brokemon.ui.theme.color
 
 /** Collectible trading card used in the dex grid. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BroCard(
     bro: Bro,
@@ -85,14 +88,7 @@ fun BroCard(
                 .scanlines(),
             contentAlignment = Alignment.Center,
         ) {
-            BroSprite(
-                seed = bro.avatarSeed,
-                stage = stage.ordinal,
-                type1 = type1,
-                type2 = type2,
-                shiny = bro.isShiny,
-                modifier = Modifier.fillMaxSize(0.8f),
-            )
+            BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.86f))
             if (bro.isShiny) Sparkles(Modifier.fillMaxSize(), seed = bro.id.toInt())
         }
         Spacer(Modifier.height(8.dp))
@@ -104,7 +100,8 @@ fun BroCard(
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Long type names like "Main Character" wrap instead of overflowing the card.
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             bro.types.forEach { TypeBadge(it, compact = true) }
         }
         Spacer(Modifier.height(6.dp))
@@ -113,6 +110,7 @@ fun BroCard(
 }
 
 /** Compact one-line roster entry for lists (squads, pickers). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BroRow(
     bro: Bro,
@@ -135,14 +133,7 @@ fun BroRow(
                 .background(DexColors.Screen, CutCornerShape(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            BroSprite(
-                bro.avatarSeed,
-                stage.ordinal,
-                bro.primaryType,
-                bro.types.getOrNull(1),
-                bro.isShiny,
-                Modifier.fillMaxSize(0.85f),
-            )
+            BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.9f))
         }
         Column(
             Modifier
@@ -157,7 +148,7 @@ fun BroRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(6.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 bro.types.forEach { TypeBadge(it, compact = true) }
             }
         }

@@ -18,9 +18,10 @@ Study: a single `MutableStateFlow<BroState>` updated with `_state.update { it.co
 Animation: `Animatable` sequenced inside one `LaunchedEffect` (drop, then shake x3, then burst).
 
 ## M3: Card display
-Files: `ui/components/BroCard.kt`, `BroSprite.kt`, `Effects.kt`, `DexChrome.kt`, `domain/SpriteGenerator.kt`
+Files: `ui/components/BroCard.kt`, `BroSprite.kt`, `AvatarBuilder.kt`, `Effects.kt`, `DexChrome.kt`, `domain/HumanSprite.kt`, `data/model/BroLook.kt`
 Study: `rememberInfiniteTransition`, `Modifier.drawBehind` / `drawWithContent`, `composed {}` modifiers, `FilterQuality.None` for crisp pixels.
-Try: change a mask in `SpriteGenerator` and watch every bro's silhouette change.
+Try: add a new hairstyle. Append it to `LookOptions.hairStyles` (append only, because indices are what gets stored) and draw it in `HumanSprite.drawFrontHair`.
+Also study: `app/schemas/` and the `AutoMigration(1 → 2)` in `BroDatabase`. That's how the `look` column was added without wiping anyone's data.
 
 ## M4: Memory log
 Files: `data/MediaStorage.kt`, `ui/detail/BroDetailViewModel.kt` (prepareCapture/onCaptureResult), `res/xml/file_paths.xml`

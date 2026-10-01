@@ -6,7 +6,7 @@ import com.joecode.brokemon.data.model.BroType
 fun testBro(
     id: Long = 1,
     name: String = "Sam",
-    type1: BroType = BroType.HYPE,
+    type1: BroType = BroType.MAIN_CHARACTER,
     type2: BroType? = null,
     catchDate: Long = 0L,
     lastCheckIn: Long? = null,

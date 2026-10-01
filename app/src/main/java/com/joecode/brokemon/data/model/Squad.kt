@@ -11,6 +11,6 @@ data class Squad(
     val createdAt: Long = System.currentTimeMillis(),
 ) {
     companion object {
-        const val MAX_MEMBERS = 6
+        const val MAX_MEMBERS = 25
     }
 }

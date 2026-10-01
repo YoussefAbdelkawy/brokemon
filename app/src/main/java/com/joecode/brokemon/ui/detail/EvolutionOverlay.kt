@@ -143,10 +143,8 @@ fun EvolutionOverlay(bro: Bro, event: EvolutionEvent, onFinished: () -> Unit) {
             Spacer(Modifier.height(24.dp))
             Crossfade(targetState = revealed, animationSpec = tween(500), label = "evolve") { done ->
                 BroSprite(
-                    seed = bro.avatarSeed,
+                    look = bro.resolvedLook,
                     stage = if (done) event.toStage else event.fromStage,
-                    type1 = bro.primaryType,
-                    type2 = bro.types.getOrNull(1),
                     shiny = bro.isShiny,
                     tint = if (flashWhite) Color.White else null,
                     modifier = Modifier
@@ -168,7 +166,20 @@ fun EvolutionOverlay(bro: Bro, event: EvolutionEvent, onFinished: () -> Unit) {
                 color = DexColors.Text,
                 textAlign = TextAlign.Center,
             )
-            AnimatedVisibility(revealed, enter = fadeIn(tween(600, delayMillis = 400)) + scaleIn()) {
+            AnimatedVisibility(revealed, enter = fadeIn(tween(600, delayMillis = 300)) + scaleIn()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    event.learnedMoves.forEach { move ->
+                        Text(
+                            "LEARNED ${move.uppercase()}!",
+                            style = PixelText.Label,
+                            color = DexColors.LedYellow,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 14.dp),
+                        )
+                    }
+                }
+            }
+            AnimatedVisibility(revealed, enter = fadeIn(tween(600, delayMillis = 900)) + scaleIn()) {
                 Text(
                     "TAP TO CONTINUE",
                     style = PixelText.Tiny,

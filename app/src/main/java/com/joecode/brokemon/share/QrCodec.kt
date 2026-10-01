@@ -3,8 +3,10 @@ package com.joecode.brokemon.share
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.BroStats
 import com.joecode.brokemon.data.model.BroType
+import com.joecode.brokemon.data.model.LookPart
 import com.joecode.brokemon.data.model.Rarity
 
 /**
@@ -20,13 +22,16 @@ data class QrPayload(
     val r: String?,
     val sh: Int?,
     val a: Long?,
+    /** The character's look as a list of option indices (v2+). */
+    val l: List<Int>? = null,
 )
 
 object QrCodec {
     const val PREFIX = "BRKM1:"
-    private const val VERSION = 1
+    private const val VERSION = 2
     const val MAX_NAME = 24
-    const val MAX_MOVES = 4
+    /** Four picked at catch plus two learned through evolution. */
+    const val MAX_MOVES = 6
     const val MAX_MOVE_LENGTH = 24
 
     private val gson = Gson()
@@ -41,6 +46,7 @@ object QrCodec {
             r = bro.rarity.code,
             sh = if (bro.isShiny) 1 else 0,
             a = bro.avatarSeed,
+            l = bro.resolvedLook.toList(),
         )
         return PREFIX + gson.toJson(payload)
     }
@@ -54,7 +60,7 @@ object QrCodec {
             return null
         } ?: return null
 
-        if (p.v != VERSION) return null
+        if (p.v == null || p.v !in 1..VERSION) return null
         val name = p.n?.trim()?.take(MAX_NAME)?.takeIf { it.isNotEmpty() } ?: return null
         val types = p.t.orEmpty().mapNotNull { BroType.from(it) }.distinct().take(2)
         if (types.isEmpty()) return null
@@ -76,6 +82,7 @@ object QrCodec {
             isShiny = p.sh == 1,
             catchDate = now,
             avatarSeed = p.a ?: name.hashCode().toLong(),
+            look = p.l?.takeIf { it.size == LookPart.entries.size }?.let { BroLook.fromList(it) },
             isTraded = true,
         )
     }

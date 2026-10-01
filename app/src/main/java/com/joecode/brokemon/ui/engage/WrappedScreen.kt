@@ -15,12 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,17 +64,13 @@ fun WrappedScreen(
             return@DexScaffold
         }
         Column(Modifier.fillMaxSize().padding(padding)) {
-            LazyRow(
-                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                items(state.years) { year ->
-                    FilterChip(
-                        selected = year == state.selectedYear,
-                        onClick = { viewModel.selectYear(year) },
-                        label = { Text(year.toString(), style = PixelText.Tiny) },
-                    )
-                }
+            if (state.isPreview) {
+                Text(
+                    "DEBUG PREVIEW: in release builds Wrapped only appears Dec 20 to Jan 15.",
+                    style = PixelText.Tiny,
+                    color = DexColors.LedYellow,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
             }
             HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { page ->
                 Box(

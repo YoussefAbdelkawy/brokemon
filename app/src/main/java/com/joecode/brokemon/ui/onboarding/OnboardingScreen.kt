@@ -37,7 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.joecode.brokemon.data.model.BroType
+import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.ui.components.BroSprite
 import com.joecode.brokemon.ui.components.CatchCube
 import com.joecode.brokemon.ui.components.LedCluster
@@ -124,9 +124,14 @@ private fun CatchPage() {
         label = "bounce",
     )
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(BroType.HYPE, BroType.GAMER, BroType.FOODIE).forEachIndexed { i, type ->
-            Box(Modifier.size(84.dp).graphicsLayer { translationY = if (i % 2 == 0) bounce else -bounce - 12f }) {
-                BroSprite(seed = 42L + i * 7, stage = i, type1 = type, type2 = null, shiny = i == 2, modifier = Modifier.fillMaxSize())
+        val parade = listOf(
+            BroLook(skin = 1, hair = 2, hairColor = 0, expression = 1, outfit = 2, outfitColor = 0),
+            BroLook(skin = 4, hair = 3, hairColor = 0, expression = 3, facialHair = 3, glasses = 3, outfit = 1, outfitColor = 1),
+            BroLook(skin = 2, hair = 9, hairColor = 4, expression = 0, hat = 1, outfit = 3, outfitColor = 8),
+        )
+        parade.forEachIndexed { i, look ->
+            Box(Modifier.size(88.dp).graphicsLayer { translationY = if (i % 2 == 0) bounce else -bounce - 12f }) {
+                BroSprite(look = look, stage = i, shiny = i == 2, modifier = Modifier.fillMaxSize())
             }
         }
     }

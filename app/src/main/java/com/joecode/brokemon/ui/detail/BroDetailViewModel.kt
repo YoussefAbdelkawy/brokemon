@@ -8,12 +8,14 @@ import com.joecode.brokemon.data.BroRepository
 import com.joecode.brokemon.data.MediaStorage
 import com.joecode.brokemon.data.UserPrefs
 import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.Fact
 import com.joecode.brokemon.data.model.MediaType
 import com.joecode.brokemon.data.model.Memory
 import com.joecode.brokemon.data.model.Rarity
 import com.joecode.brokemon.domain.Evolution
 import com.joecode.brokemon.domain.EvolutionInfo
+import com.joecode.brokemon.domain.EvolutionMoves
 import com.joecode.brokemon.ui.navigation.Routes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,7 +35,7 @@ data class DetailUiState(
     val evolution: EvolutionInfo? = null,
 )
 
-data class EvolutionEvent(val fromStage: Int, val toStage: Int)
+data class EvolutionEvent(val fromStage: Int, val toStage: Int, val learnedMoves: List<String> = emptyList())
 
 class BroDetailViewModel(
     private val savedStateHandle: SavedStateHandle,
@@ -61,8 +63,12 @@ class BroDetailViewModel(
                 val stage = Evolution.info(bro).stage.ordinal
                 val seen = prefs.seenStage(broId)
                 when {
-                    stage > seen && _evolutionEvent.value == null ->
-                        _evolutionEvent.value = EvolutionEvent(seen, stage)
+                    stage > seen && _evolutionEvent.value == null -> {
+                        // Evolving teaches a bonus move per stage gained.
+                        val learned = EvolutionMoves.unlocked(bro.primaryType, seen, stage).filterNot { it in bro.moves }
+                        _evolutionEvent.value = EvolutionEvent(seen, stage, learned)
+                        if (learned.isNotEmpty()) repository.update(bro.copy(moves = bro.moves + learned))
+                    }
                     stage < seen -> prefs.setSeenStage(broId, stage)
                 }
             }
@@ -89,6 +95,8 @@ class BroDetailViewModel(
     fun setRealMeetDate(millis: Long?) = edit { it.copy(realMeetDate = millis) }
 
     fun setRarity(rarity: Rarity) = edit { it.copy(rarity = rarity) }
+
+    fun setLook(look: BroLook) = edit { it.copy(look = look) }
 
     fun rename(name: String) {
         val clean = name.trim().take(24)

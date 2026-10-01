@@ -2,39 +2,37 @@ package com.joecode.brokemon.data.model
 
 import kotlin.random.Random
 
+data class StatInfo(val label: String, val blurb: String)
+
 data class BroStats(
-    val hype: Int = 50,
+    val rizz: Int = 50,
+    val aura: Int = 50,
+    val yap: Int = 50,
     val loyalty: Int = 50,
-    val humor: Int = 50,
-    val brains: Int = 50,
     val chaos: Int = 50,
-    val clutch: Int = 50,
+    val flake: Int = 50,
 ) {
-    fun asList(): List<Pair<String, Int>> = listOf(
-        "HYPE" to hype,
-        "LOYAL" to loyalty,
-        "HUMOR" to humor,
-        "BRAIN" to brains,
-        "CHAOS" to chaos,
-        "CLUTCH" to clutch,
-    )
+    fun asList(): List<Pair<StatInfo, Int>> = INFO.zip(toArray())
 
-    fun toArray(): List<Int> = listOf(hype, loyalty, humor, brains, chaos, clutch)
+    fun toArray(): List<Int> = listOf(rizz, aura, yap, loyalty, chaos, flake)
 
-    val total: Int get() = hype + loyalty + humor + brains + chaos + clutch
+    val total: Int get() = toArray().sum()
 
     companion object {
         const val MIN = 1
         const val MAX = 100
 
-        fun random(random: Random = Random.Default) = BroStats(
-            hype = random.nextInt(25, 96),
-            loyalty = random.nextInt(25, 96),
-            humor = random.nextInt(25, 96),
-            brains = random.nextInt(25, 96),
-            chaos = random.nextInt(25, 96),
-            clutch = random.nextInt(25, 96),
+        val INFO = listOf(
+            StatInfo("RIZZ", "Charm. Can talk to anyone"),
+            StatInfo("AURA", "Main-character energy"),
+            StatInfo("YAP", "How long they can talk for"),
+            StatInfo("LOYAL", "Ride or die level"),
+            StatInfo("CHAOS", "How often plans go sideways"),
+            StatInfo("FLAKE", "Chance they cancel last minute"),
         )
+
+        fun random(random: Random = Random.Default) =
+            fromArray(List(6) { random.nextInt(20, 96) })
 
         fun fromArray(values: List<Int>): BroStats {
             fun at(i: Int) = values.getOrElse(i) { 50 }.coerceIn(MIN, MAX)

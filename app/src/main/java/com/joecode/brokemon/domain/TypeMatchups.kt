@@ -2,35 +2,29 @@ package com.joecode.brokemon.domain
 
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.BroType
-import com.joecode.brokemon.data.model.BroType.ARTSY
-import com.joecode.brokemon.data.model.BroType.BRAIN
-import com.joecode.brokemon.data.model.BroType.CHAOS
-import com.joecode.brokemon.data.model.BroType.CHILL
-import com.joecode.brokemon.data.model.BroType.FOODIE
-import com.joecode.brokemon.data.model.BroType.GAMER
-import com.joecode.brokemon.data.model.BroType.GYM
-import com.joecode.brokemon.data.model.BroType.HYPE
-import com.joecode.brokemon.data.model.BroType.MYSTIC
-import com.joecode.brokemon.data.model.BroType.OUTDOORS
-import com.joecode.brokemon.data.model.BroType.PARTY
-import com.joecode.brokemon.data.model.BroType.SPORTS
+import com.joecode.brokemon.data.model.BroType.*
 
 /** Lighthearted matchup chart. Every type beats exactly two and loses to exactly two. */
 object TypeMatchups {
 
     private val chart: Map<BroType, Map<BroType, String>> = mapOf(
-        HYPE to mapOf(CHILL to "drags them off the couch", BRAIN to "out-talks the fun facts"),
-        CHILL to mapOf(CHAOS to "is simply unbothered", GYM to "says rest day is a lifestyle"),
-        GAMER to mapOf(BRAIN to "has a speedrun for that", MYSTIC to "already saw the patch notes"),
-        GYM to mapOf(FOODIE to "meal-preps them into silence", GAMER to "spots them a reality check"),
-        FOODIE to mapOf(PARTY to "controls the snack table", OUTDOORS to "brought the better trail mix"),
-        BRAIN to mapOf(SPORTS to "has the advanced stats", CHAOS to "saw the plan falling apart"),
-        PARTY to mapOf(CHILL to "turned the chill hang into a rager", ARTSY to "made the vibe the art"),
-        ARTSY to mapOf(MYSTIC to "painted the prophecy first", HYPE to "made a mood board of the hype"),
-        OUTDOORS to mapOf(GAMER to "touched grass on their behalf", GYM to "hiked further, no mirror"),
-        CHAOS to mapOf(PARTY to "is the after-party", HYPE to "escalated beyond hype"),
-        SPORTS to mapOf(OUTDOORS to "turned the hike into a race", FOODIE to "wins the hot-dog contest"),
-        MYSTIC to mapOf(SPORTS to "called the final score", ARTSY to "read their aura"),
+        ROAD_RAGER to mapOf(BAD_DRIVER to "honks them off the road", FOODIE to "won't stop for the drive-thru"),
+        BAD_DRIVER to mapOf(YAPPER to "takes a turn so hard the yapping stops", GAMER to "makes real driving scarier than any game"),
+        YAPPER to mapOf(GHOST to "sends 40 texts until they answer", NERD to "out-talks every fun fact"),
+        GHOST to mapOf(GYM_RAT to "never shows up to spot them", SPORTS_FAN to "left the watch-party chat on read"),
+        GYM_RAT to mapOf(FOODIE to "meal-preps them into silence", PARTY_ANIMAL to "is in bed by 9 for a 5am lift"),
+        FOODIE to mapOf(GAMER to "lures them off the couch with snacks", CHILL_GUY to "drags them to a two-hour brunch line"),
+        GAMER to mapOf(NERD to "has a speedrun for that", CHAOS_AGENT to "has seen worse chaos in ranked"),
+        NERD to mapOf(SPORTS_FAN to "has the advanced stats", MAIN_CHARACTER to "fact-checks the origin story"),
+        SPORTS_FAN to mapOf(PARTY_ANIMAL to "turned the party into a watch party", ALWAYS_LATE to "would never miss kickoff"),
+        PARTY_ANIMAL to mapOf(CHILL_GUY to "turned the chill hang into a rager", CRYPTO_BRO to "spent the gains on bottle service"),
+        CHILL_GUY to mapOf(CHAOS_AGENT to "is simply unbothered", OUTDOORSY to "says the couch is also nature"),
+        CHAOS_AGENT to mapOf(MAIN_CHARACTER to "hijacked the plot", WINGMAN to "ruined the setup on purpose"),
+        MAIN_CHARACTER to mapOf(ALWAYS_LATE to "made the big entrance first", ROAD_RAGER to "made the traffic part of the montage"),
+        ALWAYS_LATE to mapOf(CRYPTO_BRO to "missed the whole pitch", BAD_DRIVER to "was never in the car on time anyway"),
+        CRYPTO_BRO to mapOf(OUTDOORSY to "bought the mountain as an NFT", YAPPER to "out-yaps them about the blockchain"),
+        OUTDOORSY to mapOf(WINGMAN to "is too busy hiking to need a wingman", GHOST to "found them hiding on the trail"),
+        WINGMAN to mapOf(ROAD_RAGER to "calms them down at the red light", GYM_RAT to "gets them a number at the gym"),
     )
 
     fun beats(attacker: BroType): Set<BroType> = chart[attacker]?.keys.orEmpty()

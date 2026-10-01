@@ -8,6 +8,7 @@ import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.Rarity
 import com.joecode.brokemon.domain.Evolution
 import com.joecode.brokemon.domain.EvolutionStage
+import com.joecode.brokemon.domain.Wrapped
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,8 @@ data class HomeUiState(
     val legendaryCount: Int = 0,
     val query: String = "",
     val typeFilter: BroType? = null,
+    /** Set only during the New Year window (see Wrapped.seasonYear). */
+    val wrappedYear: Int? = Wrapped.seasonYear(),
 )
 
 class HomeViewModel(repository: BroRepository) : ViewModel() {

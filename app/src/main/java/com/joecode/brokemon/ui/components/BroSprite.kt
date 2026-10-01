@@ -11,29 +11,23 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
-import androidx.core.graphics.ColorUtils
-import com.joecode.brokemon.data.model.BroType
-import com.joecode.brokemon.domain.SpriteGenerator
-import com.joecode.brokemon.ui.theme.DexColors
-import com.joecode.brokemon.ui.theme.color
+import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.BroLook
+import com.joecode.brokemon.domain.HumanSprite
 
 /**
- * Crisp pixel avatar. The bitmap is 16x16 and scaled up with
+ * Crisp pixel portrait. The bitmap is 32x32 and scaled up with
  * FilterQuality.None (nearest neighbor), so pixels never blur.
  */
 @Composable
 fun BroSprite(
-    seed: Long,
+    look: BroLook,
     stage: Int,
-    type1: BroType,
-    type2: BroType?,
     shiny: Boolean,
     modifier: Modifier = Modifier,
     tint: Color? = null,
 ) {
-    val bitmap = remember(seed, stage, type1, type2, shiny, tint) {
-        spriteBitmap(seed, stage, type1, type2, shiny, tint)
-    }
+    val bitmap = remember(look, stage, shiny, tint) { spriteBitmap(look, stage, shiny, tint) }
     Image(
         bitmap = bitmap,
         contentDescription = null,
@@ -43,46 +37,17 @@ fun BroSprite(
     )
 }
 
-private fun spriteBitmap(
-    seed: Long,
-    stage: Int,
-    type1: BroType,
-    type2: BroType?,
-    shiny: Boolean,
-    tint: Color?,
-): ImageBitmap {
-    val grid = SpriteGenerator.generate(seed, stage)
-    var body = type1.color.toArgb()
-    var accent = (type2?.color ?: type1.color).toArgb()
-    if (type2 == null) accent = ColorUtils.blendARGB(accent, android.graphics.Color.WHITE, 0.35f)
-    if (shiny) {
-        body = shiftHue(body, 150f)
-        accent = DexColors.Gold.toArgb()
-    }
-    val palette = IntArray(8)
-    palette[SpriteGenerator.EMPTY] = android.graphics.Color.TRANSPARENT
-    palette[SpriteGenerator.OUTLINE] = 0xFF0B0B10.toInt()
-    palette[SpriteGenerator.BODY] = body
-    palette[SpriteGenerator.SHADE] = ColorUtils.blendARGB(body, android.graphics.Color.BLACK, 0.3f)
-    palette[SpriteGenerator.ACCENT] = accent
-    palette[SpriteGenerator.EYE] = 0xFF0B0B10.toInt()
-    palette[SpriteGenerator.EYE_SHINE] = android.graphics.Color.WHITE
-    palette[SpriteGenerator.CROWN] = DexColors.Gold.toArgb()
+@Composable
+fun BroSprite(bro: Bro, stage: Int, modifier: Modifier = Modifier, tint: Color? = null) =
+    BroSprite(bro.resolvedLook, stage, bro.isShiny, modifier, tint)
 
+private fun spriteBitmap(look: BroLook, stage: Int, shiny: Boolean, tint: Color?): ImageBitmap {
+    val pixels = HumanSprite.render(look, stage, shiny)
     if (tint != null) {
-        // Used for silhouettes / evolution flashes: every filled pixel becomes the tint.
+        // Silhouettes / evolution flashes: every drawn pixel becomes the tint.
         val t = tint.toArgb()
-        for (i in 1 until palette.size) palette[i] = t
+        for (i in pixels.indices) if (pixels[i] != HumanSprite.CLEAR) pixels[i] = t
     }
-
-    val size = SpriteGenerator.SIZE
-    val pixels = IntArray(size * size) { i -> palette[grid[i / size][i % size]] }
+    val size = HumanSprite.SIZE
     return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
-}
-
-private fun shiftHue(argb: Int, degrees: Float): Int {
-    val hsv = FloatArray(3)
-    android.graphics.Color.colorToHSV(argb, hsv)
-    hsv[0] = (hsv[0] + degrees) % 360f
-    return android.graphics.Color.HSVToColor(hsv)
 }

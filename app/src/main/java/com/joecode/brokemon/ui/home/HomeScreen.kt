@@ -41,7 +41,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import android.content.pm.ApplicationInfo
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import com.joecode.brokemon.data.model.Rarity
+import com.joecode.brokemon.ui.components.rarityGlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -75,6 +80,10 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    // Debug builds always show Wrapped so it can be tested outside the New Year window.
+    val isDebug = remember { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
+    val showWrapped = state.wrappedYear != null || isDebug
 
     DexScaffold(
         title = "Brodex",
@@ -109,8 +118,11 @@ fun HomeScreen(
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     DexCounter(state.totalCaught, state.shinyCount, state.legendaryCount)
                 }
+                state.wrappedYear?.let { year ->
+                    item(span = { GridItemSpan(maxLineSpan) }) { WrappedBanner(year, onWrapped) }
+                }
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    QuickActions(onSquads, onTrade, onCheckOnBro, onWrapped)
+                    QuickActions(onSquads, onTrade, onCheckOnBro, onWrapped.takeIf { showWrapped })
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     SearchAndFilter(
@@ -187,13 +199,24 @@ private fun QuickActions(
     onSquads: () -> Unit,
     onTrade: () -> Unit,
     onCheckOnBro: () -> Unit,
-    onWrapped: () -> Unit,
+    onWrapped: (() -> Unit)?,
 ) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         QuickAction("Squads", Icons.Filled.Groups, DexColors.LedBlue, onSquads, Modifier.weight(1f))
         QuickAction("Trade", Icons.Filled.QrCode2, DexColors.LedGreen, onTrade, Modifier.weight(1f))
         QuickAction("Check in", Icons.Filled.WavingHand, DexColors.LedYellow, onCheckOnBro, Modifier.weight(1f))
-        QuickAction("Wrapped", Icons.Filled.AutoAwesome, DexColors.DexRedLight, onWrapped, Modifier.weight(1f))
+        if (onWrapped != null) {
+            QuickAction("Wrapped", Icons.Filled.AutoAwesome, DexColors.DexRedLight, onWrapped, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun WrappedBanner(year: Int, onOpen: () -> Unit) {
+    ScreenPanel(title = "Happy New Year", modifier = Modifier.rarityGlow(Rarity.LEGENDARY)) {
+        Text("YOUR $year BRODEX WRAPPED IS HERE", style = PixelText.Label, color = DexColors.Gold)
+        Spacer(Modifier.height(10.dp))
+        PixelButton("Open Wrapped", onOpen, Modifier.fillMaxWidth(), color = DexColors.DexRed)
     }
 }
 

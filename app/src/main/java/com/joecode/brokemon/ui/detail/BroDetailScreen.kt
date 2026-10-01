@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
@@ -56,6 +57,9 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -92,6 +96,7 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.Fact
 import com.joecode.brokemon.data.model.FactCategories
 import com.joecode.brokemon.data.model.MediaType
@@ -100,6 +105,7 @@ import com.joecode.brokemon.data.model.Rarity
 import com.joecode.brokemon.domain.Evolution
 import com.joecode.brokemon.domain.EvolutionInfo
 import com.joecode.brokemon.ui.AppViewModelProvider
+import com.joecode.brokemon.ui.components.AvatarBuilder
 import com.joecode.brokemon.ui.components.BroSprite
 import com.joecode.brokemon.ui.components.DexScaffold
 import com.joecode.brokemon.ui.components.MediaThumbnail
@@ -134,6 +140,7 @@ fun BroDetailScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var showRename by rememberSaveable { mutableStateOf(false) }
     var showRarity by rememberSaveable { mutableStateOf(false) }
+    var showLookEditor by rememberSaveable { mutableStateOf(false) }
     var showDelete by rememberSaveable { mutableStateOf(false) }
     var showAddFact by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
@@ -177,6 +184,11 @@ fun BroDetailScreen(
                             text = { Text("Rename") },
                             leadingIcon = { Icon(Icons.Filled.Edit, null) },
                             onClick = { menuOpen = false; showRename = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Edit look") },
+                            leadingIcon = { Icon(Icons.Filled.Face, null) },
+                            onClick = { menuOpen = false; showLookEditor = true },
                         )
                         DropdownMenuItem(
                             text = { Text("Change rarity") },
@@ -291,6 +303,15 @@ fun BroDetailScreen(
                 confirmButton = { TextButton(onClick = { showRarity = false }) { Text("Close") } },
             )
         }
+        if (showLookEditor) {
+            LookEditorDialog(
+                initial = bro.resolvedLook,
+                shiny = bro.isShiny,
+                stage = state.evolution?.stage?.ordinal ?: 0,
+                onSave = { viewModel.setLook(it); showLookEditor = false },
+                onDismiss = { showLookEditor = false },
+            )
+        }
         if (showDelete) {
             AlertDialog(
                 onDismissRequest = { showDelete = false },
@@ -361,11 +382,8 @@ private fun HeroPanel(bro: Bro, evolution: EvolutionInfo) {
                 }
             }
             BroSprite(
-                seed = bro.avatarSeed,
+                bro = bro,
                 stage = evolution.stage.ordinal,
-                type1 = bro.primaryType,
-                type2 = bro.types.getOrNull(1),
-                shiny = bro.isShiny,
                 modifier = Modifier
                     .size(176.dp)
                     .graphicsLayer { translationY = bob },
@@ -459,7 +477,7 @@ private fun ScoreLine(label: String, count: Int, per: Int) {
 private fun StatsPanel(bro: Bro) {
     ScreenPanel(title = "Base stats") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            bro.stats.asList().forEach { (label, value) -> StatBar(label, value, bro.primaryType.color) }
+            bro.stats.asList().forEach { (info, value) -> StatBar(info.label, value, bro.primaryType.color) }
             Text(
                 "TOTAL ${bro.stats.total}",
                 style = PixelText.Tiny,
@@ -658,36 +676,57 @@ private fun TextInputDialog(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+private const val CUSTOM_CATEGORY = "Custom..."
+
+/** Pick a category from the dropdown (or "Custom..." to type one), then fill in the value. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddFactDialog(onConfirm: (String, String) -> Unit, onDismiss: () -> Unit) {
-    var category by rememberSaveable { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var choice by rememberSaveable { mutableStateOf(FactCategories.presets.first()) }
+    var custom by rememberSaveable { mutableStateOf("") }
     var value by rememberSaveable { mutableStateOf("") }
+    val category = if (choice == CUSTOM_CATEGORY) custom else choice
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("NEW FACT", style = PixelText.Label) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FactCategories.presets.forEach { preset ->
-                        FilterChip(
-                            selected = category == preset,
-                            onClick = { category = preset },
-                            label = { Text(preset) },
-                        )
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                    OutlinedTextField(
+                        value = choice,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Category") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                            .fillMaxWidth(),
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        (FactCategories.presets + CUSTOM_CATEGORY).forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = { choice = option; expanded = false },
+                            )
+                        }
                     }
                 }
-                OutlinedTextField(
-                    value = category,
-                    onValueChange = { category = it.take(32) },
-                    label = { Text("Category") },
-                    singleLine = true,
-                )
+                if (choice == CUSTOM_CATEGORY) {
+                    OutlinedTextField(
+                        value = custom,
+                        onValueChange = { custom = it.take(32) },
+                        label = { Text("Your category") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 OutlinedTextField(
                     value = value,
                     onValueChange = { value = it.take(80) },
-                    label = { Text("Value") },
+                    label = { Text(category.ifBlank { "Value" }) },
                     singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
@@ -698,6 +737,40 @@ private fun AddFactDialog(onConfirm: (String, String) -> Unit, onDismiss: () -> 
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+@Composable
+private fun LookEditorDialog(
+    initial: BroLook,
+    shiny: Boolean,
+    stage: Int,
+    onSave: (BroLook) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var look by remember { mutableStateOf(initial) }
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+                .background(DexColors.Surface, CutCornerShape(8.dp))
+                .border(2.dp, DexColors.Outline, CutCornerShape(8.dp))
+                .padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("EDIT LOOK", style = PixelText.Header, color = DexColors.Text)
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.size(150.dp).background(DexColors.Screen, CutCornerShape(4.dp)), contentAlignment = Alignment.Center) {
+                BroSprite(look, stage, shiny, Modifier.size(140.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            AvatarBuilder(look = look, onLookChange = { look = it })
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+                TextButton(onClick = { onSave(look) }) { Text("Save") }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

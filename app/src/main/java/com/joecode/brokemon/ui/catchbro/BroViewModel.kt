@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
 import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.BroStats
 import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.Rarity
@@ -27,6 +28,7 @@ data class BroState(
     val selectedMoves: List<String> = emptyList(),
     val customMoveInput: String = "",
     val avatarSeed: Long = 0L,
+    val look: BroLook = BroLook(),
     val isSaving: Boolean = false,
     val caught: CaughtResult? = null,
 ) {
@@ -34,7 +36,8 @@ data class BroState(
     val movesFull: Boolean get() = selectedMoves.size >= MAX_MOVES
 
     companion object {
-        const val MAX_MOVES = QrCodec.MAX_MOVES
+        /** Picked at catch; evolution teaches up to two more. */
+        const val MAX_MOVES = 4
         const val MAX_NAME = QrCodec.MAX_NAME
         const val MAX_MOVE_LENGTH = QrCodec.MAX_MOVE_LENGTH
     }
@@ -67,7 +70,9 @@ class BroViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        BroState(stats = BroStats.random(random), avatarSeed = random.nextLong()),
+        random.nextLong().let { seed ->
+            BroState(stats = BroStats.random(random), avatarSeed = seed, look = BroLook.random(seed))
+        },
     )
     val state: StateFlow<BroState> = _state.asStateFlow()
 
@@ -94,7 +99,9 @@ class BroViewModel(
 
     fun rerollStats() = _state.update { it.copy(stats = BroStats.random(random)) }
 
-    fun rerollAvatar() = _state.update { it.copy(avatarSeed = random.nextLong()) }
+    fun randomizeLook() = _state.update { it.copy(look = BroLook.random(random.nextLong())) }
+
+    fun onLookChanged(look: BroLook) = _state.update { it.copy(look = look) }
 
     fun onMoveToggled(move: String) = _state.update {
         when {
@@ -135,6 +142,7 @@ class BroViewModel(
                 memories = emptyList(),
                 facts = emptyList(),
                 avatarSeed = current.avatarSeed,
+                look = current.look,
             )
             val id = repository.insert(bro)
             _state.update { it.copy(isSaving = false, caught = CaughtResult(id, bro.name, isShiny)) }

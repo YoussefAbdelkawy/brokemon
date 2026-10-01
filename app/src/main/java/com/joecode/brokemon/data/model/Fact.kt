@@ -11,14 +11,19 @@ data class Fact(
 
 object FactCategories {
     val presets = listOf(
+        "Birthday",
         "Favorite song",
         "Favorite game",
-        "Favorite book",
         "Favorite food",
+        "Go-to drink",
         "Sports team",
         "Hometown",
-        "Birthday",
+        "Job",
+        "Car",
+        "Pet's name",
+        "Celebrity crush",
         "Go-to karaoke",
         "Hidden talent",
+        "Biggest fear",
     )
 }

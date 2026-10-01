@@ -72,7 +72,7 @@ fun SquadsScreen(
         if (!state.isLoading && state.squads.isEmpty()) {
             EmptyState(
                 title = "No squads yet",
-                body = "Group your bros into a party of up to ${Squad.MAX_MEMBERS} and see how their types match up.",
+                body = "Group up to ${Squad.MAX_MEMBERS} bros into a squad and see how their types match up.",
                 modifier = Modifier.padding(padding),
                 action = { PixelButton("Form a squad", { showCreate = true }) },
             )
@@ -129,27 +129,24 @@ private fun SquadCard(summary: SquadSummary, modifier: Modifier = Modifier, onCl
             Text("${summary.members.size}/${Squad.MAX_MEMBERS}", style = PixelText.Tiny, color = DexColors.TextMuted)
         }
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            repeat(Squad.MAX_MEMBERS) { i ->
+        val shown = 7
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            repeat(minOf(shown, maxOf(summary.members.size, 1))) { i ->
                 val entry = summary.members.getOrNull(i)
                 Box(
                     Modifier
-                        .size(44.dp)
+                        .size(38.dp)
                         .background(DexColors.Screen, CutCornerShape(3.dp))
                         .border(1.dp, DexColors.ScreenBorder, CutCornerShape(3.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (entry != null) {
-                        BroSprite(
-                            entry.bro.avatarSeed,
-                            entry.stage.ordinal,
-                            entry.bro.primaryType,
-                            entry.bro.types.getOrNull(1),
-                            entry.bro.isShiny,
-                            Modifier.size(38.dp),
-                        )
+                        BroSprite(entry.bro, entry.stage.ordinal, Modifier.size(34.dp))
                     }
                 }
+            }
+            if (summary.members.size > shown) {
+                Text("+${summary.members.size - shown}", style = PixelText.Label, color = DexColors.TextMuted)
             }
         }
     }

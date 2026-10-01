@@ -22,8 +22,10 @@ data class Bro(
     val lastCheckIn: Long? = null,
     val memories: List<Memory> = emptyList(),
     val facts: List<Fact> = emptyList(),
-    /** Seed for the procedurally generated pixel avatar. */
+    /** Seed used to give older cards (made before the character builder) a look. */
     val avatarSeed: Long,
+    /** The pixel character the user built. Null on cards made before the builder existed. */
+    val look: BroLook? = null,
     /** Tradeable bros can be shared by QR; locked ones can't. */
     val isTradeable: Boolean = true,
     /** True if this card arrived through a QR trade instead of a catch. */
@@ -31,5 +33,6 @@ data class Bro(
 ) {
     val dexNumber: String get() = "#%03d".format(id)
     val types: List<BroType> get() = listOfNotNull(BroType.from(type1), BroType.from(type2))
-    val primaryType: BroType get() = BroType.from(type1) ?: BroType.CHILL
+    val primaryType: BroType get() = BroType.from(type1) ?: BroType.CHILL_GUY
+    val resolvedLook: BroLook get() = look ?: BroLook.random(avatarSeed)
 }
