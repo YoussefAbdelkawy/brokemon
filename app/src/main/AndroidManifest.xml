@@ -5,6 +5,11 @@
     <!-- The camera is optional: capture goes through the user's camera app via intents,
          so the app never requests the CAMERA permission. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <!-- Voice memories and voice lines, recorded in-app and kept on the device.
+         Asked for only when the user taps record. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Local-first: Brokemon never talks to a server. Strip network permissions that
          library manifests would otherwise merge in. -->

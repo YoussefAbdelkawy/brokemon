@@ -8,6 +8,7 @@ import com.joecode.brokemon.data.model.BroStats
 import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.LookPart
 import com.joecode.brokemon.data.model.Rarity
+import com.joecode.brokemon.domain.SeasonEvents
 
 /**
  * Compact card format carried by trade QR codes. Short keys keep the code
@@ -24,6 +25,8 @@ data class QrPayload(
     val a: Long?,
     /** The character's look as a list of option indices (v2+). */
     val l: List<Int>? = null,
+    /** Limited event frame, e.g. "RAMADAN|2027" (v2+, optional). */
+    val e: String? = null,
 )
 
 object QrCodec {
@@ -47,6 +50,7 @@ object QrCodec {
             sh = if (bro.isShiny) 1 else 0,
             a = bro.avatarSeed,
             l = bro.resolvedLook.toList(),
+            e = bro.eventFrame,
         )
         return PREFIX + gson.toJson(payload)
     }
@@ -82,6 +86,7 @@ object QrCodec {
             isShiny = p.sh == 1,
             catchDate = now,
             avatarSeed = p.a ?: name.hashCode().toLong(),
+            eventFrame = p.e?.takeIf { SeasonEvents.parse(it) != null },
             look = p.l?.takeIf { it.size == LookPart.entries.size }?.let { BroLook.fromList(it) },
             isTraded = true,
         )

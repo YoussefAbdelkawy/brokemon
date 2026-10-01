@@ -22,6 +22,8 @@ class QrCodecTest {
             stats = BroStats(10, 20, 30, 40, 50, 60),
             moves = listOf("Spot Me", "Snack Run"),
             look = BroLook(skin = 3, hair = 5, hairColor = 9, glasses = 3, hat = 1, outfit = 2, outfitColor = 4),
+            eventFrame = "RAMADAN|2027",
+            voiceLine = "file:///data/secret-voice.m4a",
             rarity = Rarity.RARE,
             isShiny = true,
         )
@@ -35,6 +37,9 @@ class QrCodecTest {
         assertTrue(decoded.isShiny)
         assertEquals(bro.avatarSeed, decoded.avatarSeed)
         assertEquals(bro.resolvedLook, decoded.look)
+        // The limited frame travels with the card; the voice line never does.
+        assertEquals("RAMADAN|2027", decoded.eventFrame)
+        assertNull(decoded.voiceLine)
         assertEquals(42L, decoded.catchDate)
         assertTrue(decoded.isTraded)
         assertEquals(0L, decoded.id)
@@ -80,6 +85,8 @@ class QrCodecTest {
         // Out-of-range look indices wrap into valid options instead of crashing.
         assertTrue(bro.look!!.skin in 0 until LookPart.SKIN.count)
         assertTrue(bro.look!!.hair in 0 until LookPart.HAIR.count)
+        // Junk event frames are dropped rather than trusted.
+        assertNull(QrCodec.decode("""BRKM1:{"v":2,"n":"X","t":["GYM_RAT"],"s":[1,2,3,4,5,6],"e":"HACKED|1"}""")!!.eventFrame)
     }
 
     @Test

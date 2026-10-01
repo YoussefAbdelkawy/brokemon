@@ -40,6 +40,8 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             "Sharing" to "Data only leaves your phone when you choose to show a card's QR code. The QR holds the card's name, " +
                 "types, stats, moves, rarity, shiny flag and avatar look. It never contains photos, videos, facts or dates. " +
                 "Locked cards can't be shared at all.",
+            "Microphone" to "Used only while you record a voice memory or voice line. Recordings stay in Brokemon's " +
+                "private storage and are never included in QR codes.",
             "Camera and photos" to "Brokemon uses your device's camera app and the system photo picker. It does not request " +
                 "camera or storage permissions and can only see the specific items you capture or pick.",
             "QR scanning" to "Scanning uses Google Play services' code scanner, which runs in Google Play services rather than " +

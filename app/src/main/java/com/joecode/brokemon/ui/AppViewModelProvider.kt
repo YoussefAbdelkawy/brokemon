@@ -20,8 +20,8 @@ import com.joecode.brokemon.ui.trade.TradeViewModel
 /** One factory for every screen's ViewModel; dependencies come from [AppContainer]. */
 object AppViewModelProvider {
     val Factory = viewModelFactory {
-        initializer { HomeViewModel(container().repository) }
-        initializer { BroViewModel(container().repository) }
+        initializer { HomeViewModel(container().repository, container().events) }
+        initializer { BroViewModel(container().repository, container().events) }
         initializer {
             BroDetailViewModel(createSavedStateHandle(), container().repository, container().media, container().prefs)
         }

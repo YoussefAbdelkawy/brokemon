@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -77,6 +78,13 @@ class UserPrefs(private val context: Context) {
         context.dataStore.edit { it[longPreferencesKey("fired_$kind")] = epochDay }
     }
 
+    /** Debug-only event override: null = real date, "NONE" = no event, else a SeasonEvent name. */
+    val debugEvent: Flow<String?> = context.dataStore.data.map { it[DEBUG_EVENT] }
+
+    suspend fun setDebugEvent(value: String?) {
+        context.dataStore.edit { if (value == null) it.remove(DEBUG_EVENT) else it[DEBUG_EVENT] = value }
+    }
+
     suspend fun lastExport(): Long? = context.dataStore.data.first()[LAST_EXPORT]
 
     suspend fun setLastExport(millis: Long) {
@@ -106,5 +114,6 @@ class UserPrefs(private val context: Context) {
         val BIRTHDAY_REMINDERS = booleanPreferencesKey("birthday_reminders")
         val WEEKLY_NUDGE = booleanPreferencesKey("weekly_nudge")
         val LAST_EXPORT = longPreferencesKey("last_export")
+        val DEBUG_EVENT = stringPreferencesKey("debug_event")
     }
 }

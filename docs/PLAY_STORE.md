@@ -30,6 +30,13 @@
 8. **Testing track**: new personal developer accounts must run a closed test with at least 12 testers for 14 days before production access. Start with internal testing to sanity-check, then closed testing.
 9. **Pre-launch report**: review the automated device tests and accessibility suggestions after the first upload.
 
+## User-generated content (UGC) policy
+Google Play's UGC policy requires terms of use, in-app report/block and moderation **if users share content with each other through your app**. Brokemon avoids this by design: there's no server, no feed and no accounts. Cards move only face-to-face by QR, and images leave only through the Android share sheet to apps the user picks. **Keep it that way.** If an online feed, friend list or cloud sync is ever added, budget for terms of use, report/block flows and moderation first.
+
+## Permissions to justify in the Console
+- `RECORD_AUDIO`: voice memories and voice lines, recorded only when the user taps record and kept on-device. Declare it in Data safety as "audio, not collected" (it never leaves the device unless the user exports a backup).
+- `POST_NOTIFICATIONS`: birthday and weekly check-in reminders.
+
 ## Open product decisions that affect the listing
 - Private friend-group app vs. public release changes how strongly you word the photo-consent language.
 - Evolution thresholds (currently 0 / 20 / 40) should be tuned with real usage before launch.

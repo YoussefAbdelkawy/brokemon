@@ -145,6 +145,19 @@ class BroDetailViewModel(
         }
     }
 
+    fun newVoiceFile(prefix: String = ""): File = media.newAudioFile(prefix)
+
+    fun addVoiceMemory(file: File) = addMemory(file, MediaType.AUDIO)
+
+    /** Replaces the bro's voice line, deleting the old recording. */
+    fun setVoiceLine(file: File?) {
+        viewModelScope.launch {
+            val bro = repository.findBro(broId) ?: return@launch
+            bro.voiceLine?.let { media.delete(it) }
+            repository.update(bro.copy(voiceLine = file?.let { Uri.fromFile(it).toString() }))
+        }
+    }
+
     private fun addMemory(file: File, type: MediaType) {
         val memory = Memory(fileUri = Uri.fromFile(file).toString(), mediaType = type)
         edit { it.copy(memories = it.memories + memory) }

@@ -18,7 +18,10 @@ import androidx.core.graphics.createBitmap
 import com.joecode.brokemon.R
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Rarity
+import com.joecode.brokemon.domain.EventIcon
 import com.joecode.brokemon.domain.EvolutionStage
+import com.joecode.brokemon.domain.PixelIcons
+import com.joecode.brokemon.domain.SeasonEvents
 import com.joecode.brokemon.domain.HumanSprite
 import com.joecode.brokemon.domain.Wrapped
 import com.joecode.brokemon.domain.WrappedSummary
@@ -48,8 +51,10 @@ class StoryImages(private val context: Context) {
     fun card(bro: Bro, stage: EvolutionStage): Bitmap {
         val bmp = createBitmap(W, H)
         val c = Canvas(bmp)
-        val type1 = bro.primaryType.color.toArgb()
-        val type2 = (bro.types.getOrNull(1) ?: bro.primaryType).color.toArgb()
+        val event = SeasonEvents.parse(bro.eventFrame)
+        // Limited event cards wear the event's colors instead of the type colors.
+        val type1 = event?.event?.primary?.toInt() ?: bro.primaryType.color.toArgb()
+        val type2 = event?.event?.accent?.toInt() ?: (bro.types.getOrNull(1) ?: bro.primaryType).color.toArgb()
 
         background(c, type1)
         header(c, "BROKEMON", bro.dexNumber)
@@ -87,6 +92,18 @@ class StoryImages(private val context: Context) {
         scanlines(c, window)
         sprite(c, bro, stage.ordinal, window, inset = 40f)
         if (bro.isShiny) sparkles(c, window, bro.id.toInt(), 12)
+        event?.let { stamp ->
+            val e = stamp.event
+            pixelIcon(c, e.icon, window.left + 20f, window.top + 20f, 9f, e.primary.toInt(), e.accent.toInt())
+            val w = PixelIcons.rows(e.icon)[0].length * 9f
+            pixelIcon(c, e.icon, window.right - 20f - w, window.top + 20f, 9f, e.primary.toInt(), e.accent.toInt())
+            val ribbon = "LIMITED · ${stamp.label}"
+            val rw = measure(ribbon, 26f) + 40f
+            val r = RectF(window.centerX() - rw / 2, window.bottom - 70f, window.centerX() + rw / 2, window.bottom - 20f)
+            c.drawRoundRect(r, 8f, 8f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = withAlpha(0xFF0B0B10.toInt(), 220) })
+            c.drawRoundRect(r, 8f, 8f, Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = 4f; color = e.accent.toInt() })
+            drawText(c, ribbon, r.left + 20f, r.bottom - 15f, 26f, e.accent.toInt())
+        }
 
         // Name, types, stage.
         var y = window.bottom + 110f
@@ -220,6 +237,22 @@ class StoryImages(private val context: Context) {
         val dst = RectF(box.centerX() - side / 2, box.centerY() - side / 2, box.centerX() + side / 2, box.centerY() + side / 2)
         // Nearest-neighbor: keep the pixels crisp.
         c.drawBitmap(sprite, Rect(0, 0, s, s), dst, Paint().apply { isFilterBitmap = false; isAntiAlias = false })
+    }
+
+    private fun pixelIcon(c: Canvas, icon: EventIcon, left: Float, top: Float, px: Float, primary: Int, accent: Int) {
+        val p = Paint()
+        PixelIcons.rows(icon).forEachIndexed { y, row ->
+            row.forEachIndexed { x, ch ->
+                p.color = when (ch) {
+                    'P' -> primary
+                    'A' -> accent
+                    'W' -> 0xFFFFFFFF.toInt()
+                    'D' -> 0xFF0B0B10.toInt()
+                    else -> return@forEachIndexed
+                }
+                c.drawRect(left + x * px, top + y * px, left + (x + 1) * px, top + (y + 1) * px, p)
+            }
+        }
     }
 
     private fun scanlines(c: Canvas, rect: RectF) {

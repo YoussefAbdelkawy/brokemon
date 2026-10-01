@@ -49,6 +49,12 @@ Study: weighted random selection, `HorizontalPager`, and reading pager offsets i
 - Widget: `widget/BroOfTheDayWidget.kt`. Study: Jetpack Glance (`GlanceAppWidget`, `ActionCallback`), app-widget provider XML.
 - Reminders: `notify/*`, `domain/Reminders.kt`. Study: `CoroutineWorker` + periodic work, notification channels, the POST_NOTIFICATIONS runtime permission, `PendingIntent` flags, `BroadcastReceiver.goAsync()`.
 
+## Holo, voice, events
+- Holo tilt: `ui/components/Holo.kt`. Study: `SensorManager` + `TYPE_GAME_ROTATION_VECTOR`, `getRotationMatrixFromVector` / `getOrientation`, low-pass filtering, `graphicsLayer { rotationX/Y }`, `BlendMode.Screen/Overlay`. Note: tilt is read in the draw phase so it never recomposes.
+- Voice: `audio/VoiceRecorder.kt`, `ui/components/Audio.kt`. Study: `MediaRecorder`, `MediaPlayer`, the RECORD_AUDIO runtime permission, `DisposableEffect` for releasing players.
+- Events: `domain/SeasonEvents.kt`. Study: `java.time.chrono.HijrahDate` (the Umm al-Qura calendar), then the pure-function + unit-test pattern in `SeasonEventsTest`.
+- Schema: `docs/SCHEMA.md` and `AutoMigration(2 → 3)`.
+
 ## M9–M10: Privacy and publishing
 See `docs/PLAY_STORE.md` and `docs/privacy-policy.md`.
 

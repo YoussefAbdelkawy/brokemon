@@ -47,8 +47,14 @@ class BackupManager(
             val bros = repository.allBrosOnce()
             val squads = repository.allSquadsOnce()
             val files = mutableListOf<File>()
+            fun portable(uri: String?): String? {
+                val file = uri?.let { runCatching { it.toUri().toFile() }.getOrNull() }?.takeIf { it.exists() } ?: return null
+                files += file
+                return MEMORY_PREFIX + file.name
+            }
             val portable = bros.map { bro ->
                 bro.copy(
+                    voiceLine = portable(bro.voiceLine),
                     memories = bro.memories.mapNotNull { memory ->
                         val file = runCatching { memory.fileUri.toUri().toFile() }.getOrNull()
                             ?.takeIf { it.exists() } ?: return@mapNotNull null
@@ -95,8 +101,17 @@ class BackupManager(
             // Only now, with a valid backup in hand, replace the current data.
             media.deleteAll()
             val memoriesDir = media.memoriesDir
+            fun restoreFile(relative: String?): String? {
+                if (relative == null || !isSafeMemoryEntry(relative)) return null
+                val name = relative.removePrefix(MEMORY_PREFIX)
+                val staged = File(staging, name).takeIf { it.exists() } ?: return null
+                val dest = File(memoriesDir, name)
+                staged.copyTo(dest, overwrite = true)
+                return Uri.fromFile(dest).toString()
+            }
             val restored = data.bros.map { bro ->
                 bro.copy(
+                    voiceLine = restoreFile(bro.voiceLine),
                     memories = bro.memories.orEmpty().mapNotNull { memory ->
                         val name = memory.fileUri.removePrefix(MEMORY_PREFIX)
                         val staged = File(staging, name).takeIf { isSafeMemoryEntry(memory.fileUri) && it.exists() }
@@ -117,9 +132,9 @@ class BackupManager(
     companion object {
         const val JSON_ENTRY = "brodex.json"
         const val MEMORY_PREFIX = "memories/"
-        private val memoryName = Regex("""memories/[A-Za-z0-9-]{1,64}\.(jpg|mp4)""")
+        private val memoryName = Regex("""memories/[A-Za-z0-9-]{1,64}\.(jpg|mp4|m4a)""")
 
-        /** Only flat "memories/<uuid>.jpg|mp4" names are accepted (blocks zip-slip). */
+        /** Only flat "memories/<name>.jpg|mp4|m4a" names are accepted (blocks zip-slip). */
         fun isSafeMemoryEntry(name: String): Boolean = memoryName.matches(name)
     }
 }

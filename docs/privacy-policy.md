@@ -12,6 +12,7 @@ Everything you create in Brokemon stays on your device. The developer never rece
 - Facts you add (for example a favorite song or sports team).
 - Squads you create.
 - Photos and videos you capture or select for a memory log. These are copied into the app's private storage and are not added to your gallery.
+- Voice recordings you make in the app (voice memories and each bro's short "voice line"). The microphone is used only while you're recording, and recordings stay in the app's private storage.
 
 ## Backups
 - **Manual export:** Settings → Backup & restore creates a single .zip file containing your Brodex (including photos and videos). It's saved only where you choose (for example your Google Drive or a computer). Restoring replaces what's on the device with the contents of that file.
@@ -19,7 +20,7 @@ Everything you create in Brokemon stays on your device. The developer never rece
 - Uninstalling the app deletes all data stored on the device.
 
 ## Sharing
-Data leaves your device only when you choose to display a card's QR code and someone scans it. A QR code contains only the card's name, types, stats, moves, rarity, shiny status and avatar appearance. It never contains photos, videos, facts or dates. Cards marked "Locked" cannot be shared.
+Data leaves your device only when you choose to display a card's QR code and someone scans it. A QR code contains only the card's name, types, stats, moves, rarity, shiny status, avatar appearance and any limited event frame. It never contains photos, videos, voice recordings, facts or dates. Cards marked "Locked" cannot be shared.
 
 ## Notifications and widget
 - If you allow notifications, Brokemon can remind you of a bro's birthday (only for bros where you added a Birthday) and send a weekly check-in nudge. These are scheduled and generated on your device; you can turn each off in Settings → Reminders or in Android settings.

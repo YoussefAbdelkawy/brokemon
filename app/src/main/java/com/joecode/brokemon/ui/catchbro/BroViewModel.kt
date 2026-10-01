@@ -3,6 +3,9 @@ package com.joecode.brokemon.ui.catchbro
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
+import com.joecode.brokemon.data.EventClock
+import com.joecode.brokemon.domain.SeasonEvents
+import java.time.LocalDate
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.BroStats
@@ -16,7 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-data class CaughtResult(val id: Long, val name: String, val isShiny: Boolean)
+data class CaughtResult(val id: Long, val name: String, val isShiny: Boolean, val eventLabel: String? = null)
 
 data class BroState(
     val name: String = "",
@@ -66,6 +69,7 @@ object PresetMoves {
 
 class BroViewModel(
     private val repository: BroRepository,
+    private val events: EventClock,
     private val random: Random = Random.Default,
 ) : ViewModel() {
 
@@ -128,6 +132,8 @@ class BroViewModel(
         _state.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             val isShiny = random.nextInt(SHINY_ODDS) == 0
+            // Caught during a limited event? Stamp the event frame on forever.
+            val eventFrame = events.now()?.let { SeasonEvents.stamp(it, LocalDate.now()) }
             val bro = Bro(
                 name = current.name.trim(),
                 type1 = type1.name,
@@ -143,9 +149,11 @@ class BroViewModel(
                 facts = emptyList(),
                 avatarSeed = current.avatarSeed,
                 look = current.look,
+                eventFrame = eventFrame,
             )
             val id = repository.insert(bro)
-            _state.update { it.copy(isSaving = false, caught = CaughtResult(id, bro.name, isShiny)) }
+            val eventLabel = SeasonEvents.parse(eventFrame)?.label
+            _state.update { it.copy(isSaving = false, caught = CaughtResult(id, bro.name, isShiny, eventLabel)) }
         }
     }
 

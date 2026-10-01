@@ -20,6 +20,9 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 - **QR trading**: compact `BRKM1:` payload with short keys. It carries only name, types, stats, moves, rarity, shiny and avatar seed. Photos, videos, facts and dates are never included. Scanning uses the Google Play services code scanner, so the app needs no CAMERA permission.
 - **Check on a Bro**: weighted toward whoever you haven't checked on longest, never the same bro twice in a row, with conversation starters taken from their facts and type.
 - **Brodex Wrapped**: a New Year event, only shown Dec 20 – Jan 15 (debug builds always show it for testing). A yearly recap pager with caught count, top types, first catch, rarest catches and memory MVP.
+- **Holo tilt**: Rare, Legendary and shiny cards catch the light like real foil. Rainbow bands and a glare slide across as you tilt the phone (rotation-vector sensor). Turned off when Android animations are off.
+- **Voice notes**: record voice memories (up to 60s) and a 10-second "voice line" per bro, like a signature cry. Tap their portrait to play it. Recorded in-app as .m4a and kept on-device.
+- **Seasonal events**: limited frames during Ramadan, Eid (both from the Hijri calendar), New Year, Summer and Exam season, computed offline from the device date. Bros caught during an event keep its frame (lantern, crescent, fireworks, sun, pencil) forever, on the card, story image and QR trades. Debug builds can preview any event from Settings.
 - **Backup & restore**: one-tap export of the whole Brodex (photos and videos included) to a .zip you keep anywhere, plus restore. Bros and settings also ride along in Android's end-to-end-encrypted backup and phone-to-phone transfer.
 - **Share images**: "Post" renders a 1080×1920 story-sized card (and a Wrapped recap with an identity title like "Shiny Hunter") and opens the Android share sheet.
 - **Bro of the Day widget**: a home-screen widget (Jetpack Glance) with today's bro, a nudge, one-tap check-in, and tap to open the card.
@@ -31,7 +34,7 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 Open the project in Android Studio (a current stable release that supports AGP 9.4), let Gradle sync, and run the `app` configuration.
 
 ```
-./gradlew :app:testDebugUnitTest   # 35 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped)
+./gradlew :app:testDebugUnitTest   # 39 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped)
 ./gradlew :app:assembleDebug
 ./gradlew :app:bundleRelease       # Play Store .aab (R8 minified + resource shrinking)
 ```
@@ -62,7 +65,7 @@ app/src/main/java/com/joecode/brokemon/
   notify/          Reminder worker, notifications, check-in action receiver
 ```
 
-See `docs/LEARNING.md` for a guided walkthrough, and `docs/PLAY_STORE.md` for the release checklist.
+See `docs/SCHEMA.md` for the database plan, `docs/LEARNING.md` for a guided walkthrough, and `docs/PLAY_STORE.md` for the release checklist.
 
 ## Assets and licensing
 

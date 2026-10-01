@@ -20,8 +20,7 @@ class MediaStorage(private val context: Context) {
 
     /** A fresh empty file plus a content:// Uri the camera app is allowed to write into. */
     fun newCaptureTarget(type: MediaType): Pair<File, Uri> {
-        val ext = if (type == MediaType.PHOTO) "jpg" else "mp4"
-        val file = File(memoriesDir, "${UUID.randomUUID()}.$ext")
+        val file = File(memoriesDir, "${UUID.randomUUID()}.${type.extension}")
         file.createNewFile()
         val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
         return file to uri
@@ -29,8 +28,7 @@ class MediaStorage(private val context: Context) {
 
     /** Copies a picked gallery item into private storage so we never depend on the original. */
     fun importFromPicker(source: Uri, type: MediaType): File? {
-        val ext = if (type == MediaType.PHOTO) "jpg" else "mp4"
-        val target = File(memoriesDir, "${UUID.randomUUID()}.$ext")
+        val target = File(memoriesDir, "${UUID.randomUUID()}.${type.extension}")
         return runCatching {
             context.contentResolver.openInputStream(source)?.use { input ->
                 target.outputStream().use { input.copyTo(it) }
@@ -48,6 +46,10 @@ class MediaStorage(private val context: Context) {
     fun delete(fileUri: String) {
         runCatching { fileUri.toUri().toFile().delete() }
     }
+
+    /** A fresh file for the in-app voice recorder. */
+    fun newAudioFile(prefix: String = ""): File =
+        File(memoriesDir, "$prefix${UUID.randomUUID()}.${MediaType.AUDIO.extension}")
 
     fun deleteAll() {
         memoriesDir.deleteRecursively()

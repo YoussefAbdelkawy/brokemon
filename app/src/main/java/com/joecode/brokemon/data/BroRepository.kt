@@ -41,6 +41,7 @@ class BroRepository(
     /** Deleting a bro also removes its media files and drops it from every squad. */
     suspend fun delete(bro: Bro) {
         bro.memories.forEach { media.delete(it.fileUri) }
+        bro.voiceLine?.let { media.delete(it) }
         broDao.delete(bro)
         squadDao.getAllSquadsOnce()
             .filter { bro.id in it.memberIds }

@@ -19,6 +19,8 @@ data class SettingsUiState(
     val lastExport: Long? = null,
     val birthdayReminders: Boolean = true,
     val weeklyNudge: Boolean = true,
+    /** Debug-only event override (see EventClock). */
+    val debugEvent: String? = null,
     /** One-shot message for a snackbar. */
     val message: String? = null,
 )
@@ -32,8 +34,8 @@ class SettingsViewModel(
     private val local = MutableStateFlow(SettingsUiState())
 
     val uiState: StateFlow<SettingsUiState> =
-        combine(local, prefs.birthdayReminders, prefs.weeklyNudge) { s, birthdays, nudge ->
-            s.copy(birthdayReminders = birthdays, weeklyNudge = nudge)
+        combine(local, prefs.birthdayReminders, prefs.weeklyNudge, prefs.debugEvent) { s, birthdays, nudge, debugEvent ->
+            s.copy(birthdayReminders = birthdays, weeklyNudge = nudge, debugEvent = debugEvent)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     init {
@@ -62,6 +64,8 @@ class SettingsViewModel(
     fun setBirthdayReminders(on: Boolean) = viewModelScope.launch { prefs.setBirthdayReminders(on) }
 
     fun setWeeklyNudge(on: Boolean) = viewModelScope.launch { prefs.setWeeklyNudge(on) }
+
+    fun setDebugEvent(value: String?) = viewModelScope.launch { prefs.setDebugEvent(value) }
 
     fun messageShown() = local.update { it.copy(message = null) }
 

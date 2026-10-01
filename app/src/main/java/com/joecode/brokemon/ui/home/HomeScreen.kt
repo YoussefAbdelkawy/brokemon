@@ -62,6 +62,8 @@ import com.joecode.brokemon.ui.components.BroCard
 import com.joecode.brokemon.ui.components.CatchCube
 import com.joecode.brokemon.ui.components.DexScaffold
 import com.joecode.brokemon.ui.components.EmptyState
+import com.joecode.brokemon.ui.components.EventBanner
+import com.joecode.brokemon.ui.components.rememberTilt
 import com.joecode.brokemon.ui.components.PixelButton
 import com.joecode.brokemon.ui.components.ScreenPanel
 import com.joecode.brokemon.ui.theme.DexColors
@@ -84,6 +86,8 @@ fun HomeScreen(
     // Debug builds always show Wrapped so it can be tested outside the New Year window.
     val isDebug = remember { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
     val showWrapped = state.wrappedYear != null || isDebug
+    // One sensor listener for the whole grid; each card reads it in its draw phase.
+    val tilt = rememberTilt()
 
     DexScaffold(
         title = "Brodex",
@@ -118,6 +122,9 @@ fun HomeScreen(
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     DexCounter(state.totalCaught, state.shinyCount, state.legendaryCount)
                 }
+                state.event?.let { event ->
+                    item(span = { GridItemSpan(maxLineSpan) }) { EventBanner(event) }
+                }
                 state.wrappedYear?.let { year ->
                     item(span = { GridItemSpan(maxLineSpan) }) { WrappedBanner(year, onWrapped) }
                 }
@@ -146,6 +153,7 @@ fun HomeScreen(
                     BroCard(
                         bro = entry.bro,
                         stage = entry.stage,
+                        tilt = tilt,
                         onClick = { onBroClick(entry.bro.id) },
                         modifier = Modifier.animateItem(),
                     )

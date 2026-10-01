@@ -138,6 +138,9 @@ fun CatchOverlay(result: CaughtResult, onViewBro: () -> Unit, onDone: () -> Unit
                     if (result.isShiny) {
                         Text("IT'S SHINY!", style = PixelText.Header, color = DexColors.Gold)
                     }
+                    result.eventLabel?.let {
+                        Text("LIMITED $it FRAME!", style = PixelText.Label, color = DexColors.LedYellow, textAlign = TextAlign.Center)
+                    }
                     Spacer(Modifier.height(8.dp))
                     PixelButton("View card", onViewBro, Modifier.fillMaxWidth())
                     PixelButton("Done", onDone, Modifier.fillMaxWidth(), color = DexColors.SurfaceHigh)

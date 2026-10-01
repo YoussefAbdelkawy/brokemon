@@ -30,6 +30,10 @@ data class Bro(
     val isTradeable: Boolean = true,
     /** True if this card arrived through a QR trade instead of a catch. */
     val isTraded: Boolean = false,
+    /** Optional ~10 second "voice line" (file URI in app-private storage), like a creature's cry. */
+    val voiceLine: String? = null,
+    /** Limited event frame stamped at catch time, e.g. "RAMADAN|2027". Null = normal card. */
+    val eventFrame: String? = null,
 ) {
     val dexNumber: String get() = "#%03d".format(id)
     val types: List<BroType> get() = listOfNotNull(BroType.from(type1), BroType.from(type2))

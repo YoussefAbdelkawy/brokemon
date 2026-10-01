@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.domain.EvolutionStage
+import com.joecode.brokemon.domain.SeasonEvents
 import com.joecode.brokemon.ui.theme.DexColors
 import com.joecode.brokemon.ui.theme.PixelText
 import com.joecode.brokemon.ui.theme.color
@@ -44,22 +45,29 @@ fun BroCard(
     bro: Bro,
     stage: EvolutionStage,
     modifier: Modifier = Modifier,
+    tilt: TiltState? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val shape = CutCornerShape(10.dp)
     val type1 = bro.primaryType
     val type2 = bro.types.getOrNull(1)
-    val borderBrush = Brush.linearGradient(listOf(type1.color, (type2 ?: type1).color))
+    val event = SeasonEvents.parse(bro.eventFrame)
+    // Event cards wear the event's colors as a limited-edition frame.
+    val borderBrush = event?.let { Brush.linearGradient(listOf(it.event.primaryColor, it.event.accentColor, it.event.primaryColor)) }
+        ?: Brush.linearGradient(listOf(type1.color, (type2 ?: type1).color))
     Column(
         modifier
             .semantics(mergeDescendants = true) {
                 contentDescription = "${bro.dexNumber} ${bro.name}, ${bro.rarity.label}" +
-                    (if (bro.isShiny) ", shiny" else "") + ", ${stage.title}"
+                    (if (bro.isShiny) ", shiny" else "") + ", ${stage.title}" +
+                    (event?.let { ", limited ${it.label} frame" } ?: "")
             }
+            .tilt3d(tilt)
             .rarityGlow(bro.rarity)
             .clip(shape)
             .background(DexColors.Surface)
-            .border(3.dp, borderBrush, shape)
+            .holoSheen(tilt, holoStrength(bro.rarity, bro.isShiny))
+            .border(if (event != null) 4.dp else 3.dp, borderBrush, shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(10.dp),
     ) {
@@ -90,6 +98,11 @@ fun BroCard(
         ) {
             BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.86f))
             if (bro.isShiny) Sparkles(Modifier.fillMaxSize(), seed = bro.id.toInt())
+            event?.let { EventCorners(it.event, Modifier.fillMaxSize(), iconSize = 16.dp) }
+        }
+        event?.let {
+            Spacer(Modifier.height(6.dp))
+            EventRibbon(it, compact = true)
         }
         Spacer(Modifier.height(8.dp))
         Text(

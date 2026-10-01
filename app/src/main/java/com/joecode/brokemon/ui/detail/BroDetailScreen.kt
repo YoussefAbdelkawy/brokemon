@@ -44,7 +44,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicNone
+import androidx.compose.material.icons.filled.RecordVoiceOver
+import androidx.compose.material.icons.filled.VoiceOverOff
 import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -78,6 +83,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -115,7 +121,20 @@ import com.joecode.brokemon.ui.share.ShareImage
 import com.joecode.brokemon.ui.share.StoryImages
 import com.joecode.brokemon.ui.share.StoryPreviewDialog
 import com.joecode.brokemon.ui.AppViewModelProvider
+import com.joecode.brokemon.domain.SeasonEvents
+import com.joecode.brokemon.ui.components.AudioPlayButton
+import com.joecode.brokemon.ui.components.AudioPlayerState
 import com.joecode.brokemon.ui.components.AvatarBuilder
+import com.joecode.brokemon.ui.components.EventCorners
+import com.joecode.brokemon.ui.components.EventRibbon
+import com.joecode.brokemon.ui.components.PixelWaveform
+import com.joecode.brokemon.ui.components.TiltState
+import com.joecode.brokemon.ui.components.VoiceRecorderDialog
+import com.joecode.brokemon.ui.components.holoSheen
+import com.joecode.brokemon.ui.components.holoStrength
+import com.joecode.brokemon.ui.components.rememberAudioPlayer
+import com.joecode.brokemon.ui.components.rememberTilt
+import com.joecode.brokemon.ui.components.tilt3d
 import com.joecode.brokemon.ui.components.BroSprite
 import com.joecode.brokemon.ui.components.DexScaffold
 import com.joecode.brokemon.ui.components.MediaThumbnail
@@ -156,6 +175,10 @@ fun BroDetailScreen(
     var showRarity by rememberSaveable { mutableStateOf(false) }
     var showLookEditor by rememberSaveable { mutableStateOf(false) }
     var showStory by rememberSaveable { mutableStateOf(false) }
+    var recordingMemory by rememberSaveable { mutableStateOf(false) }
+    var recordingVoiceLine by rememberSaveable { mutableStateOf(false) }
+    val audio = rememberAudioPlayer()
+    val tilt = rememberTilt()
     var showDelete by rememberSaveable { mutableStateOf(false) }
     var showAddFact by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
@@ -207,6 +230,18 @@ fun BroDetailScreen(
                             onClick = { menuOpen = false; showLookEditor = true },
                         )
                         DropdownMenuItem(
+                            text = { Text(if (bro.voiceLine == null) "Record voice line" else "Re-record voice line") },
+                            leadingIcon = { Icon(Icons.Filled.RecordVoiceOver, null) },
+                            onClick = { menuOpen = false; recordingVoiceLine = true },
+                        )
+                        if (bro.voiceLine != null) {
+                            DropdownMenuItem(
+                                text = { Text("Delete voice line") },
+                                leadingIcon = { Icon(Icons.Filled.VoiceOverOff, null) },
+                                onClick = { menuOpen = false; audio.stop(); viewModel.setVoiceLine(null) },
+                            )
+                        }
+                        DropdownMenuItem(
                             text = { Text("Change rarity") },
                             leadingIcon = { Icon(Icons.Filled.Star, null) },
                             onClick = { menuOpen = false; showRarity = true },
@@ -234,7 +269,17 @@ fun BroDetailScreen(
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    item { HeroPanel(bro, state.evolution!!) }
+                    item {
+                        HeroPanel(
+                            bro = bro,
+                            evolution = state.evolution!!,
+                            tilt = tilt,
+                            voiceLinePlaying = audio.isPlaying(bro.voiceLine),
+                            onSpriteTap = {
+                                bro.voiceLine?.let { audio.toggle(it) } ?: run { recordingVoiceLine = true }
+                            },
+                        )
+                    }
                     item {
                         ActionRow(
                             bro = bro,
@@ -254,6 +299,7 @@ fun BroDetailScreen(
                             memories = bro.memories,
                             onPhoto = { launchCamera(MediaType.PHOTO) },
                             onVideo = { launchCamera(MediaType.VIDEO) },
+                            onVoice = { recordingMemory = true },
                             onPick = {
                                 pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
                             },
@@ -373,9 +419,30 @@ fun BroDetailScreen(
                 onDismiss = { showDatePicker = false },
             )
         }
+        if (recordingMemory) {
+            VoiceRecorderDialog(
+                title = "Voice memory",
+                hint = "Record up to a minute: a story, an inside joke, a voice note they sent you.",
+                maxSeconds = 60,
+                newFile = { viewModel.newVoiceFile() },
+                onSaved = viewModel::addVoiceMemory,
+                onDismiss = { recordingMemory = false },
+            )
+        }
+        if (recordingVoiceLine) {
+            VoiceRecorderDialog(
+                title = "${bro.name}'s voice line",
+                hint = "Their signature line, catchphrase or laugh. 10 seconds max. Tap their portrait to play it.",
+                maxSeconds = 10,
+                newFile = { viewModel.newVoiceFile("voice-") },
+                onSaved = { viewModel.setVoiceLine(it) },
+                onDismiss = { recordingVoiceLine = false },
+            )
+        }
         viewing?.let { memory ->
             MemoryViewer(
                 memory = memory,
+                audio = audio,
                 onDelete = { viewModel.deleteMemory(memory); viewing = null },
                 onDismiss = { viewing = null },
             )
@@ -384,7 +451,16 @@ fun BroDetailScreen(
 }
 
 @Composable
-private fun HeroPanel(bro: Bro, evolution: EvolutionInfo) {
+private fun HeroPanel(
+    bro: Bro,
+    evolution: EvolutionInfo,
+    tilt: TiltState,
+    voiceLinePlaying: Boolean,
+    onSpriteTap: () -> Unit,
+) {
+    val event = SeasonEvents.parse(bro.eventFrame)
+    // Bounce while the voice line plays.
+    val talk by animateFloatAsState(if (voiceLinePlaying) 1f else 0f, tween(150), label = "talk")
     val transition = rememberInfiniteTransition(label = "hero")
     val bob by transition.animateFloat(
         initialValue = 0f,
@@ -398,11 +474,15 @@ private fun HeroPanel(bro: Bro, evolution: EvolutionInfo) {
         animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
         label = "aura",
     )
-    ScreenPanel(title = "Bro data", modifier = Modifier.rarityGlow(bro.rarity)) {
+    ScreenPanel(
+        title = event?.let { "Bro data · limited" } ?: "Bro data",
+        modifier = Modifier.tilt3d(tilt, maxDegrees = 5f).rarityGlow(bro.rarity),
+    ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(220.dp),
+                .height(220.dp)
+                .holoSheen(tilt, holoStrength(bro.rarity, bro.isShiny)),
             contentAlignment = Alignment.Center,
         ) {
             if (evolution.stage.ordinal > 0) {
@@ -421,9 +501,29 @@ private fun HeroPanel(bro: Bro, evolution: EvolutionInfo) {
                 stage = evolution.stage.ordinal,
                 modifier = Modifier
                     .size(176.dp)
-                    .graphicsLayer { translationY = bob },
+                    .graphicsLayer {
+                        translationY = bob - talk * 6f
+                        val s = 1f + talk * 0.04f
+                        scaleX = s
+                        scaleY = s
+                    }
+                    .clickable(
+                        onClickLabel = if (bro.voiceLine != null) "Play voice line" else "Record voice line",
+                        onClick = onSpriteTap,
+                    ),
             )
             if (bro.isShiny) Sparkles(Modifier.fillMaxSize(), count = 14, seed = bro.id.toInt())
+            event?.let { EventCorners(it.event, Modifier.fillMaxSize(), iconSize = 30.dp) }
+            Icon(
+                if (bro.voiceLine != null) Icons.AutoMirrored.Filled.VolumeUp else Icons.Filled.MicNone,
+                contentDescription = null,
+                tint = if (voiceLinePlaying) DexColors.LedGreen else DexColors.TextMuted,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).size(20.dp),
+            )
+        }
+        event?.let {
+            EventRibbon(it)
+            Spacer(Modifier.height(10.dp))
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(bro.dexNumber, style = PixelText.Label, color = DexColors.TextMuted)
@@ -561,6 +661,7 @@ private fun MemoryPanel(
     memories: List<Memory>,
     onPhoto: () -> Unit,
     onVideo: () -> Unit,
+    onVoice: () -> Unit,
     onPick: () -> Unit,
     onOpen: (Memory) -> Unit,
 ) {
@@ -600,6 +701,7 @@ private fun MemoryPanel(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MemoryButton("Photo", Icons.Filled.PhotoCamera, onPhoto, Modifier.weight(1f))
             MemoryButton("Video", Icons.Filled.Videocam, onVideo, Modifier.weight(1f))
+            MemoryButton("Voice", Icons.Filled.Mic, onVoice, Modifier.weight(1f))
             MemoryButton("Gallery", Icons.Filled.PhotoLibrary, onPick, Modifier.weight(1f))
         }
     }
@@ -902,8 +1004,9 @@ private fun MeetDateDialog(initial: Long?, onConfirm: (Long?) -> Unit, onDismiss
 }
 
 @Composable
-private fun MemoryViewer(memory: Memory, onDelete: () -> Unit, onDismiss: () -> Unit) {
+private fun MemoryViewer(memory: Memory, audio: AudioPlayerState, onDelete: () -> Unit, onDismiss: () -> Unit) {
     var confirmDelete by remember { mutableStateOf(false) }
+    DisposableEffect(memory.id) { onDispose { audio.stop() } }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier
@@ -939,6 +1042,14 @@ private fun MemoryViewer(memory: Memory, onDelete: () -> Unit, onDismiss: () -> 
                         onRelease = { it.stopPlayback() },
                         modifier = Modifier.fillMaxWidth().aspectRatio(9f / 16f, matchHeightConstraintsFirst = true),
                     )
+                    MediaType.AUDIO -> Column(
+                        Modifier.fillMaxWidth().padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(20.dp),
+                    ) {
+                        PixelWaveform(Modifier.fillMaxWidth().height(90.dp), seed = memory.fileUri.hashCode())
+                        AudioPlayButton(audio, memory.fileUri, Modifier.fillMaxWidth(), label = "Play")
+                    }
                 }
             }
             Spacer(Modifier.height(10.dp))

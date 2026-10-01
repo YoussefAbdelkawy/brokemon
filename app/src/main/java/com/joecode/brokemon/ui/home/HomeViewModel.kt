@@ -3,6 +3,8 @@ package com.joecode.brokemon.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
+import com.joecode.brokemon.data.EventClock
+import com.joecode.brokemon.domain.SeasonEvent
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.Rarity
@@ -28,14 +30,16 @@ data class HomeUiState(
     val typeFilter: BroType? = null,
     /** Set only during the New Year window (see Wrapped.seasonYear). */
     val wrappedYear: Int? = Wrapped.seasonYear(),
+    /** Limited event running right now (from the device date). */
+    val event: SeasonEvent? = null,
 )
 
-class HomeViewModel(repository: BroRepository) : ViewModel() {
+class HomeViewModel(repository: BroRepository, events: EventClock) : ViewModel() {
 
     private val query = MutableStateFlow("")
     private val typeFilter = MutableStateFlow<BroType?>(null)
 
-    val uiState: StateFlow<HomeUiState> = combine(repository.bros, query, typeFilter) { bros, q, type ->
+    val uiState: StateFlow<HomeUiState> = combine(repository.bros, query, typeFilter, events.current) { bros, q, type, event ->
         val filtered = bros.filter { bro ->
             (q.isBlank() || bro.name.contains(q.trim(), ignoreCase = true)) &&
                 (type == null || type in bro.types)
@@ -48,6 +52,7 @@ class HomeViewModel(repository: BroRepository) : ViewModel() {
             legendaryCount = bros.count { it.rarity == Rarity.LEGENDARY },
             query = q,
             typeFilter = type,
+            event = event,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 

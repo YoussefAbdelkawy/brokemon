@@ -9,9 +9,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrokenImage
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -40,6 +42,13 @@ fun MediaThumbnail(
     maxPx: Int = 512,
     contentScale: ContentScale = ContentScale.Crop,
 ) {
+    if (type == MediaType.AUDIO) {
+        Box(modifier.background(DexColors.Screen), contentAlignment = Alignment.Center) {
+            PixelWaveform(Modifier.fillMaxSize(0.6f), seed = fileUri.hashCode())
+            Icon(Icons.Filled.Mic, contentDescription = "Voice note", tint = DexColors.Text, modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(18.dp))
+        }
+        return
+    }
     val bitmap by produceState<ImageBitmap?>(null, fileUri, maxPx) {
         value = withContext(Dispatchers.IO) { loadPreview(fileUri, type, maxPx)?.asImageBitmap() }
     }
@@ -80,6 +89,8 @@ private fun loadPreview(fileUri: String, type: MediaType, maxPx: Int): Bitmap? =
             if (rotation == 0f) decoded
             else Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, Matrix().apply { postRotate(rotation) }, true)
         }
+
+        MediaType.AUDIO -> null
 
         MediaType.VIDEO -> {
             val retriever = MediaMetadataRetriever()

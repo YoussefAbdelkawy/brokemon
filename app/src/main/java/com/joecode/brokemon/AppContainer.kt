@@ -1,6 +1,8 @@
 package com.joecode.brokemon
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import com.joecode.brokemon.data.EventClock
 import com.joecode.brokemon.data.BroRepository
 import com.joecode.brokemon.data.MediaStorage
 import com.joecode.brokemon.data.UserPrefs
@@ -21,6 +23,7 @@ class AppContainer(context: Context) {
     val prefs = UserPrefs(appContext)
     val repository = BroRepository(database, media, prefs, onChanged = ::refreshWidgets)
     val backup = BackupManager(appContext, repository, media)
+    val events = EventClock(prefs, debuggable = appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
     fun refreshWidgets() {
         appScope.launch { runCatching { BroOfTheDayWidget.refresh(appContext) } }

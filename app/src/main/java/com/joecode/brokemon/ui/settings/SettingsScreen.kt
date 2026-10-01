@@ -27,6 +27,10 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.foundation.layout.FlowRow
+import com.joecode.brokemon.data.EventClock
+import com.joecode.brokemon.domain.SeasonEvent
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -64,6 +68,7 @@ import com.joecode.brokemon.ui.theme.DexColors
 import com.joecode.brokemon.ui.theme.PixelText
 import kotlinx.coroutines.launch
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -77,6 +82,7 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val isDebug = remember { context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0 }
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         uri?.let(viewModel::export)
@@ -173,6 +179,27 @@ fun SettingsScreen(
                     checked = state.weeklyNudge,
                     onChange = { on -> viewModel.setWeeklyNudge(on); if (on) ensureNotificationPermission() },
                 )
+            }
+            if (isDebug) {
+                ScreenPanel(title = "Debug: event preview") {
+                    Text(
+                        "Force a limited event to test frames. Release builds always use the real date.",
+                        color = DexColors.TextMuted,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        val options = listOf<Pair<String?, String>>(null to "Real date", EventClock.NONE to "No event") +
+                            SeasonEvent.entries.map { it.name to it.label }
+                        options.forEach { (value, label) ->
+                            FilterChip(
+                                selected = state.debugEvent == value,
+                                onClick = { viewModel.setDebugEvent(value) },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                }
             }
             SettingsRow("Privacy policy", Icons.Filled.PrivacyTip, DexColors.LedBlue, onPrivacy)
             SettingsRow("Open-source licenses", Icons.AutoMirrored.Filled.Article, DexColors.LedGreen, onLicenses)
