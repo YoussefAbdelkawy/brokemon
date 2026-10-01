@@ -29,8 +29,14 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             "What the app stores" to "Bro cards (names, types, stats, moves, rarity, dates, catch location text you type), " +
                 "facts you add, squads, and photos/videos you capture or pick for the memory log. Media is copied into the " +
                 "app's private storage, not your gallery.",
-            "Where it lives" to "Only on this device, inside Brokemon's private app storage. Android device backups are " +
-                "disabled for Brokemon, so this data isn't uploaded to cloud backups either. Uninstalling the app deletes it.",
+            "Where it lives" to "On this device, inside Brokemon's private app storage. Uninstalling the app deletes it.",
+            "Backups" to "Settings → Backup & restore exports a .zip (photos included) to wherever you choose. Your bros and " +
+                "settings, but not photos, are also part of your phone's Android backup to your own Google account, only when " +
+                "that backup is end-to-end encrypted with your screen lock. The developer can't access either.",
+            "Reminders and widget" to "Birthday and weekly check-in reminders are created on your device and can be turned off " +
+                "in Settings. The Bro of the Day widget shows one bro on your home screen; remove it any time.",
+            "Sharing images" to "\"Post\" makes a picture of a card or your Wrapped and opens the share menu. Only that image " +
+                "is shared, and only if you choose an app. Locked cards can't be shared.",
             "Sharing" to "Data only leaves your phone when you choose to show a card's QR code. The QR holds the card's name, " +
                 "types, stats, moves, rarity, shiny flag and avatar look. It never contains photos, videos, facts or dates. " +
                 "Locked cards can't be shared at all.",

@@ -1,17 +1,24 @@
 package com.joecode.brokemon.data
 
+import androidx.room.withTransaction
 import com.joecode.brokemon.data.local.BroDao
+import com.joecode.brokemon.data.local.BroDatabase
 import com.joecode.brokemon.data.local.SquadDao
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Squad
+import com.joecode.brokemon.domain.Evolution
 import kotlinx.coroutines.flow.Flow
 
 class BroRepository(
-    private val broDao: BroDao,
-    private val squadDao: SquadDao,
+    private val database: BroDatabase,
     private val media: MediaStorage,
     private val prefs: UserPrefs,
+    /** Called after every write, e.g. to refresh the home-screen widget. */
+    private val onChanged: () -> Unit = {},
 ) {
+    private val broDao: BroDao = database.broDao()
+    private val squadDao: SquadDao = database.squadDao()
+
     val bros: Flow<List<Bro>> = broDao.getAllBros()
     val squads: Flow<List<Squad>> = squadDao.getAllSquads()
 
@@ -21,8 +28,15 @@ class BroRepository(
     suspend fun findBro(id: Long): Bro? = broDao.findBroById(id)
     suspend fun allBrosOnce(): List<Bro> = broDao.getAllBrosOnce()
 
-    suspend fun insert(bro: Bro): Long = broDao.insert(bro)
-    suspend fun update(bro: Bro) = broDao.update(bro)
+    suspend fun insert(bro: Bro): Long = broDao.insert(bro).also { onChanged() }
+    suspend fun update(bro: Bro) = broDao.update(bro).also { onChanged() }
+
+    suspend fun checkIn(id: Long, now: Long = System.currentTimeMillis()): Bro? {
+        val bro = broDao.findBroById(id) ?: return null
+        val updated = bro.copy(checkInCount = bro.checkInCount + 1, lastCheckIn = now)
+        update(updated)
+        return updated
+    }
 
     /** Deleting a bro also removes its media files and drops it from every squad. */
     suspend fun delete(bro: Bro) {
@@ -31,16 +45,36 @@ class BroRepository(
         squadDao.getAllSquadsOnce()
             .filter { bro.id in it.memberIds }
             .forEach { squadDao.update(it.copy(memberIds = it.memberIds - bro.id)) }
+        onChanged()
     }
 
     suspend fun insertSquad(squad: Squad): Long = squadDao.insert(squad)
     suspend fun updateSquad(squad: Squad) = squadDao.update(squad)
     suspend fun deleteSquad(squad: Squad) = squadDao.delete(squad)
+    suspend fun allSquadsOnce(): List<Squad> = squadDao.getAllSquadsOnce()
 
     suspend fun wipeEverything() {
         broDao.deleteAll()
         squadDao.deleteAll()
         media.deleteAll()
         prefs.clear()
+        onChanged()
+    }
+
+    /**
+     * Replaces the whole Brodex with restored data in one transaction, keeping
+     * the original ids so dex numbers and squad memberships survive.
+     */
+    suspend fun replaceAll(bros: List<Bro>, squads: List<Squad>) {
+        database.withTransaction {
+            broDao.deleteAll()
+            squadDao.deleteAll()
+            bros.forEach { broDao.insert(it) }
+            squads.forEach { squadDao.insert(it) }
+        }
+        prefs.clear()
+        // Don't replay evolution animations for bros that had already evolved.
+        bros.forEach { prefs.setSeenStage(it.id, Evolution.info(it).stage.ordinal) }
+        onChanged()
     }
 }

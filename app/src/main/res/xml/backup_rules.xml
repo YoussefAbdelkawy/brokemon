@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and below: same idea, encrypted backups only, no media. -->
+<full-backup-content>
+    <include domain="database" path="." requireFlags="clientSideEncryption" />
+    <include domain="file" path="datastore/" requireFlags="clientSideEncryption" />
+</full-backup-content>

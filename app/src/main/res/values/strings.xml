@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Brokemon</string>
+    <string name="widget_name">Bro of the Day</string>
+    <string name="widget_description">A bro to check on today, with one-tap check-in.</string>
 </resources>

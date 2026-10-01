@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,8 +26,22 @@ import com.joecode.brokemon.ui.trade.ShareBroScreen
 import com.joecode.brokemon.ui.trade.TradeScreen
 
 @Composable
-fun BrokemonApp(showOnboarding: Boolean, onOnboardingDone: () -> Unit) {
+fun BrokemonApp(
+    showOnboarding: Boolean,
+    onOnboardingDone: () -> Unit,
+    openBroId: Long? = null,
+    onOpenHandled: () -> Unit = {},
+) {
     val nav = rememberNavController()
+
+    // Deep link from the widget or a notification: jump straight to that card.
+    LaunchedEffect(openBroId) {
+        if (openBroId == null) return@LaunchedEffect
+        if (nav.currentDestination?.route != Routes.ONBOARDING) {
+            nav.navigate(Routes.broDetail(openBroId)) { launchSingleTop = true }
+        }
+        onOpenHandled()
+    }
     val back: () -> Unit = { nav.popBackStack() }
     val duration = 280
 

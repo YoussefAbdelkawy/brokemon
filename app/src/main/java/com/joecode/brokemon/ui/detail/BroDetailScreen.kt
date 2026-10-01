@@ -1,6 +1,10 @@
 package com.joecode.brokemon.ui.detail
 
+import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import android.widget.MediaController
 import android.widget.VideoView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -41,6 +45,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.IosShare
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.MoreVert
@@ -102,8 +107,13 @@ import com.joecode.brokemon.data.model.FactCategories
 import com.joecode.brokemon.data.model.MediaType
 import com.joecode.brokemon.data.model.Memory
 import com.joecode.brokemon.data.model.Rarity
+import com.joecode.brokemon.domain.Birthdays
 import com.joecode.brokemon.domain.Evolution
 import com.joecode.brokemon.domain.EvolutionInfo
+import com.joecode.brokemon.domain.EvolutionStage
+import com.joecode.brokemon.ui.share.ShareImage
+import com.joecode.brokemon.ui.share.StoryImages
+import com.joecode.brokemon.ui.share.StoryPreviewDialog
 import com.joecode.brokemon.ui.AppViewModelProvider
 import com.joecode.brokemon.ui.components.AvatarBuilder
 import com.joecode.brokemon.ui.components.BroSprite
@@ -122,6 +132,10 @@ import com.joecode.brokemon.ui.theme.PixelText
 import com.joecode.brokemon.ui.theme.color
 import kotlinx.coroutines.launch
 import java.text.DateFormat
+import java.time.Instant
+import java.time.MonthDay
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Date
 
 @Composable
@@ -141,11 +155,13 @@ fun BroDetailScreen(
     var showRename by rememberSaveable { mutableStateOf(false) }
     var showRarity by rememberSaveable { mutableStateOf(false) }
     var showLookEditor by rememberSaveable { mutableStateOf(false) }
+    var showStory by rememberSaveable { mutableStateOf(false) }
     var showDelete by rememberSaveable { mutableStateOf(false) }
     var showAddFact by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var viewing by remember { mutableStateOf<Memory?>(null) }
 
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) {
         viewModel.onCaptureResult(it)
     }
@@ -226,7 +242,8 @@ fun BroDetailScreen(
                                 viewModel.checkIn()
                                 scope.launch { snackbar.showSnackbar("Checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} pts") }
                             },
-                            onShare = { onShare(bro.id) },
+                            onShareQr = { onShare(bro.id) },
+                            onShareStory = { showStory = true },
                         )
                     }
                     item { EvolutionPanel(bro, state.evolution!!) }
@@ -303,6 +320,15 @@ fun BroDetailScreen(
                 confirmButton = { TextButton(onClick = { showRarity = false }) { Text("Close") } },
             )
         }
+        if (showStory) {
+            val stage = state.evolution?.stage ?: EvolutionStage.ROOKIE
+            StoryPreviewDialog(
+                title = "Share ${bro.name}",
+                render = { StoryImages(context).card(bro, stage) },
+                onShare = { ShareImage.share(context, it, "brokemon-${bro.dexNumber.drop(1)}", "Share ${bro.name}'s card") },
+                onDismiss = { showStory = false },
+            )
+        }
         if (showLookEditor) {
             LookEditorDialog(
                 initial = bro.resolvedLook,
@@ -327,7 +353,16 @@ fun BroDetailScreen(
         }
         if (showAddFact) {
             AddFactDialog(
-                onConfirm = { c, v -> viewModel.addFact(c, v); showAddFact = false },
+                onConfirm = { c, v, monthDay ->
+                    viewModel.addFact(c, v, monthDay)
+                    showAddFact = false
+                    // Natural moment to ask: they just told us a date they want to remember.
+                    if (monthDay != null && Build.VERSION.SDK_INT >= 33 &&
+                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
                 onDismiss = { showAddFact = false },
             )
         }
@@ -412,28 +447,36 @@ private fun HeroPanel(bro: Bro, evolution: EvolutionInfo) {
 }
 
 @Composable
-private fun ActionRow(bro: Bro, onCheckIn: () -> Unit, onShare: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun ActionRow(bro: Bro, onCheckIn: () -> Unit, onShareQr: () -> Unit, onShareStory: () -> Unit) {
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         PixelButton(
             text = "Check in",
             onClick = onCheckIn,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1.3f),
             color = DexColors.SurfaceHigh,
             leading = { Icon(Icons.Filled.WavingHand, null, tint = DexColors.LedYellow, modifier = Modifier.size(18.dp)) },
         )
         PixelButton(
-            text = if (bro.isTradeable) "Share" else "Locked",
-            onClick = onShare,
+            text = "QR",
+            onClick = onShareQr,
             enabled = bro.isTradeable,
             modifier = Modifier.weight(1f),
             leading = {
                 Icon(
                     if (bro.isTradeable) Icons.Filled.QrCode2 else Icons.Filled.Lock,
-                    null,
+                    "Share QR",
                     tint = DexColors.Text,
                     modifier = Modifier.size(18.dp),
                 )
             },
+        )
+        PixelButton(
+            text = "Post",
+            onClick = onShareStory,
+            enabled = bro.isTradeable,
+            modifier = Modifier.weight(1f),
+            color = DexColors.LedBlue.copy(alpha = 0.8f),
+            leading = { Icon(Icons.Filled.IosShare, "Share story image", tint = DexColors.Text, modifier = Modifier.size(18.dp)) },
         )
     }
 }
@@ -609,6 +652,17 @@ private fun InfoPanel(bro: Bro, onPickMeetDate: () -> Unit, onTradeableChanged: 
         InfoLine(if (bro.isTraded) "Received" else "Caught", formatDate(bro.catchDate))
         if (bro.catchLocation.isNotBlank()) InfoLine("Location", bro.catchLocation)
         InfoLine("Check-ins", bro.checkInCount.toString())
+        Birthdays.of(bro)?.let { md ->
+            val days = Birthdays.daysUntil(md)
+            InfoLine(
+                "Birthday",
+                when (days) {
+                    0 -> "TODAY! 🎂"
+                    1 -> "Tomorrow"
+                    else -> "${md.format(DateTimeFormatter.ofPattern("MMM d"))} (in $days days)"
+                },
+            )
+        }
         Row(
             Modifier
                 .fillMaxWidth()
@@ -681,12 +735,16 @@ private const val CUSTOM_CATEGORY = "Custom..."
 /** Pick a category from the dropdown (or "Custom..." to type one), then fill in the value. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddFactDialog(onConfirm: (String, String) -> Unit, onDismiss: () -> Unit) {
+private fun AddFactDialog(onConfirm: (String, String, String?) -> Unit, onDismiss: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    var birthday by rememberSaveable { mutableStateOf<String?>(null) }
+    var pickingDate by remember { mutableStateOf(false) }
     var choice by rememberSaveable { mutableStateOf(FactCategories.presets.first()) }
     var custom by rememberSaveable { mutableStateOf("") }
     var value by rememberSaveable { mutableStateOf("") }
     val category = if (choice == CUSTOM_CATEGORY) custom else choice
+    val isBirthday = choice == FactCategories.BIRTHDAY
+    val birthdayLabel = Birthdays.parse(birthday)?.format(DateTimeFormatter.ofPattern("MMMM d"))
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("NEW FACT", style = PixelText.Label) },
@@ -721,22 +779,69 @@ private fun AddFactDialog(onConfirm: (String, String) -> Unit, onDismiss: () -> 
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it.take(80) },
-                    label = { Text(category.ifBlank { "Value" }) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (isBirthday) {
+                    // Birthdays are a real date so Brokemon can remind you on the day.
+                    OutlinedButton(onClick = { pickingDate = true }, modifier = Modifier.fillMaxWidth(), shape = CutCornerShape(4.dp)) {
+                        Text(birthdayLabel ?: "Pick the date")
+                    }
+                    Text(
+                        "You'll get a heads-up on the day (Settings → Reminders).",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = DexColors.TextMuted,
+                    )
+                } else {
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { value = it.take(80) },
+                        label = { Text(category.ifBlank { "Value" }) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(category, value) }, enabled = category.isNotBlank() && value.isNotBlank()) {
+            val ready = if (isBirthday) birthdayLabel != null else category.isNotBlank() && value.isNotBlank()
+            TextButton(
+                onClick = {
+                    if (isBirthday) onConfirm(category, birthdayLabel!!, birthday) else onConfirm(category, value, null)
+                },
+                enabled = ready,
+            ) {
                 Text("Add")
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+    if (pickingDate) {
+        BirthdayPicker(
+            onPicked = { birthday = it; pickingDate = false },
+            onDismiss = { pickingDate = false },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BirthdayPicker(onPicked: (String) -> Unit, onDismiss: () -> Unit) {
+    val state = rememberDatePickerState()
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    state.selectedDateMillis?.let { millis ->
+                        val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                        onPicked(Birthdays.toStorage(MonthDay.from(date)))
+                    }
+                },
+                enabled = state.selectedDateMillis != null,
+            ) { Text("OK") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    ) {
+        DatePicker(state = state, title = { Text("Birthday (the year doesn't matter)", modifier = Modifier.padding(16.dp)) })
+    }
 }
 
 @Composable

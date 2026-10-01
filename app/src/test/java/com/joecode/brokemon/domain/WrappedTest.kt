@@ -35,6 +35,16 @@ class WrappedTest {
     }
 
     @Test
+    fun `wrapped gives you a title`() {
+        val empty = Wrapped.summarize(emptyList(), 2025)
+        assertEquals("The Quiet Year", Wrapped.title(empty))
+        val shiny = testBro(1, catchDate = millis(2025, 2, 2)).copy(isShiny = true)
+        assertEquals("Shiny Hunter", Wrapped.title(Wrapped.summarize(listOf(shiny), 2025)))
+        val plain = testBro(1, catchDate = millis(2025, 2, 2))
+        assertEquals("Day One Energy", Wrapped.title(Wrapped.summarize(listOf(plain), 2025)))
+    }
+
+    @Test
     fun `wrapped only shows around new year`() {
         assertEquals(2025, Wrapped.seasonYear(LocalDate.of(2025, 12, 20)))
         assertEquals(2025, Wrapped.seasonYear(LocalDate.of(2025, 12, 31)))

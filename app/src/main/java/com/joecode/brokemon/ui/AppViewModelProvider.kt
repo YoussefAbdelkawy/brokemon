@@ -30,7 +30,7 @@ object AppViewModelProvider {
         initializer { TradeViewModel(container().repository) }
         initializer { CheckOnBroViewModel(container().repository, container().prefs) }
         initializer { WrappedViewModel(container().repository) }
-        initializer { SettingsViewModel(container().repository) }
+        initializer { SettingsViewModel(container().repository, container().backup, container().prefs) }
     }
 }
 

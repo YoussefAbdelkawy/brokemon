@@ -20,14 +20,18 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 - **QR trading**: compact `BRKM1:` payload with short keys. It carries only name, types, stats, moves, rarity, shiny and avatar seed. Photos, videos, facts and dates are never included. Scanning uses the Google Play services code scanner, so the app needs no CAMERA permission.
 - **Check on a Bro**: weighted toward whoever you haven't checked on longest, never the same bro twice in a row, with conversation starters taken from their facts and type.
 - **Brodex Wrapped**: a New Year event, only shown Dec 20 – Jan 15 (debug builds always show it for testing). A yearly recap pager with caught count, top types, first catch, rarest catches and memory MVP.
-- **Privacy**: onboarding consent, in-app privacy policy, delete-all, no INTERNET permission, backups disabled.
+- **Backup & restore**: one-tap export of the whole Brodex (photos and videos included) to a .zip you keep anywhere, plus restore. Bros and settings also ride along in Android's end-to-end-encrypted backup and phone-to-phone transfer.
+- **Share images**: "Post" renders a 1080×1920 story-sized card (and a Wrapped recap with an identity title like "Shiny Hunter") and opens the Android share sheet.
+- **Bro of the Day widget**: a home-screen widget (Jetpack Glance) with today's bro, a nudge, one-tap check-in, and tap to open the card.
+- **Reminders**: Birthday facts use a date picker. You get a birthday notification on the day and a Sunday-evening check-in nudge with a "Checked in" button. Everything is scheduled on-device with WorkManager and can be toggled in Settings.
+- **Privacy**: onboarding consent, in-app privacy policy, delete-all, no INTERNET permission.
 
 ## Build
 
 Open the project in Android Studio (a current stable release that supports AGP 9.4), let Gradle sync, and run the `app` configuration.
 
 ```
-./gradlew :app:testDebugUnitTest   # 27 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped)
+./gradlew :app:testDebugUnitTest   # 35 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped)
 ./gradlew :app:assembleDebug
 ./gradlew :app:bundleRelease       # Play Store .aab (R8 minified + resource shrinking)
 ```
@@ -52,7 +56,10 @@ app/src/main/java/com/joecode/brokemon/
   share/           QrCodec (compact payload), QrBitmap (ZXing)
   ui/theme/        Dark-only Pokédex palette, Press Start 2P + sans body text
   ui/components/   DexScaffold (red device header, LEDs), ScreenPanel (LCD), BroCard, BroSprite, effects
-  ui/<feature>/    home, catchbro, detail, squads, trade, engage, settings, onboarding
+  ui/<feature>/    home, catchbro, detail, squads, trade, engage, settings, onboarding, share
+  data/backup/     BackupManager (zip export/restore)
+  widget/          Bro of the Day Glance widget
+  notify/          Reminder worker, notifications, check-in action receiver
 ```
 
 See `docs/LEARNING.md` for a guided walkthrough, and `docs/PLAY_STORE.md` for the release checklist.

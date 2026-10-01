@@ -43,6 +43,12 @@ Study: why decode validates and clamps everything (a QR is untrusted input), and
 Files: `domain/CheckOnBro.kt`, `domain/Wrapped.kt`, `ui/engage/*`
 Study: weighted random selection, `HorizontalPager`, and reading pager offsets inside `graphicsLayer {}` so swiping doesn't recompose.
 
+## Retention features (backup, sharing, widget, reminders)
+- Backup: `data/backup/BackupManager.kt`, `res/xml/data_extraction_rules.xml`, `backup_rules.xml`. Study: Storage Access Framework (`CreateDocument` / `OpenDocument`), `ZipOutputStream`, "zip slip", Android Auto Backup rules, `withTransaction`.
+- Share images: `ui/share/StoryImages.kt`. Study: `android.graphics.Canvas`, `Paint`, `Shader`s, `FileProvider` + `Intent.ACTION_SEND`.
+- Widget: `widget/BroOfTheDayWidget.kt`. Study: Jetpack Glance (`GlanceAppWidget`, `ActionCallback`), app-widget provider XML.
+- Reminders: `notify/*`, `domain/Reminders.kt`. Study: `CoroutineWorker` + periodic work, notification channels, the POST_NOTIFICATIONS runtime permission, `PendingIntent` flags, `BroadcastReceiver.goAsync()`.
+
 ## M9–M10: Privacy and publishing
 See `docs/PLAY_STORE.md` and `docs/privacy-policy.md`.
 

@@ -1,5 +1,6 @@
 package com.joecode.brokemon
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -19,10 +21,15 @@ import com.joecode.brokemon.ui.theme.DexColors
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    /** A card to open, set when launched from the widget or a notification. */
+    private val pendingBroId = mutableStateOf<Long?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (savedInstanceState == null) pendingBroId.value = intent.broIdExtra()
 
         val prefs = (application as BrokemonApplication).container.prefs
         var onboardingKnown = false
@@ -45,10 +52,24 @@ class MainActivity : ComponentActivity() {
                         BrokemonApp(
                             showOnboarding = showOnboarding,
                             onOnboardingDone = { scope.launch { prefs.setOnboardingDone() } },
+                            openBroId = pendingBroId.value,
+                            onOpenHandled = { pendingBroId.value = null },
                         )
                     }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.broIdExtra()?.let { pendingBroId.value = it }
+    }
+
+    private fun Intent?.broIdExtra(): Long? =
+        this?.getLongExtra(EXTRA_BRO_ID, -1L)?.takeIf { it > 0 }
+
+    companion object {
+        const val EXTRA_BRO_ID = "com.joecode.brokemon.extra.BRO_ID"
     }
 }

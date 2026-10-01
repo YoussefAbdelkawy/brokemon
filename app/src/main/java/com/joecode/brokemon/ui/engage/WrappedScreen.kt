@@ -18,7 +18,19 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.IosShare
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import com.joecode.brokemon.domain.Wrapped
+import com.joecode.brokemon.ui.share.ShareImage
+import com.joecode.brokemon.ui.share.StoryImages
+import com.joecode.brokemon.ui.share.StoryPreviewDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,8 +67,19 @@ fun WrappedScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val pager = rememberPagerState { PAGES }
+    var showShare by remember { mutableStateOf(false) }
 
-    DexScaffold(title = "Brodex Wrapped", onBack = onBack) { padding ->
+    DexScaffold(
+        title = "Brodex Wrapped",
+        onBack = onBack,
+        actions = {
+            if (state.summary != null) {
+                IconButton(onClick = { showShare = true }) {
+                    Icon(Icons.Filled.IosShare, contentDescription = "Share my Wrapped", tint = DexColors.Text)
+                }
+            }
+        },
+    ) { padding ->
         val summary = state.summary ?: run {
             Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) {
                 CircularProgressIndicator(color = DexColors.DexRed)
@@ -104,6 +127,19 @@ fun WrappedScreen(
             }
         }
     }
+    if (showShare) WrappedShare(state) { showShare = false }
+}
+
+@Composable
+private fun WrappedShare(state: WrappedUiState, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val summary = state.summary ?: return
+    StoryPreviewDialog(
+        title = "Share your ${summary.year}",
+        render = { StoryImages(context).wrapped(summary, state.stages) },
+        onShare = { ShareImage.share(context, it, "brodex-wrapped-${summary.year}", "Share your Brodex Wrapped") },
+        onDismiss = onDismiss,
+    )
 }
 
 private fun slideColor(page: Int): Color = listOf(
@@ -127,6 +163,8 @@ private fun WrappedSlide(page: Int, s: WrappedSummary, stages: Map<Long, Evoluti
                 CatchCube(Modifier.width(96.dp).height(96.dp))
                 Big("BRODEX\nWRAPPED")
                 Text(s.year.toString(), style = PixelText.Title, color = DexColors.LedYellow)
+                Text("YOU'RE A", style = PixelText.Tiny, color = DexColors.TextMuted)
+                Text(Wrapped.title(s).uppercase(), style = PixelText.Header, color = DexColors.Gold, textAlign = TextAlign.Center)
                 Body("Your year in bros. Swipe to relive it.")
             }
 

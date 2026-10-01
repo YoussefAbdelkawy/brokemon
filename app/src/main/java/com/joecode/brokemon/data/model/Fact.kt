@@ -7,9 +7,13 @@ data class Fact(
     val id: String = UUID.randomUUID().toString(),
     val category: String,
     val value: String,
+    /** For date facts like Birthday: "MM-dd", used for reminders. Null for plain text facts. */
+    val monthDay: String? = null,
 )
 
 object FactCategories {
+    const val BIRTHDAY = "Birthday"
+
     val presets = listOf(
         "Birthday",
         "Favorite song",

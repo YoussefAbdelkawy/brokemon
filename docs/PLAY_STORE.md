@@ -6,9 +6,10 @@
 - [x] Release signing from git-ignored `keystore.properties`. Enroll in **Play App Signing** when you upload.
 - [x] Adaptive launcher icon with a monochrome layer (themed icons) and a SplashScreen API splash.
 - [x] Edge-to-edge layout (mandatory when targeting 35+) and predictive back (`enableOnBackInvokedCallback`).
-- [x] **No dangerous permissions.** The merged manifest declares no INTERNET, CAMERA or READ_MEDIA_*. Camera capture uses intents, gallery access uses the system photo picker, and QR scanning runs inside Play services. This keeps Brokemon clear of the Photo & Video Permissions policy.
+- [x] **Minimal permissions.** The merged manifest has no INTERNET, CAMERA, READ_MEDIA_* or FOREGROUND_SERVICE. Camera capture uses intents, gallery access uses the system photo picker, and QR scanning runs inside Play services, which keeps Brokemon clear of the Photo & Video Permissions policy. It does declare POST_NOTIFICATIONS (requested at runtime, only when the user turns on reminders or adds a birthday) plus WorkManager's RECEIVE_BOOT_COMPLETED and WAKE_LOCK (normal permissions).
 - [x] `android.hardware.camera` declared `required=false`, so devices without a camera can still install the app.
-- [x] Backups disabled (`allowBackup=false` + data extraction rules that exclude everything).
+- [x] Backups: Auto Backup includes only the database and settings, and only when the backup is end-to-end encrypted (`disableIfNoEncryptionCapabilities`). Device-to-device transfer includes everything. A manual .zip export/restore handles photos and videos. Restore validates the file and blocks zip path-traversal.
+- [x] Home-screen widget (Glance) and on-device reminders (WorkManager). No exact alarms are used, so no SCHEDULE_EXACT_ALARM declaration is needed.
 - [x] In-app privacy policy, delete-all-data, and an onboarding consent about photos of friends.
 - [x] Original art only. The font is OFL-licensed and credited in-app (Settings → Licenses). No Nintendo/Pokémon names or trade dress; the catch device is a cube, not a ball.
 - [x] Store copy and in-app text avoid "Pokémon"/"Pokédex"; the app says "Brodex".
@@ -19,6 +20,7 @@
 3. **Data safety form** (suggested answers, verify before submitting):
    - Does your app collect or share user data? → **No.** Data the app stores only on-device, which never leaves the device unless the user shows a QR code, does not count as "collected". User-initiated QR display counts as user-initiated sharing, not developer collection.
    - Is data encrypted in transit? → Not applicable (no network).
+   - Android Auto Backup and user-initiated exports/shares are not "collection" by the developer under Play's Data safety definitions. Mention them in the privacy policy (already done).
    - Can users request deletion? → Yes, in-app (Settings → Delete all data).
    - Note: the Play services code scanner is provided by Google. Check Google's current ML Kit / code scanner Data safety guidance when you submit, and declare anything it says SDK users must disclose.
 4. **Content rating** questionnaire: no violence, no user-to-user chat, no location sharing. User-generated photos are stored locally only.

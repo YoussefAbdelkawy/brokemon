@@ -2,6 +2,7 @@
 # Keep field names so serialized JSON stays stable across releases.
 -keep class com.joecode.brokemon.data.model.** { *; }
 -keep class com.joecode.brokemon.share.QrPayload { *; }
+-keep class com.joecode.brokemon.data.backup.BackupFile { *; }
 -keepattributes Signature
 -keepattributes *Annotation*
 -keep class com.google.gson.reflect.TypeToken { *; }

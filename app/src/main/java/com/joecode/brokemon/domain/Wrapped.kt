@@ -19,6 +19,17 @@ data class WrappedSummary(
 )
 
 object Wrapped {
+    /** A playful identity label for the recap ("you're a Shiny Hunter"). */
+    fun title(s: WrappedSummary): String = when {
+        s.caughtCount == 0 && s.memoriesMade == 0 -> "The Quiet Year"
+        s.shinyCount > 0 -> "Shiny Hunter"
+        s.rarest.any { it.rarity == Rarity.LEGENDARY } -> "Legend Finder"
+        (s.mostMemories?.second ?: 0) >= 10 -> "Memory Keeper"
+        s.caughtCount >= 10 -> "The Collector"
+        s.memoriesMade >= s.caughtCount * 3 -> "Ride or Die"
+        else -> "Day One Energy"
+    }
+
     fun yearOf(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).year
 
     /**

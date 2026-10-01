@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Only the memories folder is ever exposed, and only via temporary grants to the camera app. -->
+    <!-- Memories: only ever exposed via temporary grants to the camera app or a viewer. -->
     <files-path name="memories" path="memories/" />
+    <!-- Story images the user chose to share. Regenerated on demand, safe to wipe. -->
+    <cache-path name="shared" path="shared/" />
 </paths>

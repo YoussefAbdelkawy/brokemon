@@ -103,11 +103,15 @@ class BroDetailViewModel(
         if (clean.isNotEmpty()) edit { it.copy(name = clean) }
     }
 
-    fun addFact(category: String, value: String) {
+    fun addFact(category: String, value: String, monthDay: String? = null) {
         val c = category.trim().take(32)
         val v = value.trim().take(80)
         if (c.isEmpty() || v.isEmpty()) return
-        edit { it.copy(facts = it.facts + Fact(category = c, value = v)) }
+        edit { bro ->
+            // Only one birthday per bro: a new one replaces the old.
+            val kept = if (monthDay != null) bro.facts.filterNot { it.monthDay != null } else bro.facts
+            bro.copy(facts = kept + Fact(category = c, value = v, monthDay = monthDay))
+        }
     }
 
     fun removeFact(fact: Fact) = edit { bro -> bro.copy(facts = bro.facts.filterNot { it.id == fact.id }) }

@@ -15,7 +15,7 @@ import java.util.UUID
  */
 class MediaStorage(private val context: Context) {
 
-    private val memoriesDir: File
+    val memoriesDir: File
         get() = File(context.filesDir, "memories").apply { mkdirs() }
 
     /** A fresh empty file plus a content:// Uri the camera app is allowed to write into. */
