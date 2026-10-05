@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "svg-art": {
+      "source": "kv0906/cc-skills",
+      "sourceType": "github",
+      "skillPath": "svg-art-skill/SKILL.md",
+      "computedHash": "356a500cf848e1229758271608f3956773cf89afb5bc367fc559b204f4d53640"
+    }
+  }
+}
