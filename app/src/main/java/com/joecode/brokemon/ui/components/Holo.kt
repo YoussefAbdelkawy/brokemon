@@ -1,12 +1,16 @@
 package com.joecode.brokemon.ui.components
 
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import android.provider.Settings
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -20,62 +24,51 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import com.joecode.brokemon.data.model.Rarity
 
-/** Phone tilt, each axis -1..1, relative to how the phone was held when the screen opened. */
+/** Card tilt, each axis -1..1 (where the finger is on the card). */
 @Stable
 class TiltState {
     var x by mutableFloatStateOf(0f) // left/right (roll)
         internal set
     var y by mutableFloatStateOf(0f) // forward/back (pitch)
         internal set
+    internal var springBack: Job? = null
 }
+
+@Composable
+fun rememberTiltState(): TiltState = remember { TiltState() }
 
 /**
- * Listens to the rotation-vector sensor while this composable is on screen.
- * Off when the user has disabled animations in Android settings.
+ * Pokémon TCG Pocket-style handling: press and drag on the card and it leans
+ * toward your finger in 3D, with the foil following. Let go and it springs back.
  */
-@Composable
-fun rememberTilt(): TiltState {
-    val context = LocalContext.current
-    val state = remember { TiltState() }
-    val animationsOff = remember {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
-    }
-    DisposableEffect(animationsOff) {
-        val manager = context.getSystemService(SensorManager::class.java)
-        val sensor = manager?.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
-            ?: manager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-        if (animationsOff || manager == null || sensor == null) return@DisposableEffect onDispose { }
-
-        val rotation = FloatArray(9)
-        val orientation = FloatArray(3)
-        var base: FloatArray? = null
-        val listener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent) {
-                SensorManager.getRotationMatrixFromVector(rotation, event.values)
-                SensorManager.getOrientation(rotation, orientation)
-                val b = base ?: orientation.copyOf().also { base = it }
-                val roll = ((orientation[2] - b[2]) / MAX_TILT_RAD).coerceIn(-1f, 1f)
-                val pitch = ((orientation[1] - b[1]) / MAX_TILT_RAD).coerceIn(-1f, 1f)
-                // Low-pass so the shine glides instead of jittering.
-                state.x += (roll - state.x) * 0.2f
-                state.y += (pitch - state.y) * 0.2f
-                // Slowly re-center, so however you hold the phone becomes "flat".
-                b[1] += (orientation[1] - b[1]) * 0.01f
-                b[2] += (orientation[2] - b[2]) * 0.01f
-            }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+fun Modifier.dragToTilt(state: TiltState, scope: CoroutineScope): Modifier = pointerInput(state) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false)
+        state.springBack?.cancel()
+        fun follow(position: Offset) {
+            state.x = (position.x / size.width * 2f - 1f).coerceIn(-1f, 1f)
+            state.y = (position.y / size.height * 2f - 1f).coerceIn(-1f, 1f)
         }
-        manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
-        onDispose { manager.unregisterListener(listener) }
+        follow(down.position)
+        while (true) {
+            val event = awaitPointerEvent()
+            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+            if (!change.pressed) break
+            follow(change.position)
+            if (change.positionChanged()) change.consume()
+        }
+        val fromX = state.x
+        val fromY = state.y
+        state.springBack = scope.launch {
+            animate(0f, 1f, animationSpec = spring(dampingRatio = 0.35f, stiffness = Spring.StiffnessLow)) { t, _ ->
+                state.x = fromX * (1f - t)
+                state.y = fromY * (1f - t)
+            }
+        }
     }
-    return state
 }
-
-private const val MAX_TILT_RAD = 0.45f
 
 /** Rotates the card a few degrees with the phone, like holding a real card. */
 fun Modifier.tilt3d(tilt: TiltState?, maxDegrees: Float = 7f): Modifier =

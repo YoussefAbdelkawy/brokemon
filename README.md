@@ -4,13 +4,13 @@ A Pokédex-style Android app where you "catch" your real-life friends ("bros") a
 
 Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · minSdk 26 · targetSdk 36 · compileSdk 37
 
-| Brodex | Catch | Card detail | Squads | Wrapped |
+| Brodex | Card | Room | Catch | Squads |
 |---|---|---|---|---|
-| ![](docs/screenshots/01_home.png) | ![](docs/screenshots/02_catch.png) | ![](docs/screenshots/03_detail.png) | ![](docs/screenshots/05_squads.png) | ![](docs/screenshots/07_wrapped.png) |
+| ![](docs/screenshots/01_home.png) | ![](docs/screenshots/03_detail.png) | ![](docs/screenshots/04_room.png) | ![](docs/screenshots/02_catch.png) | ![](docs/screenshots/05_squads.png) |
 
 ## Features
 
-- **Character builder**: bros are people. Build a 32×32 pixel portrait by picking skin tone, hairstyle (10), hair color, face, beard, glasses, hat, fit and fit color. Every option tile is a live preview. You can edit the look later from the card's menu.
+- **Character builder**: bros are people. Build a 32×32 pixel portrait (plus a full-body sprite for their room) from 8 skin tones, 16 hairstyles (fade, waves, afro, braids, locs...), hair color, 6 faces, beards, 6 glasses, 7 hats (incl. bucket hat, backwards cap, hijab), 6 fits (incl. galabeya, leather jacket), fit color and extras (earring, freckles, scar...). Every option tile is a live preview. You can edit the look later from the card's menu.
 - **Catch flow**: name, location, primary/secondary type (17 archetypes like Road Rager, Bad Driver, Yapper, Ghost, Main Character, Crypto Bro), manual rarity, funny stats (Rizz, Aura, Yap, Loyal, Chaos, Flake) with re-roll, preset + custom signature moves (max 4). A shiny roll (1 in 10) happens at catch. Catch animation: the Bro Cube drops, shakes three times, clicks, then a star burst and "GOTCHA!".
 - **Brodex grid**: collectible cards with type-colored borders, rarity effects (Common: none, Rare: light sweep, Legendary: pulsing glow + gold rim), shiny sparkles, search and type filter.
 - **Card detail**: idle-bobbing sprite, bond/evolution panel with score breakdown, animated stat bars, moves, memory log, facts, catch info, "met IRL" date, tradeable/locked toggle, rename / change rarity / release.
@@ -20,8 +20,12 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 - **QR trading**: compact `BRKM1:` payload with short keys. It carries only name, types, stats, moves, rarity, shiny and avatar seed. Photos, videos, facts and dates are never included. Scanning uses the Google Play services code scanner, so the app needs no CAMERA permission.
 - **Check on a Bro**: weighted toward whoever you haven't checked on longest, never the same bro twice in a row, with conversation starters taken from their facts and type.
 - **Brodex Wrapped**: a New Year event, only shown Dec 20 – Jan 15 (debug builds always show it for testing). A yearly recap pager with caught count, top types, first catch, rarest catches and memory MVP.
-- **Holo tilt**: Rare, Legendary and shiny cards catch the light like real foil. Rainbow bands and a glare slide across as you tilt the phone (rotation-vector sensor). Turned off when Android animations are off.
-- **Voice notes**: record voice memories (up to 60s) and a 10-second "voice line" per bro, like a signature cry. Tap their portrait to play it. Recorded in-app as .m4a and kept on-device.
+- **Hold the card (Pocket-style)**: on a bro's page the card is shown big. Press and drag to tilt it in 3D, with a foil glare that follows your finger (Rare/Legendary/shiny get rainbow foil). It springs back when you let go.
+- **Bro rooms**: long-press any card on Home and it grows and zooms into that bro's room (shared-element transition). They stand or sit in a pixel room you decorate: wallpaper, floor, wall decor (game poster, manga shelf, neon sign, Ramadan lantern...), floor items (gaming desk, guitar, mini fridge...), a seat (couch, gaming chair, bean bag, floor cushion) and a rug. Tap them for a quip and their voice line. Hang out once a day, and their photos go up on the memory wall.
+- **Search & filter**: the search box matches names. The filter sheet covers type, rarity, bond level, shiny, limited and tradeable, with 6 sort orders. Active filters show as removable chips.
+- **Fair bond**: one check-in per bro per day (button, widget, notification and room), and only the first 10 facts count toward evolution.
+- **Evolution styles**: power-up aura, lightning storm, glitchy "software update" or spotlight drumroll with confetti, depending on type.
+- **Voice notes**: record voice memories (up to 60s) or import voice notes from the phone, plus a 10-second "voice line" per bro, like a signature cry. Tap their portrait to play it. Recorded in-app as .m4a and kept on-device.
 - **Seasonal events**: limited frames during Ramadan, Eid (both from the Hijri calendar), New Year, Summer and Exam season, computed offline from the device date. Bros caught during an event keep its frame (lantern, crescent, fireworks, sun, pencil) forever, on the card, story image and QR trades. Debug builds can preview any event from Settings.
 - **Backup & restore**: one-tap export of the whole Brodex (photos and videos included) to a .zip you keep anywhere, plus restore. Bros and settings also ride along in Android's end-to-end-encrypted backup and phone-to-phone transfer.
 - **Share images**: "Post" renders a 1080×1920 story-sized card (and a Wrapped recap with an identity title like "Shiny Hunter") and opens the Android share sheet.
@@ -34,7 +38,7 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 Open the project in Android Studio (a current stable release that supports AGP 9.4), let Gradle sync, and run the `app` configuration.
 
 ```
-./gradlew :app:testDebugUnitTest   # 39 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped)
+./gradlew :app:testDebugUnitTest   # 42 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped)
 ./gradlew :app:assembleDebug
 ./gradlew :app:bundleRelease       # Play Store .aab (R8 minified + resource shrinking)
 ```

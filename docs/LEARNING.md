@@ -55,6 +55,11 @@ Study: weighted random selection, `HorizontalPager`, and reading pager offsets i
 - Events: `domain/SeasonEvents.kt`. Study: `java.time.chrono.HijrahDate` (the Umm al-Qura calendar), then the pure-function + unit-test pattern in `SeasonEventsTest`.
 - Schema: `docs/SCHEMA.md` and `AutoMigration(2 → 3)`.
 
+## Rooms, card handling, filters
+- Room: `domain/RoomRenderer.kt` (pixel scene), `HumanSprite.renderFullBody`, `ui/room/*`. Study: `SharedTransitionLayout` + `Modifier.sharedBounds` (card → room morph), `AnimatedVisibilityScope.animateEnterExit`, `combinedClickable` (long-press).
+- Card handling: `ui/components/Holo.kt` `dragToTilt`. Study: `pointerInput` + `awaitEachGesture`, `Animatable`/`animate` with `spring`.
+- Filters: `ui/home/HomeViewModel.kt` (`BroFilter`, `SortOrder`) + `FilterSheet.kt`. Study: `ModalBottomSheet`, keeping filter state in the ViewModel.
+
 ## M9–M10: Privacy and publishing
 See `docs/PLAY_STORE.md` and `docs/privacy-policy.md`.
 

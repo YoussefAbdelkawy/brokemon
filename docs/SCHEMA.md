@@ -1,12 +1,13 @@
 # Data schema plan
 
-Room database `brokemon.db`, currently **version 3**. Schemas are exported to `app/schemas/` (keep that folder committed). Every version bump so far has been an `AutoMigration`, so nobody's data gets wiped.
+Room database `brokemon.db`, currently **version 4**. Schemas are exported to `app/schemas/` (keep that folder committed). Every version bump so far has been an `AutoMigration`, so nobody's data gets wiped.
 
 | Version | Change | Why |
 |---|---|---|
 | 1 | `bros`, `squads` tables | First release |
 | 2 | `bros.look` (nullable TEXT) | Pixel character builder |
 | 3 | `bros.voiceLine`, `bros.eventFrame` (nullable TEXT) | Voice lines, limited event frames |
+| 4 | `bros.room` (nullable TEXT, list of option indices) | Decoratable bro rooms |
 
 ## How the planned fields map
 

@@ -30,3 +30,20 @@ object EvolutionMoves {
     fun unlocked(type: BroType, fromStage: Int, toStage: Int): List<String> =
         ((fromStage + 1)..toStage).mapNotNull { stage -> all(type).getOrNull(stage - 1) }
 }
+
+/** Each type evolves with its own animation, so evolutions don't all look the same. */
+enum class EvolutionStyle(val evolvingText: String) {
+    POWER_UP("is powering up..."),
+    LIGHTNING("is charging up..."),
+    GLITCH("is updating..."),
+    SPOTLIGHT("is stepping into the spotlight...");
+
+    companion object {
+        fun forType(type: BroType): EvolutionStyle = when (type) {
+            BroType.GYM_RAT, BroType.SPORTS_FAN, BroType.ROAD_RAGER, BroType.OUTDOORSY -> POWER_UP
+            BroType.CHAOS_AGENT, BroType.BAD_DRIVER, BroType.ALWAYS_LATE, BroType.CRYPTO_BRO -> LIGHTNING
+            BroType.GAMER, BroType.NERD, BroType.GHOST, BroType.YAPPER -> GLITCH
+            BroType.MAIN_CHARACTER, BroType.PARTY_ANIMAL, BroType.WINGMAN, BroType.FOODIE, BroType.CHILL_GUY -> SPOTLIGHT
+        }
+    }
+}

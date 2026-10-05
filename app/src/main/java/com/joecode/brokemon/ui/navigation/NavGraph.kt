@@ -4,7 +4,11 @@ import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import com.joecode.brokemon.ui.room.RoomScreen
 import androidx.compose.runtime.LaunchedEffect
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -25,6 +29,7 @@ import com.joecode.brokemon.ui.squads.SquadsScreen
 import com.joecode.brokemon.ui.trade.ShareBroScreen
 import com.joecode.brokemon.ui.trade.TradeScreen
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun BrokemonApp(
     showOnboarding: Boolean,
@@ -45,6 +50,8 @@ fun BrokemonApp(
     val back: () -> Unit = { nav.popBackStack() }
     val duration = 280
 
+    SharedTransitionLayout {
+    CompositionLocalProvider(LocalSharedTransitionScope provides this) {
     NavHost(
         navController = nav,
         startDestination = if (showOnboarding) Routes.ONBOARDING else Routes.HOME,
@@ -64,6 +71,7 @@ fun BrokemonApp(
             })
         }
         composable(Routes.HOME) {
+            CompositionLocalProvider(LocalNavAnimatedScope provides this) {
             HomeScreen(
                 onCatch = { nav.navigate(Routes.CATCH_BRO) },
                 onBroClick = { nav.navigate(Routes.broDetail(it)) },
@@ -72,7 +80,26 @@ fun BrokemonApp(
                 onCheckOnBro = { nav.navigate(Routes.CHECK_ON_BRO) },
                 onWrapped = { nav.navigate(Routes.WRAPPED) },
                 onSettings = { nav.navigate(Routes.SETTINGS) },
+                onEnterRoom = { nav.navigate(Routes.room(it)) },
             )
+            }
+        }
+        composable(
+            Routes.ROOM,
+            arguments = listOf(navArgument(Routes.ARG_BRO_ID) { type = NavType.LongType }),
+            // The shared card bounds carry this transition; keep the screen fades simple.
+            enterTransition = { fadeIn(tween(200)) },
+            exitTransition = { fadeOut(tween(200)) },
+            popEnterTransition = { fadeIn(tween(200)) },
+            popExitTransition = { fadeOut(tween(250)) },
+        ) { entry ->
+            CompositionLocalProvider(LocalNavAnimatedScope provides this) {
+                RoomScreen(
+                    broId = entry.arguments?.getLong(Routes.ARG_BRO_ID) ?: 0L,
+                    onBack = back,
+                    onOpenCard = { nav.navigate(Routes.broDetail(it)) },
+                )
+            }
         }
         composable(Routes.CATCH_BRO) {
             CatchBroScreen(
@@ -89,6 +116,7 @@ fun BrokemonApp(
             BroDetailScreen(
                 onBack = back,
                 onShare = { nav.navigate(Routes.shareBro(it)) },
+                onVisitRoom = { nav.navigate(Routes.room(it)) },
             )
         }
         composable(
@@ -128,5 +156,7 @@ fun BrokemonApp(
         }
         composable(Routes.PRIVACY) { PrivacyPolicyScreen(onBack = back) }
         composable(Routes.LICENSES) { LicensesScreen(onBack = back) }
+    }
+    }
     }
 }

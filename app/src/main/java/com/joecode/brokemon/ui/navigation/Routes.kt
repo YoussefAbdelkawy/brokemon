@@ -6,6 +6,7 @@ object Routes {
     const val CATCH_BRO = "catch"
     const val BRO_DETAIL = "bro/{broId}"
     const val SHARE_BRO = "bro/{broId}/share"
+    const val ROOM = "bro/{broId}/room"
     const val SQUADS = "squads"
     const val SQUAD_DETAIL = "squad/{squadId}"
     const val TRADE = "trade"
@@ -20,5 +21,6 @@ object Routes {
 
     fun broDetail(id: Long) = "bro/$id"
     fun shareBro(id: Long) = "bro/$id/share"
+    fun room(id: Long) = "bro/$id/room"
     fun squadDetail(id: Long) = "squad/$id"
 }

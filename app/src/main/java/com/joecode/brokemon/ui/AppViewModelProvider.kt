@@ -12,6 +12,7 @@ import com.joecode.brokemon.ui.detail.BroDetailViewModel
 import com.joecode.brokemon.ui.engage.CheckOnBroViewModel
 import com.joecode.brokemon.ui.engage.WrappedViewModel
 import com.joecode.brokemon.ui.home.HomeViewModel
+import com.joecode.brokemon.ui.room.RoomViewModel
 import com.joecode.brokemon.ui.settings.SettingsViewModel
 import com.joecode.brokemon.ui.squads.SquadDetailViewModel
 import com.joecode.brokemon.ui.squads.SquadsViewModel
@@ -20,7 +21,7 @@ import com.joecode.brokemon.ui.trade.TradeViewModel
 /** One factory for every screen's ViewModel; dependencies come from [AppContainer]. */
 object AppViewModelProvider {
     val Factory = viewModelFactory {
-        initializer { HomeViewModel(container().repository, container().events) }
+        initializer { HomeViewModel(container().repository, container().events, container().prefs) }
         initializer { BroViewModel(container().repository, container().events) }
         initializer {
             BroDetailViewModel(createSavedStateHandle(), container().repository, container().media, container().prefs)
@@ -30,6 +31,7 @@ object AppViewModelProvider {
         initializer { TradeViewModel(container().repository) }
         initializer { CheckOnBroViewModel(container().repository, container().prefs) }
         initializer { WrappedViewModel(container().repository) }
+        initializer { RoomViewModel(createSavedStateHandle(), container().repository, container().prefs) }
         initializer { SettingsViewModel(container().repository, container().backup, container().prefs) }
     }
 }

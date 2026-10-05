@@ -16,8 +16,9 @@ data class BroLook(
     val hat: Int = 0,
     val outfit: Int = 0,
     val outfitColor: Int = 0,
+    val extra: Int = 0,
 ) {
-    fun toList(): List<Int> = listOf(skin, hair, hairColor, expression, facialHair, glasses, hat, outfit, outfitColor)
+    fun toList(): List<Int> = listOf(skin, hair, hairColor, expression, facialHair, glasses, hat, outfit, outfitColor, extra)
 
     operator fun get(part: LookPart): Int = toList()[part.ordinal]
 
@@ -40,24 +41,32 @@ data class BroLook(
                 hat = at(LookPart.HAT),
                 outfit = at(LookPart.OUTFIT),
                 outfitColor = at(LookPart.OUTFIT_COLOR),
+                extra = at(LookPart.EXTRA),
             )
         }
 
-        /** Natural-looking random character; used for new catches and older cards. */
+        /**
+         * Natural-looking random character; used for new catches and older cards.
+         * The first rolls use the original option counts so older cards keep their look.
+         */
         fun random(seed: Long): BroLook {
             val r = Random(seed)
-            fun pick(part: LookPart) = r.nextInt(part.count)
-            return BroLook(
-                skin = pick(LookPart.SKIN),
-                hair = pick(LookPart.HAIR),
+            val base = BroLook(
+                skin = r.nextInt(6),
+                hair = r.nextInt(10),
                 // Mostly natural hair colors; the fun ones are opt-in.
                 hairColor = r.nextInt(LookOptions.NATURAL_HAIR_COLORS),
-                expression = pick(LookPart.EXPRESSION),
-                facialHair = if (r.nextFloat() < 0.5f) 0 else pick(LookPart.FACIAL_HAIR),
-                glasses = if (r.nextFloat() < 0.65f) 0 else pick(LookPart.GLASSES),
-                hat = if (r.nextFloat() < 0.65f) 0 else pick(LookPart.HAT),
-                outfit = pick(LookPart.OUTFIT),
-                outfitColor = pick(LookPart.OUTFIT_COLOR),
+                expression = r.nextInt(4),
+                facialHair = if (r.nextFloat() < 0.5f) 0 else r.nextInt(5),
+                glasses = if (r.nextFloat() < 0.65f) 0 else r.nextInt(4),
+                hat = if (r.nextFloat() < 0.65f) 0 else r.nextInt(4),
+                outfit = r.nextInt(4),
+                outfitColor = r.nextInt(LookOptions.outfitColors.size),
+            )
+            // Newer options, rolled afterwards so the rolls above never shift.
+            return base.copy(
+                hair = if (r.nextFloat() < 0.35f) 10 + r.nextInt(6) else base.hair,
+                extra = if (r.nextFloat() < 0.6f) 0 else r.nextInt(1, LookPart.EXTRA.count),
             )
         }
     }
@@ -72,7 +81,8 @@ enum class LookPart(val label: String, val count: Int) {
     GLASSES("Glasses", LookOptions.glasses.size),
     HAT("Hat", LookOptions.hats.size),
     OUTFIT("Fit", LookOptions.outfits.size),
-    OUTFIT_COLOR("Fit color", LookOptions.outfitColors.size);
+    OUTFIT_COLOR("Fit color", LookOptions.outfitColors.size),
+    EXTRA("Extras", LookOptions.extras.size);
 
     /** Color parts show swatches; the rest show a label under the preview. */
     val isColor: Boolean get() = this == SKIN || this == HAIR_COLOR || this == OUTFIT_COLOR
@@ -84,13 +94,17 @@ enum class LookPart(val label: String, val count: Int) {
         GLASSES -> LookOptions.glasses[index]
         HAT -> LookOptions.hats[index]
         OUTFIT -> LookOptions.outfits[index]
+        EXTRA -> LookOptions.extras[index]
         else -> null
     }
 }
 
 /** Option tables. The order matters: indices are what gets stored. Only append. */
 object LookOptions {
-    val skinTones = listOf(0xFFFFE0BD, 0xFFF1C27D, 0xFFE0AC69, 0xFFC68642, 0xFF8D5524, 0xFF5C3A21)
+    val skinTones = listOf(
+        0xFFFFE0BD, 0xFFF1C27D, 0xFFE0AC69, 0xFFC68642, 0xFF8D5524, 0xFF5C3A21,
+        0xFFFFF0E4, 0xFF3D2418,
+    )
 
     val hairColors = listOf(
         0xFF1E1A1A, 0xFF3B2416, 0xFF6A4423, 0xFFB5651D, 0xFFE5C16A, 0xFFD4652F, 0xFF9E9E9E,
@@ -99,12 +113,16 @@ object LookOptions {
     )
     const val NATURAL_HAIR_COLORS = 7
 
-    val hairStyles = listOf("Buzz", "Short", "Spiky", "Curly", "Long", "Mohawk", "Bald", "Bun", "Side part", "Mullet")
-    val expressions = listOf("Smile", "Grin", "Chill", "Smirk")
+    val hairStyles = listOf(
+        "Buzz", "Short", "Spiky", "Curly", "Long", "Mohawk", "Bald", "Bun", "Side part", "Mullet",
+        "Fade", "Afro", "Braids", "Locs", "Ponytail", "Waves",
+    )
+    val expressions = listOf("Smile", "Grin", "Chill", "Smirk", "Shocked", "Sleepy")
     val facialHair = listOf("None", "Stubble", "Mustache", "Beard", "Goatee")
-    val glasses = listOf("None", "Round", "Square", "Shades")
-    val hats = listOf("None", "Cap", "Beanie", "Headband")
-    val outfits = listOf("Tee", "Hoodie", "Jersey", "Suit")
+    val glasses = listOf("None", "Round", "Square", "Shades", "Aviators", "Thick")
+    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab")
+    val outfits = listOf("Tee", "Hoodie", "Jersey", "Suit", "Galabeya", "Leather")
+    val extras = listOf("None", "Earring", "Freckles", "Blush", "Nose ring", "Scar", "Mole")
 
     val outfitColors = listOf(
         0xFFD7263D, 0xFF3A86FF, 0xFF2EC4B6, 0xFF4CAF50, 0xFFFFC23D, 0xFFFF7A1A,

@@ -6,8 +6,11 @@ import com.joecode.brokemon.data.local.BroDatabase
 import com.joecode.brokemon.data.local.SquadDao
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Squad
+import com.joecode.brokemon.domain.CheckOnBro
 import com.joecode.brokemon.domain.Evolution
 import kotlinx.coroutines.flow.Flow
+
+enum class CheckInResult { CHECKED_IN, ALREADY_TODAY, NOT_FOUND }
 
 class BroRepository(
     private val database: BroDatabase,
@@ -31,11 +34,12 @@ class BroRepository(
     suspend fun insert(bro: Bro): Long = broDao.insert(bro).also { onChanged() }
     suspend fun update(bro: Bro) = broDao.update(bro).also { onChanged() }
 
-    suspend fun checkIn(id: Long, now: Long = System.currentTimeMillis()): Bro? {
-        val bro = broDao.findBroById(id) ?: return null
-        val updated = bro.copy(checkInCount = bro.checkInCount + 1, lastCheckIn = now)
-        update(updated)
-        return updated
+    /** One check-in per bro per day, so spamming the button can't farm bond points. */
+    suspend fun checkIn(id: Long, now: Long = System.currentTimeMillis()): CheckInResult {
+        val bro = broDao.findBroById(id) ?: return CheckInResult.NOT_FOUND
+        if (CheckOnBro.checkedInToday(bro, now)) return CheckInResult.ALREADY_TODAY
+        update(bro.copy(checkInCount = bro.checkInCount + 1, lastCheckIn = now))
+        return CheckInResult.CHECKED_IN
     }
 
     /** Deleting a bro also removes its media files and drops it from every squad. */

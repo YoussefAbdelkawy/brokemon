@@ -46,6 +46,25 @@ class HumanSpriteTest {
     }
 
     @Test
+    fun `full body renders standing and sitting`() {
+        val look = BroLook.random(5)
+        val standing = HumanSprite.renderFullBody(look, 0, false, sitting = false)
+        val sitting = HumanSprite.renderFullBody(look, 0, false, sitting = true)
+        assertEquals(HumanSprite.BODY_W * HumanSprite.BODY_H, standing.size)
+        assertFalse(standing.contentEquals(sitting))
+        // Standing bros' shoes reach the bottom rows; sitting bros are shorter.
+        fun lowestRow(px: IntArray) = px.indices.filter { px[it] != HumanSprite.CLEAR && px[it] != 0xFF0B0B10.toInt() }.maxOf { it / HumanSprite.BODY_W }
+        assertTrue(lowestRow(standing) > lowestRow(sitting))
+    }
+
+    @Test
+    fun `older 9-part looks still load`() {
+        val old = BroLook.fromList(listOf(1, 2, 3, 1, 0, 0, 0, 1, 2))
+        assertEquals(0, old.extra)
+        assertEquals(2, old.hair)
+    }
+
+    @Test
     fun `look survives a list round trip and clamps bad input`() {
         val look = BroLook.random(99)
         assertEquals(look, BroLook.fromList(look.toList()))

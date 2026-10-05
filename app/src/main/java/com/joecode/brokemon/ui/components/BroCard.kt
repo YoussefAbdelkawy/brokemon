@@ -3,6 +3,7 @@ package com.joecode.brokemon.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +47,9 @@ fun BroCard(
     stage: EvolutionStage,
     modifier: Modifier = Modifier,
     tilt: TiltState? = null,
+    tiltDegrees: Float = 7f,
+    holoFloor: Float = 0f,
+    onLongClick: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val shape = CutCornerShape(10.dp)
@@ -62,13 +66,21 @@ fun BroCard(
                     (if (bro.isShiny) ", shiny" else "") + ", ${stage.title}" +
                     (event?.let { ", limited ${it.label} frame" } ?: "")
             }
-            .tilt3d(tilt)
+            .tilt3d(tilt, tiltDegrees)
             .rarityGlow(bro.rarity)
             .clip(shape)
             .background(DexColors.Surface)
-            .holoSheen(tilt, holoStrength(bro.rarity, bro.isShiny))
+            .holoSheen(tilt, maxOf(holoFloor, holoStrength(bro.rarity, bro.isShiny)))
             .border(if (event != null) 4.dp else 3.dp, borderBrush, shape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(
+                if (onClick != null || onLongClick != null) {
+                    Modifier.combinedClickable(
+                        onClick = { onClick?.invoke() },
+                        onLongClick = onLongClick,
+                        onLongClickLabel = onLongClick?.let { "Enter ${bro.name}'s room" },
+                    )
+                } else Modifier,
+            )
             .padding(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

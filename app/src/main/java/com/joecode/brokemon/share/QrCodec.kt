@@ -87,7 +87,7 @@ object QrCodec {
             catchDate = now,
             avatarSeed = p.a ?: name.hashCode().toLong(),
             eventFrame = p.e?.takeIf { SeasonEvents.parse(it) != null },
-            look = p.l?.takeIf { it.size == LookPart.entries.size }?.let { BroLook.fromList(it) },
+            look = p.l?.takeIf { it.size in 9..LookPart.entries.size }?.let { BroLook.fromList(it) },
             isTraded = true,
         )
     }

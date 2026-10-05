@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -157,6 +158,8 @@ fun VoiceRecorderDialog(
     title: String,
     hint: String,
     maxSeconds: Int,
+    /** Longest clip accepted when importing from the phone. */
+    importMaxSeconds: Int = maxSeconds,
     newFile: () -> File,
     onSaved: (File) -> Unit,
     onDismiss: () -> Unit,
@@ -190,6 +193,33 @@ fun VoiceRecorderDialog(
         runCatching { recorder.start(target, maxSeconds * 1000) { stopRecording() } }
             .onSuccess { phase = RecPhase.RECORDING }
             .onFailure { discard() }
+    }
+
+    var importError by remember { mutableStateOf<String?>(null) }
+    // Import an existing voice note / audio file (WhatsApp voice notes, recordings...).
+    val importAudio = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        discard()
+        importError = null
+        val target = newFile()
+        val copied = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } } != null
+        }.getOrDefault(false)
+        val seconds = if (copied) durationSeconds(target) else null
+        when {
+            !copied || seconds == null -> {
+                target.delete()
+                importError = "Couldn't read that audio file."
+            }
+            seconds > importMaxSeconds -> {
+                target.delete()
+                importError = "That clip is ${seconds}s. Pick one up to ${importMaxSeconds}s."
+            }
+            else -> {
+                file = target
+                phase = RecPhase.RECORDED
+            }
+        }
     }
 
     val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -295,6 +325,16 @@ fun VoiceRecorderDialog(
                     textAlign = TextAlign.Center,
                 )
             }
+            if (phase != RecPhase.RECORDING) {
+                TextButton(onClick = { importAudio.launch(arrayOf("audio/*")) }) {
+                    Icon(Icons.Filled.LibraryMusic, null, tint = DexColors.LedBlue, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.size(6.dp))
+                    Text("CHOOSE FROM PHONE", style = PixelText.Tiny, color = DexColors.LedBlue)
+                }
+            }
+            importError?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = DexColors.LedYellow, textAlign = TextAlign.Center)
+            }
             val recorded = file
             if (phase == RecPhase.RECORDED && recorded != null) {
                 AudioPlayButton(player, Uri.fromFile(recorded).toString(), Modifier.fillMaxWidth(), label = "Listen")
@@ -314,3 +354,14 @@ fun VoiceRecorderDialog(
         }
     }
 }
+
+/** Length of an audio file in whole seconds, or null if it can't be read as audio. */
+private fun durationSeconds(file: File): Int? = runCatching {
+    val retriever = android.media.MediaMetadataRetriever()
+    try {
+        retriever.setDataSource(file.path)
+        retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.let { ((it + 999) / 1000).toInt() }
+    } finally {
+        retriever.release()
+    }
+}.getOrNull()

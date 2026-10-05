@@ -33,6 +33,9 @@ object Evolution {
     const val MONTH_POINTS = 1
     const val MONTHS_CAP = 24
 
+    /** Only the first 10 facts count, so adding junk facts can't power-level a bro. */
+    const val FACTS_CAP = 10
+
     fun monthsKnown(catchDate: Long, now: Long = System.currentTimeMillis()): Int {
         val zone = ZoneId.systemDefault()
         val start = Instant.ofEpochMilli(catchDate).atZone(zone).toLocalDate()
@@ -47,7 +50,7 @@ object Evolution {
         monthsKnown: Int,
     ): Int = memories * MEMORY_POINTS +
         checkIns * CHECK_IN_POINTS +
-        facts * FACT_POINTS +
+        min(facts, FACTS_CAP) * FACT_POINTS +
         min(monthsKnown, MONTHS_CAP) * MONTH_POINTS
 
     fun score(bro: Bro, now: Long = System.currentTimeMillis()): Int = score(

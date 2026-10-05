@@ -46,6 +46,7 @@ class CheckOnBroViewModel(
                 daysSince = pick?.let { CheckOnBro.daysSinceContact(it) } ?: 0,
                 prompts = pick?.let { CheckInPrompts.forBro(it) }.orEmpty(),
                 canReroll = bros.size > 1,
+                checkedIn = pick?.let { CheckOnBro.checkedInToday(it) } ?: false,
             )
         }
     }
@@ -53,9 +54,8 @@ class CheckOnBroViewModel(
     fun checkIn() {
         val bro = _state.value.pick?.bro ?: return
         viewModelScope.launch {
-            val fresh = repository.findBro(bro.id) ?: return@launch
-            repository.update(fresh.copy(checkInCount = fresh.checkInCount + 1, lastCheckIn = System.currentTimeMillis()))
-            _state.update { it.copy(checkedIn = true) }
+            val result = repository.checkIn(bro.id)
+            _state.update { it.copy(checkedIn = result != com.joecode.brokemon.data.CheckInResult.NOT_FOUND) }
         }
     }
 }

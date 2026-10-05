@@ -119,7 +119,7 @@ fun CheckOnBroScreen(
                     }
                 }
                 PixelButton(
-                    text = if (state.checkedIn) "Checked in! +${Evolution.CHECK_IN_POINTS}" else "I checked in",
+                    text = if (state.checkedIn) "Checked in today" else "I checked in +${Evolution.CHECK_IN_POINTS}",
                     onClick = viewModel::checkIn,
                     enabled = !state.checkedIn,
                     color = DexColors.LedGreen.copy(alpha = 0.8f),

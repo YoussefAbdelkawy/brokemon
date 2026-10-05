@@ -238,7 +238,7 @@ fun ScreenPanel(
     }
 }
 
-/** Chunky retro button that physically "presses" down. */
+/** Chunky retro button that physically "presses" down. [stacked] puts the icon above the label. */
 @Composable
 fun PixelButton(
     text: String,
@@ -246,6 +246,7 @@ fun PixelButton(
     modifier: Modifier = Modifier,
     color: Color = DexColors.DexRed,
     enabled: Boolean = true,
+    stacked: Boolean = false,
     leading: (@Composable () -> Unit)? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -271,21 +272,34 @@ fun PixelButton(
                 .offset(y = depth)
                 .background(Color.Black.copy(alpha = 0.55f), shape),
         )
-        Row(
-            Modifier
-                .offset { IntOffset(0, (depth * offset).roundToPx()) }
-                .fillMaxWidth()
-                .background(face, shape)
-                .border(2.dp, Color.White.copy(alpha = 0.18f), shape)
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (leading != null) {
-                leading()
-                Spacer(Modifier.width(8.dp))
+        val faceModifier = Modifier
+            .offset { IntOffset(0, (depth * offset).roundToPx()) }
+            .fillMaxWidth()
+            .background(face, shape)
+            .border(2.dp, Color.White.copy(alpha = 0.18f), shape)
+        if (stacked) {
+            Column(
+                faceModifier.padding(horizontal = 6.dp, vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (leading != null) {
+                    leading()
+                    Spacer(Modifier.height(6.dp))
+                }
+                Text(text.uppercase(), style = PixelText.Tiny, color = DexColors.Text, textAlign = TextAlign.Center, maxLines = 1)
             }
-            Text(text.uppercase(), style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
+        } else {
+            Row(
+                faceModifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (leading != null) {
+                    leading()
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(text.uppercase(), style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
+            }
         }
     }
 }

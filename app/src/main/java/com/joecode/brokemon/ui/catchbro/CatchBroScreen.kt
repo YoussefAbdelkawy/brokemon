@@ -46,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -235,14 +236,25 @@ private fun TypeSection(
             }
         }
         state.type1?.let { Text(it.blurb, color = DexColors.TextMuted, style = androidx.compose.material3.MaterialTheme.typography.bodySmall) }
-        SectionTitle("Second type (optional)")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            BroType.entries.forEach { type ->
-                TypeChoice(
-                    type,
-                    selected = state.type2 == type,
-                    enabled = state.type1 != null && state.type1 != type,
-                ) { onType2Selected(type) }
+        // Most bros need one type; the second list only opens on request.
+        var showSecond by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+        if (state.type1 != null && !showSecond && state.type2 == null) {
+            TextButton(onClick = { showSecond = true }) {
+                Icon(Icons.Filled.Add, contentDescription = null, tint = DexColors.LedBlue)
+                Spacer(Modifier.width(6.dp))
+                Text("ADD A SECOND TYPE", style = PixelText.Tiny, color = DexColors.LedBlue)
+            }
+        }
+        if (showSecond || state.type2 != null) {
+            SectionTitle("Second type (optional)")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                BroType.entries.forEach { type ->
+                    TypeChoice(
+                        type,
+                        selected = state.type2 == type,
+                        enabled = state.type1 != null && state.type1 != type,
+                    ) { onType2Selected(type) }
+                }
             }
         }
     }

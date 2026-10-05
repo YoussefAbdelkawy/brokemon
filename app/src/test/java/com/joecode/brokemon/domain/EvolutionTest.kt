@@ -17,6 +17,11 @@ class EvolutionTest {
     }
 
     @Test
+    fun `facts stop counting after the cap`() {
+        assertEquals(Evolution.FACTS_CAP * Evolution.FACT_POINTS, Evolution.score(memories = 0, checkIns = 0, facts = 50, monthsKnown = 0))
+    }
+
+    @Test
     fun `stage thresholds`() {
         assertEquals(EvolutionStage.ROOKIE, Evolution.stageFor(0))
         assertEquals(EvolutionStage.ROOKIE, Evolution.stageFor(19))

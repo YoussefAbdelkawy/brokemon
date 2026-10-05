@@ -5,6 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import com.joecode.brokemon.data.model.BroLook
+import com.joecode.brokemon.data.model.BroRoom
 import com.joecode.brokemon.data.model.BroStats
 import com.joecode.brokemon.data.model.Fact
 import com.joecode.brokemon.data.model.Memory
@@ -58,6 +59,14 @@ class Converters {
             chaos = stat("chaos"),
             flake = stat("flake", "clutch"),
         )
+    }
+
+    @TypeConverter
+    fun roomToJson(value: BroRoom?): String? = value?.let { gson.toJson(it.toList()) }
+
+    @TypeConverter
+    fun jsonToRoom(value: String?): BroRoom? = value?.let {
+        runCatching { BroRoom.fromList(gson.fromJson(it, object : TypeToken<List<Int>>() {}.type)) }.getOrNull()
     }
 
     @TypeConverter

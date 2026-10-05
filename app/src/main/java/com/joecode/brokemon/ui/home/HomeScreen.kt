@@ -43,6 +43,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import android.content.pm.ApplicationInfo
 import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.foundation.layout.width
+import com.joecode.brokemon.ui.navigation.sharedCard
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.joecode.brokemon.data.model.Rarity
@@ -63,7 +73,6 @@ import com.joecode.brokemon.ui.components.CatchCube
 import com.joecode.brokemon.ui.components.DexScaffold
 import com.joecode.brokemon.ui.components.EmptyState
 import com.joecode.brokemon.ui.components.EventBanner
-import com.joecode.brokemon.ui.components.rememberTilt
 import com.joecode.brokemon.ui.components.PixelButton
 import com.joecode.brokemon.ui.components.ScreenPanel
 import com.joecode.brokemon.ui.theme.DexColors
@@ -79,15 +88,12 @@ fun HomeScreen(
     onCheckOnBro: () -> Unit,
     onWrapped: () -> Unit,
     onSettings: () -> Unit,
+    onEnterRoom: (Long) -> Unit,
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    // Debug builds always show Wrapped so it can be tested outside the New Year window.
-    val isDebug = remember { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
-    val showWrapped = state.wrappedYear != null || isDebug
-    // One sensor listener for the whole grid; each card reads it in its draw phase.
-    val tilt = rememberTilt()
+    var showFilters by rememberSaveable { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
 
     DexScaffold(
         title = "Brodex",
@@ -129,37 +135,57 @@ fun HomeScreen(
                     item(span = { GridItemSpan(maxLineSpan) }) { WrappedBanner(year, onWrapped) }
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    QuickActions(onSquads, onTrade, onCheckOnBro, onWrapped.takeIf { showWrapped })
+                    // Wrapped only appears in its New Year window, like Spotify Wrapped.
+                    QuickActions(onSquads, onTrade, onCheckOnBro, onWrapped.takeIf { state.wrappedYear != null })
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    SearchAndFilter(
+                    SearchBar(
                         query = state.query,
                         onQueryChanged = viewModel::onQueryChanged,
-                        selected = state.typeFilter,
-                        onTypeSelected = viewModel::onTypeFilterSelected,
+                        filter = state.filter,
+                        onFilterChanged = viewModel::onFilterChanged,
+                        onOpenFilters = { showFilters = true },
+                        onClear = viewModel::clearFilters,
+                        shown = state.entries.size,
+                        total = state.totalCaught,
                     )
+                }
+                if (state.showRoomHint) {
+                    item(span = { GridItemSpan(maxLineSpan) }) { RoomHint(viewModel::dismissRoomHint) }
                 }
                 if (state.entries.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(
-                            "No bros match that search.",
-                            color = DexColors.TextMuted,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(24.dp),
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                            Text("No bros match.", color = DexColors.TextMuted, textAlign = TextAlign.Center)
+                            TextButton(onClick = { viewModel.onQueryChanged(""); viewModel.clearFilters() }) {
+                                Text("CLEAR SEARCH & FILTERS", style = PixelText.Tiny, color = DexColors.LedYellow)
+                            }
+                        }
                     }
                 }
                 items(state.entries, key = { it.bro.id }) { entry ->
                     BroCard(
                         bro = entry.bro,
                         stage = entry.stage,
-                        tilt = tilt,
                         onClick = { onBroClick(entry.bro.id) },
-                        modifier = Modifier.animateItem(),
+                        onLongClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            onEnterRoom(entry.bro.id)
+                        },
+                        modifier = Modifier.animateItem().sharedCard(entry.bro.id),
                     )
                 }
             }
         }
+    }
+    if (showFilters) {
+        FilterSheet(
+            filter = state.filter,
+            onFilterChanged = viewModel::onFilterChanged,
+            onClear = viewModel::clearFilters,
+            resultCount = state.entries.size,
+            onDismiss = { showFilters = false },
+        )
     }
 }
 
@@ -246,41 +272,23 @@ private fun QuickAction(label: String, icon: ImageVector, color: Color, onClick:
 }
 
 @Composable
-private fun SearchAndFilter(
-    query: String,
-    onQueryChanged: (String) -> Unit,
-    selected: BroType?,
-    onTypeSelected: (BroType?) -> Unit,
-) {
-    Column {
-        OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChanged,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            placeholder = { Text("Search your bros") },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = DexColors.DexRed,
-                unfocusedBorderColor = DexColors.Outline,
-            ),
+private fun RoomHint(onDismiss: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(DexColors.LedBlue.copy(alpha = 0.12f), CutCornerShape(6.dp))
+            .border(1.dp, DexColors.LedBlue.copy(alpha = 0.5f), CutCornerShape(6.dp))
+            .padding(start = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.TouchApp, null, tint = DexColors.LedBlue, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            "Tip: press and hold a card to step inside their room.",
+            color = DexColors.Text,
+            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.height(10.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(BroType.entries) { type ->
-                val isSelected = type == selected
-                val shape = CutCornerShape(4.dp)
-                Text(
-                    type.label.uppercase(),
-                    style = PixelText.Tiny,
-                    color = if (isSelected) Color(0xFF101014) else type.color,
-                    modifier = Modifier
-                        .background(if (isSelected) type.color else Color.Transparent, shape)
-                        .border(1.dp, type.color, shape)
-                        .clickable { onTypeSelected(type) }
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                )
-            }
-        }
+        IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, "Dismiss tip", tint = DexColors.TextMuted) }
     }
 }

@@ -34,9 +34,12 @@ data class Bro(
     val voiceLine: String? = null,
     /** Limited event frame stamped at catch time, e.g. "RAMADAN|2027". Null = normal card. */
     val eventFrame: String? = null,
+    /** The bro's decorated room. Null = default room. */
+    val room: BroRoom? = null,
 ) {
     val dexNumber: String get() = "#%03d".format(id)
     val types: List<BroType> get() = listOfNotNull(BroType.from(type1), BroType.from(type2))
     val primaryType: BroType get() = BroType.from(type1) ?: BroType.CHILL_GUY
     val resolvedLook: BroLook get() = look ?: BroLook.random(avatarSeed)
+    val resolvedRoom: BroRoom get() = room ?: BroRoom()
 }

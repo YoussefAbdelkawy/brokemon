@@ -31,6 +31,13 @@ object CheckOnBro {
         return candidates.last()
     }
 
+    fun checkedInToday(bro: Bro, now: Long = System.currentTimeMillis()): Boolean {
+        val zone = java.time.ZoneId.systemDefault()
+        val last = bro.lastCheckIn ?: return false
+        return java.time.Instant.ofEpochMilli(last).atZone(zone).toLocalDate() ==
+            java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+    }
+
     fun daysSinceContact(bro: Bro, now: Long = System.currentTimeMillis()): Long =
         TimeUnit.MILLISECONDS.toDays(now - (bro.lastCheckIn ?: bro.catchDate)).coerceAtLeast(0)
 }

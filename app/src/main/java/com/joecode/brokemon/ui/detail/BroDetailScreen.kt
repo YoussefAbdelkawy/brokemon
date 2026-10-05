@@ -125,16 +125,18 @@ import com.joecode.brokemon.domain.SeasonEvents
 import com.joecode.brokemon.ui.components.AudioPlayButton
 import com.joecode.brokemon.ui.components.AudioPlayerState
 import com.joecode.brokemon.ui.components.AvatarBuilder
-import com.joecode.brokemon.ui.components.EventCorners
-import com.joecode.brokemon.ui.components.EventRibbon
 import com.joecode.brokemon.ui.components.PixelWaveform
 import com.joecode.brokemon.ui.components.TiltState
+import com.joecode.brokemon.ui.components.BroCard
+import com.joecode.brokemon.ui.components.dragToTilt
+import com.joecode.brokemon.ui.components.rememberTiltState
+import com.joecode.brokemon.data.CheckInResult
+import com.joecode.brokemon.domain.CheckOnBro
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Weekend
+import androidx.compose.foundation.layout.widthIn
 import com.joecode.brokemon.ui.components.VoiceRecorderDialog
-import com.joecode.brokemon.ui.components.holoSheen
-import com.joecode.brokemon.ui.components.holoStrength
 import com.joecode.brokemon.ui.components.rememberAudioPlayer
-import com.joecode.brokemon.ui.components.rememberTilt
-import com.joecode.brokemon.ui.components.tilt3d
 import com.joecode.brokemon.ui.components.BroSprite
 import com.joecode.brokemon.ui.components.DexScaffold
 import com.joecode.brokemon.ui.components.MediaThumbnail
@@ -161,6 +163,7 @@ import java.util.Date
 fun BroDetailScreen(
     onBack: () -> Unit,
     onShare: (Long) -> Unit,
+    onVisitRoom: (Long) -> Unit = {},
     viewModel: BroDetailViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -178,7 +181,7 @@ fun BroDetailScreen(
     var recordingMemory by rememberSaveable { mutableStateOf(false) }
     var recordingVoiceLine by rememberSaveable { mutableStateOf(false) }
     val audio = rememberAudioPlayer()
-    val tilt = rememberTilt()
+    val tilt = rememberTiltState()
     var showDelete by rememberSaveable { mutableStateOf(false) }
     var showAddFact by rememberSaveable { mutableStateOf(false) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
@@ -219,6 +222,11 @@ fun BroDetailScreen(
                         Icon(Icons.Filled.MoreVert, contentDescription = "More", tint = DexColors.Text)
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Visit their room") },
+                            leadingIcon = { Icon(Icons.Filled.Weekend, null) },
+                            onClick = { menuOpen = false; onVisitRoom(bro.id) },
+                        )
                         DropdownMenuItem(
                             text = { Text("Rename") },
                             leadingIcon = { Icon(Icons.Filled.Edit, null) },
@@ -270,22 +278,27 @@ fun BroDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     item {
-                        HeroPanel(
+                        CardShowcase(
                             bro = bro,
                             evolution = state.evolution!!,
                             tilt = tilt,
-                            voiceLinePlaying = audio.isPlaying(bro.voiceLine),
-                            onSpriteTap = {
-                                bro.voiceLine?.let { audio.toggle(it) } ?: run { recordingVoiceLine = true }
-                            },
+                            onTap = { bro.voiceLine?.let { audio.toggle(it) } },
                         )
                     }
                     item {
                         ActionRow(
                             bro = bro,
                             onCheckIn = {
-                                viewModel.checkIn()
-                                scope.launch { snackbar.showSnackbar("Checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} pts") }
+                                viewModel.checkIn { result ->
+                                    scope.launch {
+                                        snackbar.showSnackbar(
+                                            when (result) {
+                                                CheckInResult.CHECKED_IN -> "Checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} pts"
+                                                else -> "Already checked in with ${bro.name} today. Come back tomorrow!"
+                                            },
+                                        )
+                                    }
+                                }
                             },
                             onShareQr = { onShare(bro.id) },
                             onShareStory = { showStory = true },
@@ -422,8 +435,9 @@ fun BroDetailScreen(
         if (recordingMemory) {
             VoiceRecorderDialog(
                 title = "Voice memory",
-                hint = "Record up to a minute: a story, an inside joke, a voice note they sent you.",
+                hint = "Record up to a minute, or pick a voice note they sent you from your phone.",
                 maxSeconds = 60,
+                importMaxSeconds = 600,
                 newFile = { viewModel.newVoiceFile() },
                 onSaved = viewModel::addVoiceMemory,
                 onDismiss = { recordingMemory = false },
@@ -432,8 +446,9 @@ fun BroDetailScreen(
         if (recordingVoiceLine) {
             VoiceRecorderDialog(
                 title = "${bro.name}'s voice line",
-                hint = "Their signature line, catchphrase or laugh. 10 seconds max. Tap their portrait to play it.",
+                hint = "Their signature line, catchphrase or laugh, up to 10 seconds (or a clip up to 15s from your phone). Tap their card to play it.",
                 maxSeconds = 10,
+                importMaxSeconds = 15,
                 newFile = { viewModel.newVoiceFile("voice-") },
                 onSaved = { viewModel.setVoiceLine(it) },
                 onDismiss = { recordingVoiceLine = false },
@@ -450,123 +465,79 @@ fun BroDetailScreen(
     }
 }
 
+/**
+ * The card itself, big and centered, like holding it in Pokémon TCG Pocket:
+ * press and drag to tilt it in 3D (the foil follows your finger), release to
+ * let it spring back. Tap plays their voice line if they have one.
+ */
 @Composable
-private fun HeroPanel(
-    bro: Bro,
-    evolution: EvolutionInfo,
-    tilt: TiltState,
-    voiceLinePlaying: Boolean,
-    onSpriteTap: () -> Unit,
-) {
-    val event = SeasonEvents.parse(bro.eventFrame)
-    // Bounce while the voice line plays.
-    val talk by animateFloatAsState(if (voiceLinePlaying) 1f else 0f, tween(150), label = "talk")
-    val transition = rememberInfiniteTransition(label = "hero")
-    val bob by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = -10f,
-        animationSpec = infiniteRepeatable(tween(800), RepeatMode.Reverse),
-        label = "bob",
-    )
-    val auraPulse by transition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
-        label = "aura",
-    )
-    ScreenPanel(
-        title = event?.let { "Bro data · limited" } ?: "Bro data",
-        modifier = Modifier.tilt3d(tilt, maxDegrees = 5f).rarityGlow(bro.rarity),
-    ) {
+private fun CardShowcase(bro: Bro, evolution: EvolutionInfo, tilt: TiltState, onTap: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .holoSheen(tilt, holoStrength(bro.rarity, bro.isShiny)),
-            contentAlignment = Alignment.Center,
+                .padding(vertical = 8.dp)
+                .widthIn(max = 300.dp)
+                .fillMaxWidth(0.82f)
+                .dragToTilt(tilt, scope),
         ) {
-            if (evolution.stage.ordinal > 0) {
-                // Evolved bros keep a soft aura that grows with each stage.
-                val color = bro.primaryType.color
-                Canvas(Modifier.size(200.dp)) {
-                    drawCircle(
-                        Brush.radialGradient(
-                            listOf(color.copy(alpha = 0.45f * auraPulse * evolution.stage.ordinal / 2f), Color.Transparent),
-                        ),
-                    )
-                }
-            }
-            BroSprite(
+            BroCard(
                 bro = bro,
-                stage = evolution.stage.ordinal,
-                modifier = Modifier
-                    .size(176.dp)
-                    .graphicsLayer {
-                        translationY = bob - talk * 6f
-                        val s = 1f + talk * 0.04f
-                        scaleX = s
-                        scaleY = s
-                    }
-                    .clickable(
-                        onClickLabel = if (bro.voiceLine != null) "Play voice line" else "Record voice line",
-                        onClick = onSpriteTap,
-                    ),
-            )
-            if (bro.isShiny) Sparkles(Modifier.fillMaxSize(), count = 14, seed = bro.id.toInt())
-            event?.let { EventCorners(it.event, Modifier.fillMaxSize(), iconSize = 30.dp) }
-            Icon(
-                if (bro.voiceLine != null) Icons.AutoMirrored.Filled.VolumeUp else Icons.Filled.MicNone,
-                contentDescription = null,
-                tint = if (voiceLinePlaying) DexColors.LedGreen else DexColors.TextMuted,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(6.dp).size(20.dp),
+                stage = evolution.stage,
+                tilt = tilt,
+                tiltDegrees = 16f,
+                holoFloor = 0.14f,
+                onClick = onTap,
             )
         }
-        event?.let {
-            EventRibbon(it)
-            Spacer(Modifier.height(10.dp))
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(bro.dexNumber, style = PixelText.Label, color = DexColors.TextMuted)
-            Spacer(Modifier.width(10.dp))
-            Text(bro.name.uppercase(), style = PixelText.Header, color = DexColors.Text, modifier = Modifier.weight(1f))
-            RarityStars(bro.rarity, size = 14.dp)
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            bro.types.forEach { TypeBadge(it) }
-            Spacer(Modifier.weight(1f))
-            if (bro.isShiny) Text("SHINY", style = PixelText.Tiny, color = DexColors.Gold)
-        }
-        Spacer(Modifier.height(10.dp))
         Text(
             bro.primaryType.blurb,
             color = DexColors.TextMuted,
             style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            if (bro.voiceLine != null) "HOLD & DRAG TO TILT · TAP TO HEAR THEM" else "HOLD & DRAG THE CARD TO TILT IT",
+            style = PixelText.Tiny,
+            color = DexColors.Outline,
         )
     }
 }
 
 @Composable
 private fun ActionRow(bro: Bro, onCheckIn: () -> Unit, onShareQr: () -> Unit, onShareStory: () -> Unit) {
+    val checkedToday = CheckOnBro.checkedInToday(bro)
+    // Three equal buttons: same size, icon over label.
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         PixelButton(
-            text = "Check in",
+            text = if (checkedToday) "Done today" else "Check in",
             onClick = onCheckIn,
-            modifier = Modifier.weight(1.3f),
+            enabled = !checkedToday,
+            stacked = true,
+            modifier = Modifier.weight(1f),
             color = DexColors.SurfaceHigh,
-            leading = { Icon(Icons.Filled.WavingHand, null, tint = DexColors.LedYellow, modifier = Modifier.size(18.dp)) },
+            leading = {
+                Icon(
+                    if (checkedToday) Icons.Filled.CheckCircle else Icons.Filled.WavingHand,
+                    null,
+                    tint = if (checkedToday) DexColors.LedGreen else DexColors.LedYellow,
+                    modifier = Modifier.size(20.dp),
+                )
+            },
         )
         PixelButton(
-            text = "QR",
+            text = "QR trade",
             onClick = onShareQr,
             enabled = bro.isTradeable,
+            stacked = true,
             modifier = Modifier.weight(1f),
             leading = {
                 Icon(
                     if (bro.isTradeable) Icons.Filled.QrCode2 else Icons.Filled.Lock,
-                    "Share QR",
+                    null,
                     tint = DexColors.Text,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(20.dp),
                 )
             },
         )
@@ -574,9 +545,10 @@ private fun ActionRow(bro: Bro, onCheckIn: () -> Unit, onShareQr: () -> Unit, on
             text = "Post",
             onClick = onShareStory,
             enabled = bro.isTradeable,
+            stacked = true,
             modifier = Modifier.weight(1f),
             color = DexColors.LedBlue.copy(alpha = 0.8f),
-            leading = { Icon(Icons.Filled.IosShare, "Share story image", tint = DexColors.Text, modifier = Modifier.size(18.dp)) },
+            leading = { Icon(Icons.Filled.IosShare, null, tint = DexColors.Text, modifier = Modifier.size(20.dp)) },
         )
     }
 }
@@ -602,7 +574,7 @@ private fun EvolutionPanel(bro: Bro, evolution: EvolutionInfo) {
         val months = Evolution.monthsKnown(bro.catchDate)
         ScoreLine("Memories", bro.memories.size, Evolution.MEMORY_POINTS)
         ScoreLine("Check-ins", bro.checkInCount, Evolution.CHECK_IN_POINTS)
-        ScoreLine("Facts", bro.facts.size, Evolution.FACT_POINTS)
+        ScoreLine("Facts (max ${Evolution.FACTS_CAP})", minOf(bro.facts.size, Evolution.FACTS_CAP), Evolution.FACT_POINTS)
         ScoreLine("Months", minOf(months, Evolution.MONTHS_CAP), Evolution.MONTH_POINTS)
     }
 }

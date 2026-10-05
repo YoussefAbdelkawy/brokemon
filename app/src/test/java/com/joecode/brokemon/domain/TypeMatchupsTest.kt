@@ -19,6 +19,8 @@ class TypeMatchupsTest {
     @Test
     fun `every type learns two evolution moves`() {
         BroType.entries.forEach { assertEquals("$it", 2, EvolutionMoves.all(it).size) }
+        // Every evolution style is used by at least one type.
+        assertEquals(EvolutionStyle.entries.toSet(), BroType.entries.map { EvolutionStyle.forType(it) }.toSet())
         assertEquals(listOf("Horn Solo"), EvolutionMoves.unlocked(BroType.ROAD_RAGER, 0, 1))
         assertEquals(listOf("Horn Solo", "Brake Check"), EvolutionMoves.unlocked(BroType.ROAD_RAGER, 0, 2))
         assertEquals(listOf("Brake Check"), EvolutionMoves.unlocked(BroType.ROAD_RAGER, 1, 2))

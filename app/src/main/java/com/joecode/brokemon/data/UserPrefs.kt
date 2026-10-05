@@ -78,6 +78,13 @@ class UserPrefs(private val context: Context) {
         context.dataStore.edit { it[longPreferencesKey("fired_$kind")] = epochDay }
     }
 
+    /** Whether the "hold a card to enter their room" tip can be retired. */
+    val roomHintSeen: Flow<Boolean> = context.dataStore.data.map { it[ROOM_HINT_SEEN] ?: false }
+
+    suspend fun setRoomHintSeen() {
+        context.dataStore.edit { it[ROOM_HINT_SEEN] = true }
+    }
+
     /** Debug-only event override: null = real date, "NONE" = no event, else a SeasonEvent name. */
     val debugEvent: Flow<String?> = context.dataStore.data.map { it[DEBUG_EVENT] }
 
@@ -115,5 +122,6 @@ class UserPrefs(private val context: Context) {
         val WEEKLY_NUDGE = booleanPreferencesKey("weekly_nudge")
         val LAST_EXPORT = longPreferencesKey("last_export")
         val DEBUG_EVENT = stringPreferencesKey("debug_event")
+        val ROOM_HINT_SEEN = booleanPreferencesKey("room_hint_seen")
     }
 }

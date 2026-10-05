@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
+import com.joecode.brokemon.data.CheckInResult
 import com.joecode.brokemon.data.MediaStorage
 import com.joecode.brokemon.data.UserPrefs
 import com.joecode.brokemon.data.model.Bro
@@ -88,7 +89,9 @@ class BroDetailViewModel(
         }
     }
 
-    fun checkIn() = edit { it.copy(checkInCount = it.checkInCount + 1, lastCheckIn = System.currentTimeMillis()) }
+    fun checkIn(onResult: (CheckInResult) -> Unit) {
+        viewModelScope.launch { onResult(repository.checkIn(broId)) }
+    }
 
     fun setTradeable(tradeable: Boolean) = edit { it.copy(isTradeable = tradeable) }
 
