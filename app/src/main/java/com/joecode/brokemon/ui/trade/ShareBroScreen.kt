@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -67,6 +68,7 @@ fun ShareBroScreen(
         ) {
             when {
                 entry != null -> {
+                    LaunchedEffect(entry.bro.id) { viewModel.onQrShown() }
                     val payload = remember(entry.bro) { QrCodec.encode(entry.bro) }
                     val qr = remember(payload) {
                         QrBitmap.render(payload, Color(0xFF0B0B10).toArgb(), Color.White.toArgb()).asImageBitmap()
@@ -106,7 +108,7 @@ fun ShareBroScreen(
                     }
                     BroCard(entry.bro, entry.stage, Modifier.widthIn(max = 220.dp))
                     Text(
-                        "Shared: name, types, stats, moves, rarity, look. Never shared: photos, videos, facts, dates.",
+                        "Shared: name, types, stats, moves, rarity, look, dex entry. Never shared: photos, videos, facts, dates.",
                         color = DexColors.TextMuted,
                         style = MaterialTheme.typography.bodySmall,
                         textAlign = TextAlign.Center,

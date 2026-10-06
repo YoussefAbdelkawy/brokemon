@@ -60,6 +60,14 @@ Study: weighted random selection, `HorizontalPager`, and reading pager offsets i
 - Card handling: `ui/components/Holo.kt` `dragToTilt`. Study: `pointerInput` + `awaitEachGesture`, `Animatable`/`animate` with `spring`.
 - Filters: `ui/home/HomeViewModel.kt` (`BroFilter`, `SortOrder`) + `FilterSheet.kt`. Study: `ModalBottomSheet`, keeping filter state in the ViewModel.
 
+## Trainer, Journal, views, wild bros
+- Intro: `ui/onboarding/OnboardingScreen.kt`. Study: a typewriter effect with `LaunchedEffect` + `delay`, `AnimatedContent` between steps, `BackHandler`.
+- Trainer Card + Journal: `data/model/Trainer.kt`, `domain/Journal.kt`, `ui/trainer/*`. Study: storing a small object as JSON in DataStore, deriving progress from data instead of storing it (only claims are saved), `combine` of four flows.
+- Coach marks: `ui/components/CoachMark.kt`. Study: `staticCompositionLocalOf` to hand a dependency (the hint store) down without threading it through every screen.
+- Dex views: `ui/home/HomeScreen.kt`. Study: `AnimatedContent` for the view switch, `HorizontalPager` + `graphicsLayer` driven by `currentPageOffsetFraction` for the binder.
+- Stat hexagon: `ui/components/StatHexagon.kt`. Study: `Canvas`, `Path`, polar coordinates, `rememberTextMeasurer` + `drawText`.
+- Wild bro: `ui/wild/*`. Study: `TYPE_ACCELEROMETER` + `LifecycleResumeEffect` (listen only while visible), an explicit-package `Intent` for WhatsApp with a share-sheet fallback, and a single 0..1 `Animatable` driving a whole timeline.
+
 ## M9–M10: Privacy and publishing
 See `docs/PLAY_STORE.md` and `docs/privacy-policy.md`.
 

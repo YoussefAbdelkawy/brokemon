@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.LookOptions
 import com.joecode.brokemon.data.model.LookPart
+import com.joecode.brokemon.domain.Reward
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
 import com.joecode.brokemon.ui.theme.DexColors
 import com.joecode.brokemon.ui.theme.PixelText
 
@@ -65,23 +69,28 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
                 )
             }
         }
+        val unlocked = LocalUnlockedRewards.current
         LazyRow(state = optionsState, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items((0 until part.count).toList()) { i ->
-                OptionTile(look, part, i, selected = look[part] == i) { onLookChange(look.with(part, i)) }
+                // Journal rewards stay visible but locked until they're earned.
+                val locked = part == LookPart.HAT && i == LookOptions.TRAINER_CAP && Reward.TRAINER_CAP !in unlocked
+                OptionTile(look, part, i, selected = look[part] == i, locked = locked) {
+                    if (!locked) onLookChange(look.with(part, i))
+                }
             }
         }
     }
 }
 
 @Composable
-private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Boolean, onClick: () -> Unit) {
+private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Boolean, locked: Boolean, onClick: () -> Unit) {
     val shape = CutCornerShape(4.dp)
-    val label = part.optionLabel(index)
+    val label = if (locked) "Journal" else part.optionLabel(index)
     Column(
         Modifier
             .width(72.dp)
             .semantics {
-                contentDescription = "${part.label} ${label ?: "color ${index + 1}"}"
+                contentDescription = "${part.label} ${label ?: "color ${index + 1}"}" + if (locked) ", locked: earn it in the Trainer's Journal" else ""
                 this.selected = selected
             }
             .clickable(onClick = onClick),
@@ -110,6 +119,9 @@ private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Bool
                         .background(Color(color), CutCornerShape(2.dp))
                         .border(1.dp, Color.Black.copy(alpha = 0.6f), CutCornerShape(2.dp)),
                 )
+            } else if (locked) {
+                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(4.dp), tint = DexColors.Outline)
+                Icon(Icons.Filled.Lock, null, tint = DexColors.LedYellow, modifier = Modifier.size(18.dp))
             } else {
                 BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(4.dp))
             }

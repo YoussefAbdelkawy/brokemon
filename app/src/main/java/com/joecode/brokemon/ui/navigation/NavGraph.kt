@@ -28,6 +28,11 @@ import com.joecode.brokemon.ui.squads.SquadDetailScreen
 import com.joecode.brokemon.ui.squads.SquadsScreen
 import com.joecode.brokemon.ui.trade.ShareBroScreen
 import com.joecode.brokemon.ui.trade.TradeScreen
+import com.joecode.brokemon.domain.Quest
+import com.joecode.brokemon.ui.trainer.JournalScreen
+import com.joecode.brokemon.ui.trainer.TrainerEditScreen
+import com.joecode.brokemon.ui.trainer.TrainerScreen
+import com.joecode.brokemon.ui.wild.WildBroScreen
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -81,8 +86,45 @@ fun BrokemonApp(
                 onWrapped = { nav.navigate(Routes.WRAPPED) },
                 onSettings = { nav.navigate(Routes.SETTINGS) },
                 onEnterRoom = { nav.navigate(Routes.room(it)) },
+                onTrainer = { nav.navigate(Routes.TRAINER) },
+                onJournal = { nav.navigate(Routes.JOURNAL) },
+                onWild = { nav.navigate(Routes.WILD) { launchSingleTop = true } },
             )
             }
+        }
+        composable(Routes.TRAINER) {
+            TrainerScreen(
+                onBack = back,
+                onEdit = { nav.navigate(Routes.TRAINER_EDIT) },
+                onJournal = { nav.navigate(Routes.JOURNAL) },
+            )
+        }
+        composable(Routes.TRAINER_EDIT) { TrainerEditScreen(onBack = back) }
+        composable(Routes.JOURNAL) {
+            JournalScreen(
+                onBack = back,
+                onGo = { quest ->
+                    when (quest) {
+                        Quest.MAKE_TRAINER_CARD -> nav.navigate(Routes.TRAINER_EDIT)
+                        Quest.CATCH_FIRST_BRO -> nav.navigate(Routes.CATCH_BRO)
+                        Quest.TRADE_QR -> nav.navigate(Routes.TRADE)
+                        Quest.CHECK_IN -> nav.navigate(Routes.CHECK_ON_BRO)
+                        // Facts and memories live on a card: back to the dex to pick one.
+                        Quest.ADD_FACT, Quest.LOG_MEMORY -> nav.popBackStack(Routes.HOME, inclusive = false)
+                    }
+                },
+            )
+        }
+        composable(
+            Routes.WILD,
+            enterTransition = { fadeIn(tween(120)) },
+            popExitTransition = { fadeOut(tween(200)) },
+        ) {
+            WildBroScreen(
+                onBack = back,
+                onOpenBro = { nav.navigate(Routes.broDetail(it)) { popUpTo(Routes.HOME) } },
+                onCatch = { nav.navigate(Routes.CATCH_BRO) { popUpTo(Routes.HOME) } },
+            )
         }
         composable(
             Routes.ROOM,

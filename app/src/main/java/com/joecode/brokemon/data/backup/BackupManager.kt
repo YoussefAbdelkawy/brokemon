@@ -7,6 +7,8 @@ import androidx.core.net.toUri
 import com.google.gson.Gson
 import com.joecode.brokemon.data.BroRepository
 import com.joecode.brokemon.data.MediaStorage
+import com.joecode.brokemon.data.UserPrefs
+import com.joecode.brokemon.data.model.Trainer
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Squad
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,8 @@ data class BackupFile(
     val exportedAt: Long = 0,
     val bros: List<Bro> = emptyList(),
     val squads: List<Squad> = emptyList(),
+    /** Your own Trainer Card (older backups don't have it). */
+    val trainer: Trainer? = null,
 ) {
     companion object {
         const val FORMAT = "brokemon-backup"
@@ -39,6 +43,7 @@ class BackupManager(
     private val context: Context,
     private val repository: BroRepository,
     private val media: MediaStorage,
+    private val prefs: UserPrefs,
 ) {
     private val gson = Gson()
 
@@ -63,7 +68,13 @@ class BackupManager(
                     },
                 )
             }
-            val json = gson.toJson(BackupFile(exportedAt = System.currentTimeMillis(), bros = portable, squads = squads))
+            val backup = BackupFile(
+                exportedAt = System.currentTimeMillis(),
+                bros = portable,
+                squads = squads,
+                trainer = prefs.trainerOnce(),
+            )
+            val json = gson.toJson(backup)
             val out = context.contentResolver.openOutputStream(target) ?: error("Couldn't open the file")
             ZipOutputStream(out.buffered()).use { zip ->
                 zip.putNextEntry(ZipEntry(JSON_ENTRY))
@@ -122,9 +133,12 @@ class BackupManager(
                     },
                     facts = bro.facts.orEmpty(),
                     moves = bro.moves.orEmpty(),
+                    // Backups from before v5 have no flavor text; Gson would leave it null.
+                    flavorText = bro.flavorText.orEmpty(),
                 )
             }
             repository.replaceAll(restored, data.squads.orEmpty())
+            data.trainer?.let { prefs.setTrainer(it.sanitized()) }
             BackupSummary(restored.size, restored.sumOf { it.memories.size })
         }.also { staging.deleteRecursively() }
     }

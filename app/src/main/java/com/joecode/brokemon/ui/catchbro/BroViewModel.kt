@@ -24,6 +24,7 @@ data class CaughtResult(val id: Long, val name: String, val isShiny: Boolean, va
 data class BroState(
     val name: String = "",
     val catchLocation: String = "",
+    val flavorText: String = "",
     val type1: BroType? = null,
     val type2: BroType? = null,
     val rarity: Rarity = Rarity.COMMON,
@@ -83,6 +84,8 @@ class BroViewModel(
     fun onNameChanged(value: String) = _state.update { it.copy(name = value.take(BroState.MAX_NAME)) }
 
     fun onLocationChanged(value: String) = _state.update { it.copy(catchLocation = value.take(40)) }
+
+    fun onFlavorChanged(value: String) = _state.update { it.copy(flavorText = value.take(Bro.MAX_FLAVOR)) }
 
     fun onType1Selected(type: BroType) = _state.update {
         it.copy(type1 = type, type2 = it.type2.takeUnless { t -> t == type })
@@ -150,6 +153,7 @@ class BroViewModel(
                 avatarSeed = current.avatarSeed,
                 look = current.look,
                 eventFrame = eventFrame,
+                flavorText = current.flavorText.trim(),
             )
             val id = repository.insert(bro)
             val eventLabel = SeasonEvents.parse(eventFrame)?.label

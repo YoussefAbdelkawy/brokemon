@@ -27,6 +27,8 @@ data class QrPayload(
     val l: List<Int>? = null,
     /** Limited event frame, e.g. "RAMADAN|2027" (v2+, optional). */
     val e: String? = null,
+    /** Dex entry / flavor text (optional, older apps ignore it). */
+    val f: String? = null,
 )
 
 object QrCodec {
@@ -51,6 +53,7 @@ object QrCodec {
             a = bro.avatarSeed,
             l = bro.resolvedLook.toList(),
             e = bro.eventFrame,
+            f = bro.flavorText.take(Bro.MAX_FLAVOR).ifBlank { null },
         )
         return PREFIX + gson.toJson(payload)
     }
@@ -89,6 +92,7 @@ object QrCodec {
             eventFrame = p.e?.takeIf { SeasonEvents.parse(it) != null },
             look = p.l?.takeIf { it.size in 9..LookPart.entries.size }?.let { BroLook.fromList(it) },
             isTraded = true,
+            flavorText = p.f?.trim()?.take(Bro.MAX_FLAVOR).orEmpty(),
         )
     }
 }

@@ -96,4 +96,15 @@ class QrCodecTest {
         assertEquals("GYM_RAT", bro.type1)
         assertNull(bro.look)
     }
+
+    @Test
+    fun `dex entry travels with the card, capped`() {
+        val bro = testBro(name = "Omar").copy(flavorText = "Has never been on time. " + "x".repeat(200))
+        val decoded = QrCodec.decode(QrCodec.encode(bro))!!
+        assertEquals(bro.flavorText.take(com.joecode.brokemon.data.model.Bro.MAX_FLAVOR), decoded.flavorText)
+        // Old cards without one decode to blank, which falls back to the type blurb.
+        val plain = QrCodec.decode(QrCodec.encode(testBro()))!!
+        assertEquals("", plain.flavorText)
+        assertTrue(plain.dexEntry.isNotBlank())
+    }
 }

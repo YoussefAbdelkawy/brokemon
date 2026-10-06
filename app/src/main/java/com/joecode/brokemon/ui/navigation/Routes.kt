@@ -15,6 +15,10 @@ object Routes {
     const val SETTINGS = "settings"
     const val PRIVACY = "privacy"
     const val LICENSES = "licenses"
+    const val TRAINER = "trainer"
+    const val TRAINER_EDIT = "trainer/edit"
+    const val JOURNAL = "journal"
+    const val WILD = "wild"
 
     const val ARG_BRO_ID = "broId"
     const val ARG_SQUAD_ID = "squadId"

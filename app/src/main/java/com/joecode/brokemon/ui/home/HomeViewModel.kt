@@ -3,7 +3,10 @@ package com.joecode.brokemon.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
+import com.joecode.brokemon.data.DexView
 import com.joecode.brokemon.data.EventClock
+import com.joecode.brokemon.ui.trainer.TrainerProgress
+import com.joecode.brokemon.ui.trainer.trainerProgressFlow
 import com.joecode.brokemon.data.UserPrefs
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.BroType
@@ -80,14 +83,18 @@ data class HomeUiState(
     /** Limited event running right now (from the device date). */
     val event: SeasonEvent? = null,
     val showRoomHint: Boolean = false,
+    /** Uncaught "???" slots shown after your bros, so the dex is never empty (#001–#006). */
+    val mysterySlots: List<Long> = emptyList(),
+    val view: DexView = DexView.CARDS,
+    val progress: TrainerProgress = TrainerProgress(),
 )
 
-class HomeViewModel(repository: BroRepository, events: EventClock, private val prefs: UserPrefs) : ViewModel() {
+class HomeViewModel(private val repository: BroRepository, events: EventClock, private val prefs: UserPrefs) : ViewModel() {
 
     private val query = MutableStateFlow("")
     private val filter = MutableStateFlow(BroFilter())
 
-    val uiState: StateFlow<HomeUiState> =
+    private val dexState =
         combine(repository.bros, query, filter, events.current, prefs.roomHintSeen) { bros, q, f, event, hintSeen ->
             val all = bros.map { DexEntry(it, Evolution.info(it).stage) }
             val shown = all.filter { e -> (q.isBlank() || e.bro.name.contains(q.trim(), ignoreCase = true)) && f.matches(e) }
@@ -103,8 +110,24 @@ class HomeViewModel(repository: BroRepository, events: EventClock, private val p
                 wrappedYear = Wrapped.seasonYear() ?: if (event == SeasonEvent.NEW_YEAR) Year.now().value else null,
                 event = event,
                 showRoomHint = !hintSeen && bros.isNotEmpty(),
+                mysterySlots = if (q.isBlank() && f == BroFilter()) {
+                    ((bros.maxOfOrNull { it.id } ?: 0L) + 1..MIN_SLOTS).toList()
+                } else emptyList(),
             )
+        }
+
+    val uiState: StateFlow<HomeUiState> =
+        combine(dexState, trainerProgressFlow(repository, prefs), prefs.dexView) { state, progress, view ->
+            state.copy(progress = progress, view = view)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+
+    fun setView(view: DexView) {
+        viewModelScope.launch { prefs.setDexView(view) }
+    }
+
+    companion object {
+        const val MIN_SLOTS = 6L
+    }
 
     fun onQueryChanged(value: String) = query.update { value }
 

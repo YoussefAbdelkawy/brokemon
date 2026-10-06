@@ -8,7 +8,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import com.joecode.brokemon.domain.Journal
+import com.joecode.brokemon.ui.components.LocalHintStore
+import com.joecode.brokemon.ui.components.LocalUnlockedRewards
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,16 +49,22 @@ class MainActivity : ComponentActivity() {
                         .fillMaxSize()
                         .background(DexColors.Background),
                 ) {
+                    val claimed by prefs.claimedQuests.collectAsStateWithLifecycle(initialValue = emptySet())
                     done?.let { isDone ->
                         onboardingKnown = true
                         // Read once: flipping the start destination later would reset the nav graph.
                         val showOnboarding = remember { !isDone }
-                        BrokemonApp(
-                            showOnboarding = showOnboarding,
-                            onOnboardingDone = { scope.launch { prefs.setOnboardingDone() } },
-                            openBroId = pendingBroId.value,
-                            onOpenHandled = { pendingBroId.value = null },
-                        )
+                        CompositionLocalProvider(
+                            LocalHintStore provides prefs,
+                            LocalUnlockedRewards provides Journal.unlocked(claimed),
+                        ) {
+                            BrokemonApp(
+                                showOnboarding = showOnboarding,
+                                onOnboardingDone = { scope.launch { prefs.setOnboardingDone() } },
+                                openBroId = pendingBroId.value,
+                                onOpenHandled = { pendingBroId.value = null },
+                            )
+                        }
                     }
                 }
             }

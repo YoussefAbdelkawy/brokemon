@@ -3,6 +3,7 @@ package com.joecode.brokemon.ui.trade
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
+import com.joecode.brokemon.data.UserPrefs
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.domain.Evolution
 import com.joecode.brokemon.share.QrCodec
@@ -23,7 +24,7 @@ data class TradeUiState(
     val error: String? = null,
 )
 
-class TradeViewModel(private val repository: BroRepository) : ViewModel() {
+class TradeViewModel(private val repository: BroRepository, private val prefs: UserPrefs) : ViewModel() {
 
     private val incoming = MutableStateFlow<Bro?>(null)
     private val error = MutableStateFlow<String?>(null)
@@ -44,7 +45,13 @@ class TradeViewModel(private val repository: BroRepository) : ViewModel() {
         } else {
             error.update { null }
             incoming.update { bro }
+            viewModelScope.launch { prefs.setTradedQr() }
         }
+    }
+
+    /** Showing a card's QR to a friend counts as trading for the Journal quest. */
+    fun onQrShown() {
+        viewModelScope.launch { prefs.setTradedQr() }
     }
 
     fun onScanFailed(message: String) = error.update { message }

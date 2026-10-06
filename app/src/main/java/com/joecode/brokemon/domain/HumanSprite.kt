@@ -65,6 +65,7 @@ object HumanSprite {
     private const val BUCKET = 4
     private const val BACKWARDS = 5
     private const val HIJAB = 6
+    private const val TRAINER_CAP = 7
 
     // Outfits
     private const val TEE = 0
@@ -138,7 +139,7 @@ object HumanSprite {
         drawFacialHair(c, look.facialHair, p)
         drawMouth(c, look.expression)
         if (!hijab) {
-            drawFrontHair(c, look.hair, p, hatCovers = look.hat in listOf(CAP, BEANIE, BUCKET, BACKWARDS))
+            drawFrontHair(c, look.hair, p, hatCovers = look.hat in listOf(CAP, BEANIE, BUCKET, BACKWARDS, TRAINER_CAP))
             c.lightHair(p.hair, p.hairLight, p.hairShade)
         }
         drawHat(c, look.hat, p)
@@ -474,6 +475,18 @@ object HumanSprite {
                 c.row(3, 13, 18, shade) // brim peeking over the top
                 c.row(8, 14, 17, p.hair) // strap opening
                 c[14, 9] = WHITE; c[17, 9] = WHITE
+            }
+            TRAINER_CAP -> {
+                // Two-tone cap: colored crown, white front panel with a gold star, dark brim.
+                c.row(4, 12, 19, color)
+                c.row(5, 10, 21, color)
+                for (y in 6..8) c.row(y, 8, 23, color)
+                for (y in 4..8) c.row(y, 13, 18, WHITE)
+                c[15, 5] = GOLD; c[16, 5] = GOLD
+                c.row(6, 14, 17, GOLD)
+                c[15, 7] = GOLD_DARK; c[16, 7] = GOLD_DARK
+                c.row(9, 7, 24, shade)
+                c.row(10, 6, 25, LEATHER)
             }
             HIJAB -> {
                 for (y in 2..26) for (x in 3..28) {

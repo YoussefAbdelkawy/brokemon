@@ -120,7 +120,10 @@ object LookOptions {
     val expressions = listOf("Smile", "Grin", "Chill", "Smirk", "Shocked", "Sleepy")
     val facialHair = listOf("None", "Stubble", "Mustache", "Beard", "Goatee")
     val glasses = listOf("None", "Round", "Square", "Shades", "Aviators", "Thick")
-    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab")
+    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab", "Trainer cap")
+
+    /** Hats you unlock through the Trainer's Journal instead of having from the start. */
+    const val TRAINER_CAP = 7
     val outfits = listOf("Tee", "Hoodie", "Jersey", "Suit", "Galabeya", "Leather")
     val extras = listOf("None", "Earring", "Freckles", "Blush", "Nose ring", "Scar", "Mole")
 

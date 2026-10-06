@@ -51,3 +51,30 @@ private fun spriteBitmap(look: BroLook, stage: Int, shiny: Boolean, tint: Color?
     val size = HumanSprite.SIZE
     return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
 }
+
+/** Full standing (or sitting) figure, 32x52, nearest-neighbor scaled like the portraits. */
+@Composable
+fun BroFullBody(
+    look: BroLook,
+    stage: Int,
+    shiny: Boolean,
+    modifier: Modifier = Modifier,
+    sitting: Boolean = false,
+    tint: Color? = null,
+) {
+    val bitmap = remember(look, stage, shiny, sitting, tint) {
+        val pixels = HumanSprite.renderFullBody(look, stage, shiny, sitting)
+        if (tint != null) {
+            val t = tint.toArgb()
+            for (i in pixels.indices) if (pixels[i] != HumanSprite.CLEAR) pixels[i] = t
+        }
+        Bitmap.createBitmap(pixels, HumanSprite.BODY_W, HumanSprite.BODY_H, Bitmap.Config.ARGB_8888).asImageBitmap()
+    }
+    Image(
+        bitmap = bitmap,
+        contentDescription = null,
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+        filterQuality = FilterQuality.None,
+    )
+}

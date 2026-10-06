@@ -91,7 +91,7 @@ fun CatchBroScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 AvatarPreview(state, onLookChanged = viewModel::onLookChanged, onRandomize = viewModel::randomizeLook)
-                IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged)
+                IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged, viewModel::onFlavorChanged)
                 TypeSection(state, viewModel::onType1Selected, viewModel::onType2Selected)
                 RaritySection(state.rarity, viewModel::onRarityChanged)
                 StatsSection(state, viewModel::onStatChanged, viewModel::rerollStats)
@@ -188,6 +188,7 @@ private fun IdentitySection(
     state: BroState,
     onNameChanged: (String) -> Unit,
     onLocationChanged: (String) -> Unit,
+    onFlavorChanged: (String) -> Unit,
 ) {
     val colors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = DexColors.DexRed,
@@ -216,6 +217,18 @@ private fun IdentitySection(
             singleLine = true,
             colors = colors,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        OutlinedTextField(
+            value = state.flavorText,
+            onValueChange = onFlavorChanged,
+            label = { Text("Dex entry (optional)") },
+            placeholder = { Text("Can smell shawarma from 3 km away. Has never been on time.") },
+            colors = colors,
+            minLines = 2,
+            maxLines = 3,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            supportingText = { Text("One funny line, like a real dex. ${state.flavorText.length}/${com.joecode.brokemon.data.model.Bro.MAX_FLAVOR}") },
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -261,7 +274,7 @@ private fun TypeSection(
 }
 
 @Composable
-private fun TypeChoice(type: BroType, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
+internal fun TypeChoice(type: BroType, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
     val shape = CutCornerShape(4.dp)
     val alpha = if (enabled) 1f else 0.3f
     Row(

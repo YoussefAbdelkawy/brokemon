@@ -77,7 +77,7 @@ class BroRepository(
             bros.forEach { broDao.insert(it) }
             squads.forEach { squadDao.insert(it) }
         }
-        prefs.clear()
+        prefs.clear(keepProfile = true)
         // Don't replay evolution animations for bros that had already evolved.
         bros.forEach { prefs.setSeenStage(it.id, Evolution.info(it).stage.ordinal) }
         onChanged()

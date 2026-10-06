@@ -158,6 +158,16 @@ import java.time.MonthDay
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import androidx.compose.material.icons.automirrored.filled.Notes
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.joecode.brokemon.ui.components.ArrowSide
+import com.joecode.brokemon.ui.components.CoachMark
+import com.joecode.brokemon.ui.components.Hints
+import com.joecode.brokemon.ui.components.StatHexagon
+import com.joecode.brokemon.ui.components.rememberHintDismisser
+import com.joecode.brokemon.ui.components.rememberSeenHints
 
 @Composable
 fun BroDetailScreen(
@@ -175,6 +185,9 @@ fun BroDetailScreen(
 
     var menuOpen by remember { mutableStateOf(false) }
     var showRename by rememberSaveable { mutableStateOf(false) }
+    var showDexEntry by rememberSaveable { mutableStateOf(false) }
+    val seenHints = rememberSeenHints()
+    val dismissHint = rememberHintDismisser()
     var showRarity by rememberSaveable { mutableStateOf(false) }
     var showLookEditor by rememberSaveable { mutableStateOf(false) }
     var showStory by rememberSaveable { mutableStateOf(false) }
@@ -233,6 +246,11 @@ fun BroDetailScreen(
                             onClick = { menuOpen = false; showRename = true },
                         )
                         DropdownMenuItem(
+                            text = { Text("Edit dex entry") },
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.Notes, null) },
+                            onClick = { menuOpen = false; showDexEntry = true },
+                        )
+                        DropdownMenuItem(
                             text = { Text("Edit look") },
                             leadingIcon = { Icon(Icons.Filled.Face, null) },
                             onClick = { menuOpen = false; showLookEditor = true },
@@ -286,9 +304,18 @@ fun BroDetailScreen(
                         )
                     }
                     item {
+                        CoachMark(
+                            id = Hints.DETAIL_CHECK_IN,
+                            text = "Talked to ${bro.name} today? Tap here!",
+                            visible = seenHints != null && Hints.DETAIL_CHECK_IN !in seenHints && !CheckOnBro.checkedInToday(bro),
+                            arrow = ArrowSide.BOTTOM,
+                            arrowBias = 1f / 6f,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
                         ActionRow(
                             bro = bro,
                             onCheckIn = {
+                                dismissHint(Hints.DETAIL_CHECK_IN)
                                 viewModel.checkIn { result ->
                                     scope.launch {
                                         snackbar.showSnackbar(
@@ -358,6 +385,18 @@ fun BroDetailScreen(
                 confirm = "Save",
                 onConfirm = { viewModel.rename(it); showRename = false },
                 onDismiss = { showRename = false },
+            )
+        }
+        if (showDexEntry) {
+            TextInputDialog(
+                title = "Dex entry",
+                label = "One line about ${bro.name}",
+                initial = bro.flavorText,
+                confirm = "Save",
+                maxLength = Bro.MAX_FLAVOR,
+                placeholder = "Has never once replied in under 3 hours.",
+                onConfirm = { viewModel.setFlavorText(it); showDexEntry = false },
+                onDismiss = { showDexEntry = false },
             )
         }
         if (showRarity) {
@@ -487,16 +526,10 @@ private fun CardShowcase(bro: Bro, evolution: EvolutionInfo, tilt: TiltState, on
                 tilt = tilt,
                 tiltDegrees = 16f,
                 holoFloor = 0.14f,
+                showDexEntry = true,
                 onClick = onTap,
             )
         }
-        Text(
-            bro.primaryType.blurb,
-            color = DexColors.TextMuted,
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(4.dp))
         Text(
             if (bro.voiceLine != null) "HOLD & DRAG TO TILT · TAP TO HEAR THEM" else "HOLD & DRAG THE CARD TO TILT IT",
             style = PixelText.Tiny,
@@ -590,9 +623,30 @@ private fun ScoreLine(label: String, count: Int, per: Int) {
 
 @Composable
 private fun StatsPanel(bro: Bro) {
+    var asBars by rememberSaveable { mutableStateOf(false) }
     ScreenPanel(title = "Base stats") {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            bro.stats.asList().forEach { (info, value) -> StatBar(info.label, value, bro.primaryType.color) }
+            Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf(false to "HEX", true to "BARS").forEach { (bars, label) ->
+                    val selected = asBars == bars
+                    Text(
+                        label,
+                        style = PixelText.Tiny,
+                        color = if (selected) Color(0xFF101014) else DexColors.TextMuted,
+                        modifier = Modifier
+                            .background(if (selected) DexColors.ScreenText else Color.Transparent, CutCornerShape(3.dp))
+                            .border(1.dp, DexColors.ScreenBorder, CutCornerShape(3.dp))
+                            .clickable(role = Role.Tab) { asBars = bars }
+                            .semantics { this.selected = selected }
+                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                    )
+                }
+            }
+            if (asBars) {
+                bro.stats.asList().forEach { (info, value) -> StatBar(info.label, value, bro.primaryType.color) }
+            } else {
+                StatHexagon(bro.stats, bro.primaryType.color)
+            }
             Text(
                 "TOTAL ${bro.stats.total}",
                 style = PixelText.Tiny,
@@ -793,12 +847,22 @@ private fun TextInputDialog(
     onConfirm: (String) -> Unit,
     onDismiss: () -> Unit,
     dismiss: String = "Cancel",
+    maxLength: Int = 140,
+    placeholder: String? = null,
 ) {
     var text by rememberSaveable { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title.uppercase(), style = PixelText.Label) },
-        text = { OutlinedTextField(value = text, onValueChange = { text = it.take(140) }, label = { Text(label) }) },
+        text = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(maxLength) },
+                label = { Text(label) },
+                placeholder = placeholder?.let { { Text(it) } },
+                supportingText = { Text("${text.length}/$maxLength") },
+            )
+        },
         confirmButton = { TextButton(onClick = { onConfirm(text) }) { Text(confirm) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(dismiss) } },
     )

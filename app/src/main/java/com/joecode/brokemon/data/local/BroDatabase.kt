@@ -11,14 +11,15 @@ import com.joecode.brokemon.data.model.Squad
 
 @Database(
     entities = [Bro::class, Squad::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
     // Room writes these migrations from the exported schemas in app/schemas.
-    // v2: `look`. v3: `voiceLine` + `eventFrame`. v4: `room`.
+    // v2: `look`. v3: `voiceLine` + `eventFrame`. v4: `room`. v5: `flavorText`.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
     ],
 )
 @TypeConverters(Converters::class)

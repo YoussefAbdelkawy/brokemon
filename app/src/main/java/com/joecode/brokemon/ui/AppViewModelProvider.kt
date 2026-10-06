@@ -17,6 +17,8 @@ import com.joecode.brokemon.ui.settings.SettingsViewModel
 import com.joecode.brokemon.ui.squads.SquadDetailViewModel
 import com.joecode.brokemon.ui.squads.SquadsViewModel
 import com.joecode.brokemon.ui.trade.TradeViewModel
+import com.joecode.brokemon.ui.trainer.TrainerViewModel
+import com.joecode.brokemon.ui.wild.WildBroViewModel
 
 /** One factory for every screen's ViewModel; dependencies come from [AppContainer]. */
 object AppViewModelProvider {
@@ -28,10 +30,12 @@ object AppViewModelProvider {
         }
         initializer { SquadsViewModel(container().repository) }
         initializer { SquadDetailViewModel(createSavedStateHandle(), container().repository) }
-        initializer { TradeViewModel(container().repository) }
+        initializer { TradeViewModel(container().repository, container().prefs) }
         initializer { CheckOnBroViewModel(container().repository, container().prefs) }
         initializer { WrappedViewModel(container().repository) }
         initializer { RoomViewModel(createSavedStateHandle(), container().repository, container().prefs) }
+        initializer { TrainerViewModel(container().repository, container().prefs) }
+        initializer { WildBroViewModel(container().repository, container().prefs) }
         initializer { SettingsViewModel(container().repository, container().backup, container().prefs) }
     }
 }

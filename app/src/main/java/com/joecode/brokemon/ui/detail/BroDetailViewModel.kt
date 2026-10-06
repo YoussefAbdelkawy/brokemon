@@ -101,6 +101,8 @@ class BroDetailViewModel(
 
     fun setLook(look: BroLook) = edit { it.copy(look = look) }
 
+    fun setFlavorText(text: String) = edit { it.copy(flavorText = text.trim().take(Bro.MAX_FLAVOR)) }
+
     fun rename(name: String) {
         val clean = name.trim().take(24)
         if (clean.isNotEmpty()) edit { it.copy(name = clean) }
