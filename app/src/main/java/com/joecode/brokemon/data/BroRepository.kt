@@ -6,6 +6,10 @@ import com.joecode.brokemon.data.local.BroDatabase
 import com.joecode.brokemon.data.local.SquadDao
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Squad
+import com.joecode.brokemon.data.model.BattleRecord
+import com.joecode.brokemon.data.model.BroDexCrossRef
+import com.joecode.brokemon.data.model.RegionalDex
+import com.joecode.brokemon.data.model.Tournament
 import com.joecode.brokemon.domain.CheckOnBro
 import com.joecode.brokemon.domain.Evolution
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +25,8 @@ class BroRepository(
 ) {
     private val broDao: BroDao = database.broDao()
     private val squadDao: SquadDao = database.squadDao()
+    private val dexDao = database.dexDao()
+    private val battleDao = database.battleDao()
 
     val bros: Flow<List<Bro>> = broDao.getAllBros()
     val squads: Flow<List<Squad>> = squadDao.getAllSquads()
@@ -53,12 +59,54 @@ class BroRepository(
         onChanged()
     }
 
+    // --- Regional dexes ---------------------------------------------------------------
+
+    val dexes: Flow<List<RegionalDex>> = dexDao.getAllDexes()
+    val dexRefs: Flow<List<BroDexCrossRef>> = dexDao.getAllCrossRefs()
+
+    suspend fun createDex(name: String, colorIndex: Int): Long =
+        dexDao.insert(RegionalDex(name = name.trim().take(RegionalDex.MAX_NAME), colorIndex = colorIndex))
+
+    suspend fun renameDex(dex: RegionalDex, name: String) =
+        dexDao.update(dex.copy(name = name.trim().take(RegionalDex.MAX_NAME)))
+
+    suspend fun deleteDex(dex: RegionalDex) = dexDao.delete(dex)
+
+    /** Adds a bro to a dex with the next free regional number (#001, #002...). No-op if already in it. */
+    suspend fun addToDex(broId: Long, dexId: Long) {
+        database.withTransaction {
+            val refs = dexDao.crossRefsFor(dexId)
+            if (refs.any { it.broId == broId }) return@withTransaction
+            dexDao.insertCrossRef(BroDexCrossRef(broId, dexId, (refs.maxOfOrNull { it.regionalNumber } ?: 0) + 1))
+        }
+    }
+
+    suspend fun removeFromDex(broId: Long, dexId: Long) = dexDao.removeCrossRef(broId, dexId)
+
+    suspend fun allDexesOnce(): List<RegionalDex> = dexDao.getAllDexesOnce()
+    suspend fun allDexRefsOnce(): List<BroDexCrossRef> = dexDao.getAllCrossRefsOnce()
+
+    // --- Battles & tournaments -------------------------------------------------------
+
+    val battleRecords: Flow<List<BattleRecord>> = battleDao.getAllRecords()
+    val tournaments: Flow<List<Tournament>> = battleDao.getAllTournaments()
+
+    fun tournament(id: Long): Flow<Tournament?> = battleDao.getTournament(id)
+    suspend fun findBattle(id: Long): BattleRecord? = battleDao.findRecord(id)
+    suspend fun insertBattle(record: BattleRecord): Long = battleDao.insertRecord(record)
+    suspend fun insertTournament(t: Tournament): Long = battleDao.insertTournament(t)
+    suspend fun updateTournament(t: Tournament) = battleDao.updateTournament(t)
+    suspend fun deleteTournament(t: Tournament) = battleDao.deleteTournament(t)
+
     suspend fun insertSquad(squad: Squad): Long = squadDao.insert(squad)
     suspend fun updateSquad(squad: Squad) = squadDao.update(squad)
     suspend fun deleteSquad(squad: Squad) = squadDao.delete(squad)
     suspend fun allSquadsOnce(): List<Squad> = squadDao.getAllSquadsOnce()
 
     suspend fun wipeEverything() {
+        dexDao.deleteAll()
+        battleDao.deleteAllRecords()
+        battleDao.deleteAllTournaments()
         broDao.deleteAll()
         squadDao.deleteAll()
         media.deleteAll()
@@ -70,12 +118,22 @@ class BroRepository(
      * Replaces the whole Brodex with restored data in one transaction, keeping
      * the original ids so dex numbers and squad memberships survive.
      */
-    suspend fun replaceAll(bros: List<Bro>, squads: List<Squad>) {
+    suspend fun replaceAll(
+        bros: List<Bro>,
+        squads: List<Squad>,
+        dexes: List<RegionalDex> = emptyList(),
+        dexRefs: List<BroDexCrossRef> = emptyList(),
+    ) {
         database.withTransaction {
+            dexDao.deleteAll()
             broDao.deleteAll()
             squadDao.deleteAll()
             bros.forEach { broDao.insert(it) }
             squads.forEach { squadDao.insert(it) }
+            dexes.forEach { dexDao.insert(it) }
+            val broIds = bros.map { it.id }.toSet()
+            val dexIds = dexes.map { it.id }.toSet()
+            dexRefs.filter { it.broId in broIds && it.dexId in dexIds }.forEach { dexDao.insertCrossRef(it) }
         }
         prefs.clear(keepProfile = true)
         // Don't replay evolution animations for bros that had already evolved.

@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -86,8 +86,8 @@ fun SearchBar(
                     onClick = onOpenFilters,
                     modifier = Modifier
                         .size(56.dp)
-                        .background(DexColors.Surface, CutCornerShape(6.dp))
-                        .border(2.dp, if (filter.activeCount > 0) DexColors.LedYellow else DexColors.Outline, CutCornerShape(6.dp)),
+                        .background(DexColors.Surface, DexShape(6.dp))
+                        .border(2.dp, if (filter.activeCount > 0) DexColors.LedYellow else DexColors.Outline, DexShape(6.dp)),
                 ) { Icon(Icons.Filled.Tune, "Filters", tint = if (filter.activeCount > 0) DexColors.LedYellow else DexColors.Text) }
                 if (filter.activeCount > 0) {
                     Text(
@@ -195,8 +195,8 @@ fun FilterSheet(
                         style = PixelText.Tiny,
                         color = if (selected) Color(0xFF101014) else t.color,
                         modifier = Modifier
-                            .background(if (selected) t.color else Color.Transparent, CutCornerShape(4.dp))
-                            .border(1.dp, t.color, CutCornerShape(4.dp))
+                            .background(if (selected) t.color else Color.Transparent, DexShape(4.dp))
+                            .border(1.dp, t.color, DexShape(4.dp))
                             .clickable { onFilterChanged(filter.copy(types = filter.types.toggle(t))) }
                             .padding(horizontal = 8.dp, vertical = 8.dp),
                     )

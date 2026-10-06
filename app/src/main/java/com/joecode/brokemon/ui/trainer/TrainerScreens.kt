@@ -30,7 +30,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
@@ -75,6 +75,7 @@ import com.joecode.brokemon.ui.components.SegmentedBar
 import com.joecode.brokemon.ui.components.Sparkles
 import com.joecode.brokemon.ui.components.dragToTilt
 import com.joecode.brokemon.ui.components.rememberTiltState
+import com.joecode.brokemon.ui.components.rememberDeviceTilt
 import com.joecode.brokemon.ui.theme.DexColors
 import com.joecode.brokemon.ui.theme.PixelText
 
@@ -116,7 +117,7 @@ fun TrainerScreen(
                 item {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(Modifier.widthIn(max = 420.dp).fillMaxWidth().dragToTilt(tilt, scope)) {
-                            TrainerCard(trainer, p.level, p.totals, p.unlocked, tilt = tilt)
+                            TrainerCard(trainer, p.level, p.totals, p.unlocked, tilt = tilt, deviceTilt = rememberDeviceTilt(), trophies = p.trophies)
                         }
                         Spacer(Modifier.height(6.dp))
                         Text("HOLD & DRAG TO TILT", style = PixelText.Tiny, color = DexColors.Outline)
@@ -172,6 +173,8 @@ private fun LevelPanel(p: TrainerProgress) {
         XpLine("Log a memory", TrainerLevel.MEMORY_XP)
         XpLine("Add a fact", TrainerLevel.FACT_XP)
         XpLine("Claim a quest", TrainerLevel.QUEST_XP)
+        XpLine("Win a battle", TrainerLevel.BATTLE_WIN_XP)
+        XpLine("Daily battle quest", TrainerLevel.DAILY_BATTLE_XP)
     }
 }
 
@@ -191,7 +194,7 @@ private fun FramePanel(unlocked: List<TrainerFrame>, current: TrainerFrame, onPi
             TrainerFrame.entries.forEach { frame ->
                 val owned = frame in unlocked
                 val selected = frame == current
-                val shape = CutCornerShape(4.dp)
+                val shape = DexShape(4.dp)
                 Column(
                     Modifier
                         .width(72.dp)
@@ -349,7 +352,7 @@ fun JournalScreen(
 
 @Composable
 private fun QuestRow(number: Int, status: QuestStatus, onClaim: () -> Unit, onGo: () -> Unit, modifier: Modifier = Modifier) {
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     val pulse by rememberInfiniteTransition(label = "claim").animateFloat(
         initialValue = 0.96f,
         targetValue = 1.04f,
@@ -436,7 +439,7 @@ private fun RewardDialog(reward: Reward, masterToo: Boolean, onEquip: (() -> Uni
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RewardIcon(Reward.MASTER_BADGE, true, size = 28.dp)
                         Spacer(Modifier.width(8.dp))
-                        Text("JOURNAL COMPLETE: BRO MASTER BADGE!", style = PixelText.Tiny, color = DexColors.Gold)
+                        Text("JOURNAL COMPLETE: BRO MASTER BADGE + POW! BACKDROP", style = PixelText.Tiny, color = DexColors.Gold)
                     }
                 }
                 if (reward.kind == RewardKind.PART) {

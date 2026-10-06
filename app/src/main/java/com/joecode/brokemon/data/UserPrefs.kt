@@ -145,6 +145,66 @@ class UserPrefs(private val context: Context) : HintStore {
         context.dataStore.edit { it[DEX_VIEW] = view.name }
     }
 
+    // --- Earned shinies -----------------------------------------------------------
+
+    suspend fun lastShinyRoll(broId: Long): Long? = context.dataStore.data.first()[longPreferencesKey("shiny_roll_$broId")]
+
+    suspend fun setLastShinyRoll(broId: Long, epochDay: Long) {
+        context.dataStore.edit { it[longPreferencesKey("shiny_roll_$broId")] = epochDay }
+    }
+
+    /** True once any bro has turned shiny through a memory (unlocks the cape accessory). */
+    val shinyEarned: Flow<Boolean> = context.dataStore.data.map { it[SHINY_EARNED] ?: false }
+
+    suspend fun setShinyEarned() {
+        context.dataStore.edit { it[SHINY_EARNED] = true }
+    }
+
+    // --- Battles ------------------------------------------------------------------
+
+    val battleWins: Flow<Int> = context.dataStore.data.map { it[BATTLE_WINS] ?: 0 }
+    val dailyQuestsDone: Flow<Int> = context.dataStore.data.map { it[DAILY_QUESTS] ?: 0 }
+    val trophies: Flow<Int> = context.dataStore.data.map { it[TROPHIES] ?: 0 }
+    val dailyQuestDay: Flow<Long?> = context.dataStore.data.map { it[DAILY_QUEST_DAY] }
+
+    suspend fun addBattleWin() {
+        context.dataStore.edit { it[BATTLE_WINS] = (it[BATTLE_WINS] ?: 0) + 1 }
+    }
+
+    /** Returns true if this completed today's daily battle quest (it only counts once a day). */
+    suspend fun completeDailyQuest(epochDay: Long): Boolean {
+        var done = false
+        context.dataStore.edit {
+            if (it[DAILY_QUEST_DAY] != epochDay) {
+                it[DAILY_QUEST_DAY] = epochDay
+                it[DAILY_QUESTS] = (it[DAILY_QUESTS] ?: 0) + 1
+                done = true
+            }
+        }
+        return done
+    }
+
+    suspend fun addTrophy() {
+        context.dataStore.edit {
+            it[TROPHIES] = (it[TROPHIES] ?: 0) + 1
+            it[TOURNAMENT_WON] = true
+        }
+    }
+
+    /** Typewriter speed for battle text: 0 slow, 1 normal, 2 fast. */
+    val textSpeed: Flow<Int> = context.dataStore.data.map { it[TEXT_SPEED] ?: 1 }
+
+    suspend fun setTextSpeed(value: Int) {
+        context.dataStore.edit { it[TEXT_SPEED] = value.coerceIn(0, 2) }
+    }
+
+    /** True once the user (as a player) has won a tournament. */
+    val tournamentWon: Flow<Boolean> = context.dataStore.data.map { it[TOURNAMENT_WON] ?: false }
+
+    suspend fun setTournamentWon() {
+        context.dataStore.edit { it[TOURNAMENT_WON] = true }
+    }
+
     suspend fun lastExport(): Long? = context.dataStore.data.first()[LAST_EXPORT]
 
     suspend fun setLastExport(millis: Long) {
@@ -159,11 +219,11 @@ class UserPrefs(private val context: Context) : HintStore {
     suspend fun clear(keepProfile: Boolean = false) {
         context.dataStore.edit { prefs ->
             val keep: Map<Preferences.Key<*>, Any> = buildMap {
-                listOf(ONBOARDING_DONE, BIRTHDAY_REMINDERS, WEEKLY_NUDGE, DEX_VIEW, SEEN_HINTS).forEach { key ->
+                listOf(ONBOARDING_DONE, BIRTHDAY_REMINDERS, WEEKLY_NUDGE, DEX_VIEW, SEEN_HINTS, TEXT_SPEED).forEach { key ->
                     prefs[key]?.let { put(key, it) }
                 }
                 if (keepProfile) {
-                    listOf(TRAINER, CLAIMED_QUESTS, TRADED_QR).forEach { key -> prefs[key]?.let { put(key, it) } }
+                    listOf(TRAINER, CLAIMED_QUESTS, TRADED_QR, SHINY_EARNED, TOURNAMENT_WON, BATTLE_WINS, DAILY_QUESTS, DAILY_QUEST_DAY, TROPHIES).forEach { key -> prefs[key]?.let { put(key, it) } }
                 }
             }
             prefs.clear()
@@ -189,5 +249,12 @@ class UserPrefs(private val context: Context) : HintStore {
         val TRADED_QR = booleanPreferencesKey("traded_qr")
         val SEEN_HINTS = stringSetPreferencesKey("seen_hints")
         val DEX_VIEW = stringPreferencesKey("dex_view")
+        val SHINY_EARNED = booleanPreferencesKey("shiny_earned")
+        val TOURNAMENT_WON = booleanPreferencesKey("tournament_won")
+        val BATTLE_WINS = intPreferencesKey("battle_wins")
+        val DAILY_QUESTS = intPreferencesKey("daily_quests")
+        val DAILY_QUEST_DAY = longPreferencesKey("daily_quest_day")
+        val TROPHIES = intPreferencesKey("trophies")
+        val TEXT_SPEED = intPreferencesKey("text_speed")
     }
 }

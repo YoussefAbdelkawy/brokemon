@@ -26,6 +26,9 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -53,6 +56,8 @@ fun TradeScreen(
     onBack: () -> Unit,
     onShareBro: (Long) -> Unit,
     onOpenBro: (Long) -> Unit,
+    /** Opened from the "Scan QR" app shortcut: jump straight into the scanner. */
+    autoScan: Boolean = false,
     viewModel: TradeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,6 +81,14 @@ fun TradeScreen(
             .startScan()
             .addOnSuccessListener { viewModel.onScanned(it.rawValue) }
             .addOnFailureListener { viewModel.onScanFailed("Scanner unavailable. Make sure Google Play services is up to date.") }
+    }
+
+    var autoScanned by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(autoScan) {
+        if (autoScan && !autoScanned) {
+            autoScanned = true
+            scan()
+        }
     }
 
     DexScaffold(title = "Trade", onBack = onBack, snackbarHostState = snackbar) { padding ->

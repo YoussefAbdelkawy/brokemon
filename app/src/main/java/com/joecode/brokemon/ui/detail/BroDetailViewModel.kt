@@ -20,6 +20,10 @@ import com.joecode.brokemon.domain.EvolutionMoves
 import com.joecode.brokemon.ui.navigation.Routes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.joecode.brokemon.domain.ShinyHunt
+import com.joecode.brokemon.data.model.RegionalDex
+import kotlinx.coroutines.flow.stateIn
+import java.time.LocalDate
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -165,9 +169,50 @@ class BroDetailViewModel(
 
     private fun addMemory(file: File, type: MediaType) {
         val memory = Memory(fileUri = Uri.fromFile(file).toString(), mediaType = type)
-        edit { it.copy(memories = it.memories + memory) }
         _captionTarget.value = memory
+        viewModelScope.launch {
+            val bro = repository.findBro(broId) ?: return@launch
+            // Every memory is a chance to go shiny (one roll per bro per day).
+            val today = LocalDate.now().toEpochDay()
+            var turnedShiny = false
+            if (ShinyHunt.canRoll(bro.isShiny, prefs.lastShinyRoll(broId), today)) {
+                prefs.setLastShinyRoll(broId, today)
+                turnedShiny = ShinyHunt.roll()
+            }
+            repository.update(bro.copy(memories = bro.memories + memory, isShiny = bro.isShiny || turnedShiny))
+            if (turnedShiny) {
+                prefs.setShinyEarned()
+                _shinyMoment.value = true
+            }
+        }
     }
+
+    private val _shinyMoment = MutableStateFlow(false)
+    val shinyMoment: StateFlow<Boolean> = _shinyMoment.asStateFlow()
+
+    fun dismissShinyMoment() {
+        _shinyMoment.value = false
+    }
+
+    /** Each regional dex and whether this bro is in it. */
+    val dexMembership: StateFlow<List<Pair<RegionalDex, Boolean>>> =
+        kotlinx.coroutines.flow.combine(repository.dexes, repository.dexRefs) { dexes, refs ->
+            dexes.map { dex -> dex to refs.any { it.dexId == dex.id && it.broId == broId } }
+        }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun setInDex(dexId: Long, member: Boolean) {
+        viewModelScope.launch { if (member) repository.addToDex(broId, dexId) else repository.removeFromDex(broId, dexId) }
+    }
+
+    fun createDexWithBro(name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            val id = repository.createDex(name, colorIndex = dexMembership.value.size)
+            repository.addToDex(broId, id)
+        }
+    }
+
+    fun setHabitat(value: String) = edit { it.copy(habitat = value.trim().take(Bro.MAX_HABITAT).ifBlank { null }) }
 
     fun setCaption(memory: Memory, caption: String) {
         _captionTarget.value = null

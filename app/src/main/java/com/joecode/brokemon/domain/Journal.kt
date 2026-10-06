@@ -1,6 +1,7 @@
 package com.joecode.brokemon.domain
 
 import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.LookPart
 import com.joecode.brokemon.data.model.TrainerFrame
 import kotlin.math.sqrt
 
@@ -15,6 +16,9 @@ enum class Reward(val label: String, val kind: RewardKind, val description: Stri
     SILVER_FRAME("Silver Frame", RewardKind.FRAME, "Shiny silver trim for your Trainer Card."),
     GOLD_FRAME("Gold Holo Frame", RewardKind.FRAME, "The flex. A gold holo Trainer Card."),
     MASTER_BADGE("Bro Master Badge", RewardKind.BADGE, "Finished the whole Journal."),
+    HERO_CAPE("Hero Cape", RewardKind.PART, "Back accessory. Earned when a memory turns a bro shiny."),
+    POW_BACKDROP("POW! Backdrop", RewardKind.PART, "Comic backdrop. Earned by finishing the whole Journal."),
+    CHAMPION_GLOW("Trophy Glow", RewardKind.PART, "Champion backdrop. Earned by winning a tournament."),
     ;
 
     val frame: TrainerFrame?
@@ -56,10 +60,16 @@ object Journal {
             QuestStatus(quest, done || quest.name in claimed, quest.name in claimed)
         }
 
-    /** Rewards the user owns: one per claimed quest, plus Bro Master for finishing. */
-    fun unlocked(claimed: Set<String>): Set<Reward> {
-        val fromQuests = Quest.entries.filter { it.name in claimed }.map { it.reward }.toSet()
-        return if (fromQuests.size == Quest.entries.size) fromQuests + Reward.MASTER_BADGE else fromQuests
+    /**
+     * Rewards the user owns: one per claimed quest, Bro Master + the POW! backdrop
+     * for finishing, the Hero Cape for an earned shiny, Trophy Glow for a tournament win.
+     */
+    fun unlocked(claimed: Set<String>, shinyEarned: Boolean = false, champion: Boolean = false): Set<Reward> = buildSet {
+        val fromQuests = Quest.entries.filter { it.name in claimed }.map { it.reward }
+        addAll(fromQuests)
+        if (fromQuests.size == Quest.entries.size) { add(Reward.MASTER_BADGE); add(Reward.POW_BACKDROP) }
+        if (shinyEarned) add(Reward.HERO_CAPE)
+        if (champion) add(Reward.CHAMPION_GLOW)
     }
 
     fun unlockedFrames(claimed: Set<String>): List<TrainerFrame> =
@@ -83,9 +93,12 @@ object TrainerLevel {
     const val MEMORY_XP = 40
     const val FACT_XP = 10
     const val QUEST_XP = 100
+    const val BATTLE_WIN_XP = 15
+    const val DAILY_BATTLE_XP = 60
     const val MAX_LEVEL = 99
 
-    fun xp(bros: List<Bro>, hasTrainer: Boolean, claimedQuests: Int): Int =
+    fun xp(bros: List<Bro>, hasTrainer: Boolean, claimedQuests: Int, battleWins: Int = 0, dailyQuests: Int = 0): Int =
+        battleWins * BATTLE_WIN_XP + dailyQuests * DAILY_BATTLE_XP +
         (if (hasTrainer) TRAINER_CARD_XP else 0) +
             bros.size * CATCH_XP +
             bros.sumOf { it.checkInCount } * CHECK_IN_XP +
@@ -103,5 +116,29 @@ object TrainerLevel {
             levelStartXp = xpFor(level),
             nextLevelXp = if (level >= MAX_LEVEL) null else xpFor(level + 1),
         )
+    }
+}
+
+/** Avatar options that start locked and the reward that unlocks each. */
+object AvatarLocks {
+    fun requiredReward(part: LookPart, index: Int): Reward? {
+        return when {
+            part == LookPart.HAT && index == com.joecode.brokemon.data.model.LookOptions.TRAINER_CAP -> Reward.TRAINER_CAP
+            part == LookPart.BACK && index == 1 -> Reward.HERO_CAPE
+            part == LookPart.BACKGROUND && index == 1 -> Reward.POW_BACKDROP
+            part == LookPart.BACKGROUND && index == 5 -> Reward.CHAMPION_GLOW
+            else -> null
+        }
+    }
+
+    /** A sample look showing off a PART reward, for icons. */
+    fun showcase(reward: Reward): com.joecode.brokemon.data.model.BroLook {
+        val base = com.joecode.brokemon.data.model.BroLook(skin = 2, hair = 1, outfit = 1, outfitColor = 0)
+        return when (reward) {
+            Reward.HERO_CAPE -> base.copy(back = 1)
+            Reward.POW_BACKDROP -> base.copy(background = 1)
+            Reward.CHAMPION_GLOW -> base.copy(background = 5)
+            else -> base.copy(hat = com.joecode.brokemon.data.model.LookOptions.TRAINER_CAP)
+        }
     }
 }

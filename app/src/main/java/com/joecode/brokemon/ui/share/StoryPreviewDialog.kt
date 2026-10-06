@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,8 +43,8 @@ fun StoryPreviewDialog(
     Dialog(onDismissRequest = onDismiss) {
         Column(
             Modifier
-                .background(DexColors.Surface, CutCornerShape(8.dp))
-                .border(2.dp, DexColors.Outline, CutCornerShape(8.dp))
+                .background(DexColors.Surface, DexShape(8.dp))
+                .border(2.dp, DexColors.Outline, DexShape(8.dp))
                 .padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),

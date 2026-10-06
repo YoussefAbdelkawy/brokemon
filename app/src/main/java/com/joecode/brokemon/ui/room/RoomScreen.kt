@@ -35,7 +35,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -59,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
+import com.joecode.brokemon.ui.components.AvatarBitmaps
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -136,9 +137,9 @@ fun RoomScreen(
 private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBack: () -> Unit) {
     val room = bro.resolvedRoom
     val place = RoomRenderer.placement(room)
-    val roomBitmap = remember(room) { pixels(RoomRenderer.render(room), RoomRenderer.W, RoomRenderer.H) }
+    val roomBitmap = remember(room) { roomImage(room) }
     val broBitmap = remember(bro.resolvedLook, stage, bro.isShiny, place.sitting) {
-        pixels(HumanSprite.renderFullBody(bro.resolvedLook, stage.ordinal, bro.isShiny, place.sitting), HumanSprite.BODY_W, HumanSprite.BODY_H)
+        AvatarBitmaps.fullBody(bro.resolvedLook, stage.ordinal, bro.isShiny, place.sitting).asImageBitmap()
     }
     val audio = rememberAudioPlayer()
     val haptics = LocalHapticFeedback.current
@@ -177,12 +178,12 @@ private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBac
                 contentDescription = "${bro.name}'s room",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.FillBounds,
-                filterQuality = FilterQuality.None,
+                filterQuality = AvatarBitmaps.filterQuality,
             )
             Image(
                 broBitmap,
                 contentDescription = bro.name,
-                filterQuality = FilterQuality.None,
+                filterQuality = AvatarBitmaps.filterQuality,
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier
                     .offset { IntOffset((px * place.x).roundToPx(), (px * (place.y + bob - hop)).roundToPx()) }
@@ -205,8 +206,8 @@ private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBac
                     modifier = Modifier
                         .offset(x = px * (place.x - 14), y = px * (place.y - 13))
                         .width(px * 60)
-                        .background(Color.White, CutCornerShape(6.dp))
-                        .border(2.dp, Color(0xFF101014), CutCornerShape(6.dp))
+                        .background(Color.White, DexShape(6.dp))
+                        .border(2.dp, Color(0xFF101014), DexShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 5.dp),
                 )
             }
@@ -228,7 +229,7 @@ private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBac
                 style = PixelText.Label,
                 color = Color.White,
                 modifier = Modifier
-                    .background(Color.Black.copy(alpha = 0.55f), CutCornerShape(4.dp))
+                    .background(Color.Black.copy(alpha = 0.55f), DexShape(4.dp))
                     .padding(horizontal = 10.dp, vertical = 8.dp),
             )
         }
@@ -316,7 +317,7 @@ private fun RoomDecorator(room: BroRoom, onRoomChange: (BroRoom) -> Unit) {
                     style = PixelText.Tiny,
                     color = if (selected) Color(0xFF101014) else DexColors.Text,
                     modifier = Modifier
-                        .background(if (selected) DexColors.LedYellow else DexColors.SurfaceHigh, CutCornerShape(4.dp))
+                        .background(if (selected) DexColors.LedYellow else DexColors.SurfaceHigh, DexShape(4.dp))
                         .clickable { part = p }
                         .padding(horizontal = 10.dp, vertical = 8.dp),
                 )
@@ -326,7 +327,7 @@ private fun RoomDecorator(room: BroRoom, onRoomChange: (BroRoom) -> Unit) {
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items((0 until part.count).toList()) { i ->
                 val option = room.with(part, i)
-                val preview = remember(option) { pixels(RoomRenderer.render(option), RoomRenderer.W, RoomRenderer.H) }
+                val preview = remember(option) { roomImage(option) }
                 val selected = room[part] == i
                 Column(
                     Modifier
@@ -337,12 +338,12 @@ private fun RoomDecorator(room: BroRoom, onRoomChange: (BroRoom) -> Unit) {
                     Image(
                         preview,
                         contentDescription = part.options[i],
-                        filterQuality = FilterQuality.None,
+                        filterQuality = AvatarBitmaps.filterQuality,
                         contentScale = ContentScale.FillBounds,
                         modifier = Modifier
                             .fillMaxWidth()
                             .aspectRatio(RoomRenderer.W / RoomRenderer.H.toFloat())
-                            .border(2.dp, if (selected) DexColors.LedYellow else DexColors.ScreenBorder, CutCornerShape(3.dp)),
+                            .border(2.dp, if (selected) DexColors.LedYellow else DexColors.ScreenBorder, DexShape(3.dp)),
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
@@ -356,6 +357,10 @@ private fun RoomDecorator(room: BroRoom, onRoomChange: (BroRoom) -> Unit) {
         }
     }
 }
+
+/** The room in the current art style: pixel art (classic) or flat vector (cosmos). */
+private fun roomImage(room: com.joecode.brokemon.data.model.BroRoom): ImageBitmap =
+    if (AvatarBitmaps.smooth) FlatRoom.render(room).asImageBitmap() else pixels(RoomRenderer.render(room), RoomRenderer.W, RoomRenderer.H)
 
 private fun pixels(px: IntArray, w: Int, h: Int): ImageBitmap =
     Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888).asImageBitmap()
@@ -381,8 +386,8 @@ private fun RoomStats(bro: Bro, stage: EvolutionStage) {
             Column(
                 Modifier
                     .weight(1f)
-                    .background(DexColors.Screen, CutCornerShape(4.dp))
-                    .border(1.dp, DexColors.ScreenBorder, CutCornerShape(4.dp))
+                    .background(DexColors.Screen, DexShape(4.dp))
+                    .border(1.dp, DexColors.ScreenBorder, DexShape(4.dp))
                     .padding(vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

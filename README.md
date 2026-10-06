@@ -1,12 +1,16 @@
 # Brokemon
 
-A Pokédex-style Android app where you "catch" your real-life friends ("bros") and collect them as pixel-art trading cards that evolve as the friendship grows. Local-first: everything stays on the phone.
+A handheld-dex-style Android app where you "catch" your real-life friends ("bros") and collect them as pixel-art trading cards that evolve as the friendship grows. Local-first: everything stays on the phone.
 
 Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · minSdk 26 · targetSdk 36 · compileSdk 37
 
 | Brodex | Card | Room | Catch | Squads |
 |---|---|---|---|---|
 | ![](docs/screenshots/01_home.png) | ![](docs/screenshots/03_detail.png) | ![](docs/screenshots/04_room.png) | ![](docs/screenshots/02_catch.png) | ![](docs/screenshots/05_squads.png) |
+
+| Cosmos style | Cosmos battle | Classic battle | Tournament | Accessories |
+|---|---|---|---|---|
+| ![](docs/screenshots/r4_cosmos_home.png) | ![](docs/screenshots/r4_cosmos_battle.png) | ![](docs/screenshots/r4_classic_battle.png) | ![](docs/screenshots/r4_tournament.png) | ![](docs/screenshots/r4_accessories.png) |
 
 | Bro Prof intro | Empty dex | Pokédex list | Binder | Trainer Card | Journal | Wild bro | Stat hexagon |
 |---|---|---|---|---|---|---|---|
@@ -45,6 +49,23 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 - **Dex entries**: one funny line per bro ("Can smell shawarma from 3 km away"), set at catch or from the card menu. It shows on the big card, in the binder and as the subtitle in the list, and travels in QR trades. Bros without one fall back to their type's blurb.
 - **A wild bro appeared!**: shake the phone on Home (accelerometer, only while the screen is open) or tap WILD. A random bro, leaning toward whoever you've neglected, jumps out with a retro battle intro: flashes, closing bars, slide-in and a text box. Then you can message them on WhatsApp (falls back to the share sheet), check in, roll another, or run.
 - **Stat hexagon**: a Canvas radar chart of the six stats that grows in from the middle, with a HEX/BARS toggle.
+- **Two art styles, one codebase**: product flavors `classic` (red pixel handheld, Press Start 2P, nearest-neighbor sprites) and `cosmos` ("Brokemon Cosmos": flat vector illustration, deep-space palette, soft glows, rounded shapes, Fredoka font). Everything style-specific lives in `AppStyle` (per flavor), `FlatAvatar` and `FlatRoom`; both apps install side by side and can battle each other.
+- **Real foil holo**: the card foil is three layers driven by finger tilt + the phone's gyro (low-pass filtered, ±25°, only while a card is on screen): a rainbow band that sweeps along the diagonal, a specular glare moving opposite to the tilt (only when tilted), and a foil texture (hairlines + sparkle grain). Masked to the art and the border so text stays readable. AGSL `RuntimeShader` on Android 13+, gradient + texture fallback below. Levels: Common none, Rare band, Epic band + glare, Legendary everything + sparkles, Shiny gold/silver.
+- **Epic rarity** between Rare and Legendary.
+- **App shortcuts**: long-press the icon for Catch a Bro, Scan QR and Random Bro (pixel shortcut icons).
+- **Earned shinies**: no more shiny roll at catch. Each logged memory has a 1/20 chance (`ShinyHunt.ODDS`) to turn the bro shiny, at most one roll per bro per day, with a full-screen "SHINY!" card-flip moment and a share button.
+- **Habitat**: "Uni cafeteria", "Discord"... a text field with quick-pick chips, shown on the big card and in Catch info.
+- **Regional dexes**: make "Uni Dex", "Gym Dex"... Each has its own numbering (#001...) and counter. Bros can be in several (many-to-many `BroDexCrossRef`). Switch dexes with chips on Home; cards, list and binder all follow. Manage membership from Home or a card's menu.
+- **Accessories**: one per slot, all original: head (headset, headphones, ninja-style band), face (hero mask), new anime spikes hair, made-up football kits + captain armband, hand items (manga, comic, football, controller, coffee, shawarma, gym bag, keeper gloves), back (hero cape, cosplay cape, backpack, scarf) and backdrops (POW!, gaming chair, pitch, speed lines, trophy glow). Some are locked: Trainer cap (Journal), Hero cape (earn a shiny), POW! (finish the Journal), Trophy glow (win a tournament).
+- **Bro Battles** (all free and offline, no server):
+  - A pure-Kotlin, deterministic engine (`domain/battle`): state + two actions + seed → next state, so phones only exchange actions. Legality checks (illegal = forfeit), snapshot validation (stats and moves recomputed from the rules), 3v3 or 1v1, Fair Mode (everyone Lv.30), type matchups from `TypeMatchups`, five original status effects (Cringed, Left on Read, Hyped, Sleepy, Main Character) in one table.
+  - Moves unlock with friendship (level = 5 + evolution score, max 50); 4 equipped per bro; custom signature moves use fixed power templates.
+  - Modes: Practice vs CPU, same phone (pass and play), and Nearby (Google Nearby Connections over Bluetooth/Wi-Fi): host gets a 6-character code (no 0/O/1/I/L) + QR, codes expire after 10 minutes, 60-second reconnect window.
+  - Battle screen: typewriter text with big pools of original lines, hit flash, screen shake and haptics, "goes AFK" faints, emotes, 30-second turn timer, recap image (9:16), rematch.
+  - Tournaments (bracket with byes or round robin) built from a dex or squad, kept on the organizer's phone; play matches here or on Nearby, or record a result. Champions get a trophy on the Trainer Card and a gold champion frame on their MVP bro.
+  - Local records: W/L, streaks, monthly season table, you-vs-each-friend leaderboard, MVP bro, and replays (seed + actions).
+  - Daily battle quest (win with a given type, +60 XP), win XP, and a capped once-a-day bond bonus for the MVP.
+  - Accessibility: type icons next to colors, battle text speed setting.
 - **Privacy**: onboarding consent, in-app privacy policy, delete-all, no INTERNET permission.
 
 ## Build
@@ -52,9 +73,9 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 Open the project in Android Studio (a current stable release that supports AGP 9.4), let Gradle sync, and run the `app` configuration.
 
 ```
-./gradlew :app:testDebugUnitTest   # 55 unit tests (evolution, QR codec, recommender, matchups, sprites, wrapped, journal/levels, shake)
-./gradlew :app:assembleDebug
-./gradlew :app:bundleRelease       # Play Store .aab (R8 minified + resource shrinking)
+./gradlew :app:testClassicDebugUnitTest   # 72 unit tests (battle engine, tournaments, journal, QR, evolution, sprites...)
+./gradlew :app:assembleClassicDebug :app:assembleCosmosDebug
+./gradlew :app:bundleClassicRelease :app:bundleCosmosRelease   # Play Store .aab files (R8 + resource shrinking)
 ```
 
 Release signing reads `keystore.properties` at the repo root (git-ignored):

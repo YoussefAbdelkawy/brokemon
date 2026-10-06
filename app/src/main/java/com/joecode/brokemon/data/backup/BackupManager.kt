@@ -9,6 +9,8 @@ import com.joecode.brokemon.data.BroRepository
 import com.joecode.brokemon.data.MediaStorage
 import com.joecode.brokemon.data.UserPrefs
 import com.joecode.brokemon.data.model.Trainer
+import com.joecode.brokemon.data.model.RegionalDex
+import com.joecode.brokemon.data.model.BroDexCrossRef
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Squad
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,8 @@ data class BackupFile(
     val squads: List<Squad> = emptyList(),
     /** Your own Trainer Card (older backups don't have it). */
     val trainer: Trainer? = null,
+    val dexes: List<RegionalDex> = emptyList(),
+    val dexRefs: List<BroDexCrossRef> = emptyList(),
 ) {
     companion object {
         const val FORMAT = "brokemon-backup"
@@ -73,6 +77,8 @@ class BackupManager(
                 bros = portable,
                 squads = squads,
                 trainer = prefs.trainerOnce(),
+                dexes = repository.allDexesOnce(),
+                dexRefs = repository.allDexRefsOnce(),
             )
             val json = gson.toJson(backup)
             val out = context.contentResolver.openOutputStream(target) ?: error("Couldn't open the file")
@@ -137,7 +143,7 @@ class BackupManager(
                     flavorText = bro.flavorText.orEmpty(),
                 )
             }
-            repository.replaceAll(restored, data.squads.orEmpty())
+            repository.replaceAll(restored, data.squads.orEmpty(), data.dexes.orEmpty(), data.dexRefs.orEmpty())
             data.trainer?.let { prefs.setTrainer(it.sanitized()) }
             BackupSummary(restored.size, restored.sumOf { it.memories.size })
         }.also { staging.deleteRecursively() }

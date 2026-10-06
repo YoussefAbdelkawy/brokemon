@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -91,7 +91,7 @@ fun CatchBroScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 AvatarPreview(state, onLookChanged = viewModel::onLookChanged, onRandomize = viewModel::randomizeLook)
-                IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged, viewModel::onFlavorChanged)
+                IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged, viewModel::onFlavorChanged, viewModel::onHabitatChanged)
                 TypeSection(state, viewModel::onType1Selected, viewModel::onType2Selected)
                 RaritySection(state.rarity, viewModel::onRarityChanged)
                 StatsSection(state, viewModel::onStatChanged, viewModel::rerollStats)
@@ -189,6 +189,7 @@ private fun IdentitySection(
     onNameChanged: (String) -> Unit,
     onLocationChanged: (String) -> Unit,
     onFlavorChanged: (String) -> Unit,
+    onHabitatChanged: (String) -> Unit,
 ) {
     val colors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = DexColors.DexRed,
@@ -219,6 +220,7 @@ private fun IdentitySection(
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
             modifier = Modifier.fillMaxWidth(),
         )
+        HabitatField(state.habitat, onHabitatChanged, colors)
         OutlinedTextField(
             value = state.flavorText,
             onValueChange = onFlavorChanged,
@@ -275,7 +277,7 @@ private fun TypeSection(
 
 @Composable
 internal fun TypeChoice(type: BroType, selected: Boolean, enabled: Boolean, onClick: () -> Unit) {
-    val shape = CutCornerShape(4.dp)
+    val shape = DexShape(4.dp)
     val alpha = if (enabled) 1f else 0.3f
     Row(
         Modifier
@@ -322,6 +324,7 @@ private fun RaritySection(rarity: Rarity, onRarityChanged: (Rarity) -> Unit) {
             when (rarity) {
                 Rarity.COMMON -> "A solid everyday bro."
                 Rarity.RARE -> "Hard to find, harder to replace."
+                Rarity.EPIC -> "Main-cast energy. Top-tier friend."
                 Rarity.LEGENDARY -> "Once-in-a-lifetime. Choose wisely."
             },
             color = DexColors.TextMuted,
@@ -432,4 +435,46 @@ private fun MovesSection(
 @Composable
 private fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     Text(text.uppercase(), style = PixelText.Label, color = DexColors.DexRedLight, modifier = modifier)
+}
+
+/** Habitat: free text plus quick-pick chips. Shared by the catch form and the edit dialog. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun HabitatField(
+    value: String,
+    onChange: (String) -> Unit,
+    colors: androidx.compose.material3.TextFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = DexColors.DexRed,
+        unfocusedBorderColor = DexColors.Outline,
+        focusedLabelColor = DexColors.DexRedLight,
+    ),
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onChange,
+            label = { Text("Habitat (optional)") },
+            placeholder = { Text("Uni cafeteria, the gym, Discord...") },
+            singleLine = true,
+            colors = colors,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            com.joecode.brokemon.data.model.Bro.HABITAT_PICKS.forEach { pick ->
+                val selected = value.equals(pick, ignoreCase = true)
+                val shape = DexShape(4.dp)
+                Text(
+                    pick.uppercase(),
+                    style = PixelText.Tiny,
+                    color = if (selected) Color(0xFF101014) else DexColors.ScreenText,
+                    modifier = Modifier
+                        .background(if (selected) DexColors.ScreenText else Color.Transparent, shape)
+                        .border(1.dp, DexColors.ScreenBorder, shape)
+                        .clickable { onChange(pick) }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                )
+            }
+        }
+    }
 }

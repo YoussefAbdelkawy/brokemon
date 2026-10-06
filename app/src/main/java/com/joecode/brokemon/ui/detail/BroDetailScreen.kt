@@ -38,12 +38,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Mic
@@ -130,6 +131,7 @@ import com.joecode.brokemon.ui.components.TiltState
 import com.joecode.brokemon.ui.components.BroCard
 import com.joecode.brokemon.ui.components.dragToTilt
 import com.joecode.brokemon.ui.components.rememberTiltState
+import com.joecode.brokemon.ui.components.rememberDeviceTilt
 import com.joecode.brokemon.data.CheckInResult
 import com.joecode.brokemon.domain.CheckOnBro
 import androidx.compose.material.icons.filled.CheckCircle
@@ -186,6 +188,10 @@ fun BroDetailScreen(
     var menuOpen by remember { mutableStateOf(false) }
     var showRename by rememberSaveable { mutableStateOf(false) }
     var showDexEntry by rememberSaveable { mutableStateOf(false) }
+    var showHabitat by rememberSaveable { mutableStateOf(false) }
+    var showDexes by rememberSaveable { mutableStateOf(false) }
+    val dexMembership by viewModel.dexMembership.collectAsStateWithLifecycle()
+    val shinyMoment by viewModel.shinyMoment.collectAsStateWithLifecycle()
     val seenHints = rememberSeenHints()
     val dismissHint = rememberHintDismisser()
     var showRarity by rememberSaveable { mutableStateOf(false) }
@@ -244,6 +250,11 @@ fun BroDetailScreen(
                             text = { Text("Rename") },
                             leadingIcon = { Icon(Icons.Filled.Edit, null) },
                             onClick = { menuOpen = false; showRename = true },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Regional dexes") },
+                            leadingIcon = { Icon(Icons.Filled.CollectionsBookmark, null) },
+                            onClick = { menuOpen = false; showDexes = true },
                         )
                         DropdownMenuItem(
                             text = { Text("Edit dex entry") },
@@ -351,6 +362,7 @@ fun BroDetailScreen(
                         InfoPanel(
                             bro = bro,
                             onPickMeetDate = { showDatePicker = true },
+                            onEditHabitat = { showHabitat = true },
                             onTradeableChanged = viewModel::setTradeable,
                         )
                     }
@@ -361,6 +373,17 @@ fun BroDetailScreen(
 
         if (bro != null) {
             evolutionEvent?.let { EvolutionOverlay(bro, it, viewModel::onEvolutionFinished) }
+            if (shinyMoment && captionTarget == null && evolutionEvent == null) {
+                ShinyMoment(
+                    bro = bro,
+                    stage = state.evolution?.stage ?: EvolutionStage.ROOKIE,
+                    onShare = {
+                        val stage = state.evolution?.stage ?: EvolutionStage.ROOKIE
+                        ShareImage.share(context, StoryImages(context).card(bro, stage), "brokemon-shiny-${bro.dexNumber.drop(1)}", "Share shiny ${bro.name}")
+                    },
+                    onDismiss = viewModel::dismissShinyMoment,
+                )
+            }
         }
     }
 
@@ -385,6 +408,22 @@ fun BroDetailScreen(
                 confirm = "Save",
                 onConfirm = { viewModel.rename(it); showRename = false },
                 onDismiss = { showRename = false },
+            )
+        }
+        if (showDexes) {
+            RegionalDexDialog(
+                broName = bro.name,
+                membership = dexMembership,
+                onToggle = viewModel::setInDex,
+                onCreate = viewModel::createDexWithBro,
+                onDismiss = { showDexes = false },
+            )
+        }
+        if (showHabitat) {
+            HabitatDialog(
+                initial = bro.habitat.orEmpty(),
+                onConfirm = { viewModel.setHabitat(it); showHabitat = false },
+                onDismiss = { showHabitat = false },
             )
         }
         if (showDexEntry) {
@@ -505,7 +544,7 @@ fun BroDetailScreen(
 }
 
 /**
- * The card itself, big and centered, like holding it in Pokémon TCG Pocket:
+ * The card itself, big and centered, like holding a real trading card:
  * press and drag to tilt it in 3D (the foil follows your finger), release to
  * let it spring back. Tap plays their voice line if they have one.
  */
@@ -525,7 +564,7 @@ private fun CardShowcase(bro: Bro, evolution: EvolutionInfo, tilt: TiltState, on
                 stage = evolution.stage,
                 tilt = tilt,
                 tiltDegrees = 16f,
-                holoFloor = 0.14f,
+                deviceTilt = rememberDeviceTilt(),
                 showDexEntry = true,
                 onClick = onTap,
             )
@@ -634,8 +673,8 @@ private fun StatsPanel(bro: Bro) {
                         style = PixelText.Tiny,
                         color = if (selected) Color(0xFF101014) else DexColors.TextMuted,
                         modifier = Modifier
-                            .background(if (selected) DexColors.ScreenText else Color.Transparent, CutCornerShape(3.dp))
-                            .border(1.dp, DexColors.ScreenBorder, CutCornerShape(3.dp))
+                            .background(if (selected) DexColors.ScreenText else Color.Transparent, DexShape(3.dp))
+                            .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
                             .clickable(role = Role.Tab) { asBars = bars }
                             .semantics { this.selected = selected }
                             .padding(horizontal = 8.dp, vertical = 5.dp),
@@ -666,7 +705,7 @@ private fun MovesPanel(bro: Bro) {
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 bro.moves.forEach { move ->
-                    val shape = CutCornerShape(4.dp)
+                    val shape = DexShape(4.dp)
                     Text(
                         move.uppercase(),
                         style = PixelText.Tiny,
@@ -735,7 +774,7 @@ private fun MemoryPanel(
 
 @Composable
 private fun MemoryButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier) {
-    OutlinedButton(onClick = onClick, modifier = modifier, shape = CutCornerShape(4.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
+    OutlinedButton(onClick = onClick, modifier = modifier, shape = DexShape(4.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, contentDescription = null, tint = DexColors.ScreenText, modifier = Modifier.size(18.dp))
             Spacer(Modifier.height(4.dp))
@@ -775,10 +814,20 @@ private fun FactsPanel(facts: List<Fact>, onAdd: () -> Unit, onRemove: (Fact) ->
 }
 
 @Composable
-private fun InfoPanel(bro: Bro, onPickMeetDate: () -> Unit, onTradeableChanged: (Boolean) -> Unit) {
+private fun InfoPanel(bro: Bro, onPickMeetDate: () -> Unit, onEditHabitat: () -> Unit, onTradeableChanged: (Boolean) -> Unit) {
     ScreenPanel(title = "Catch info") {
         InfoLine(if (bro.isTraded) "Received" else "Caught", formatDate(bro.catchDate))
         if (bro.catchLocation.isNotBlank()) InfoLine("Location", bro.catchLocation)
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClickLabel = "Edit habitat", onClick = onEditHabitat)
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("HABITAT", style = PixelText.Tiny, color = DexColors.TextMuted, modifier = Modifier.weight(1f))
+            Text(bro.habitat ?: "Tap to set", color = if (bro.habitat == null) DexColors.LedBlue else DexColors.Text)
+        }
         InfoLine("Check-ins", bro.checkInCount.toString())
         Birthdays.of(bro)?.let { md ->
             val days = Birthdays.daysUntil(md)
@@ -919,7 +968,7 @@ private fun AddFactDialog(onConfirm: (String, String, String?) -> Unit, onDismis
                 }
                 if (isBirthday) {
                     // Birthdays are a real date so Brokemon can remind you on the day.
-                    OutlinedButton(onClick = { pickingDate = true }, modifier = Modifier.fillMaxWidth(), shape = CutCornerShape(4.dp)) {
+                    OutlinedButton(onClick = { pickingDate = true }, modifier = Modifier.fillMaxWidth(), shape = DexShape(4.dp)) {
                         Text(birthdayLabel ?: "Pick the date")
                     }
                     Text(
@@ -996,14 +1045,14 @@ private fun LookEditorDialog(
             Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
-                .background(DexColors.Surface, CutCornerShape(8.dp))
-                .border(2.dp, DexColors.Outline, CutCornerShape(8.dp))
+                .background(DexColors.Surface, DexShape(8.dp))
+                .border(2.dp, DexColors.Outline, DexShape(8.dp))
                 .padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text("EDIT LOOK", style = PixelText.Header, color = DexColors.Text)
             Spacer(Modifier.height(10.dp))
-            Box(Modifier.size(150.dp).background(DexColors.Screen, CutCornerShape(4.dp)), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(150.dp).background(DexColors.Screen, DexShape(4.dp)), contentAlignment = Alignment.Center) {
                 BroSprite(look, stage, shiny, Modifier.size(140.dp))
             }
             Spacer(Modifier.height(12.dp))
@@ -1048,8 +1097,8 @@ private fun MemoryViewer(memory: Memory, audio: AudioPlayerState, onDelete: () -
             Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .background(DexColors.Surface, CutCornerShape(8.dp))
-                .border(2.dp, DexColors.Outline, CutCornerShape(8.dp))
+                .background(DexColors.Surface, DexShape(8.dp))
+                .border(2.dp, DexColors.Outline, DexShape(8.dp))
                 .padding(12.dp),
         ) {
             Box(
@@ -1113,3 +1162,56 @@ internal fun formatDate(millis: Long): String = DateFormat.getDateInstance(DateF
 /** The date picker stores UTC midnight, so format it in UTC to avoid an off-by-one day. */
 private fun formatUtcDate(millis: Long): String =
     DateFormat.getDateInstance(DateFormat.MEDIUM).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(Date(millis))
+
+@Composable
+private fun HabitatDialog(initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by rememberSaveable { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("HABITAT", style = PixelText.Label) },
+        text = { com.joecode.brokemon.ui.catchbro.HabitatField(text, { text = it.take(Bro.MAX_HABITAT) }) },
+        confirmButton = { TextButton(onClick = { onConfirm(text) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+@Composable
+private fun RegionalDexDialog(
+    broName: String,
+    membership: List<Pair<com.joecode.brokemon.data.model.RegionalDex, Boolean>>,
+    onToggle: (Long, Boolean) -> Unit,
+    onCreate: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var newName by rememberSaveable { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("${broName.uppercase()}'S DEXES", style = PixelText.Label) },
+        text = {
+            Column {
+                Text("Always in the National Dex. Add them to as many regional dexes as you like.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+                membership.forEach { (dex, member) ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { onToggle(dex.id, !member) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        androidx.compose.material3.Checkbox(checked = member, onCheckedChange = { onToggle(dex.id, it) })
+                        Text(dex.name)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it.take(com.joecode.brokemon.data.model.RegionalDex.MAX_NAME) },
+                    label = { Text("New dex (e.g. Uni Dex)") },
+                    singleLine = true,
+                    trailingIcon = {
+                        TextButton(onClick = { onCreate(newName); newName = "" }, enabled = newName.isNotBlank()) { Text("Add") }
+                    },
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
+}

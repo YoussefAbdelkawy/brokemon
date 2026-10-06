@@ -30,7 +30,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -263,7 +263,7 @@ private fun Platform(modifier: Modifier) {
 
 @Composable
 private fun InfoBox(bro: Bro, evolution: EvolutionInfo, modifier: Modifier) {
-    val shape = CutCornerShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 2.dp, bottomEnd = 14.dp)
+    val shape = DexShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 2.dp, bottomEnd = 14.dp)
     Column(
         modifier
             .width(196.dp)
@@ -308,14 +308,14 @@ private fun BattleText(
     val days = CheckOnBro.daysSinceContact(bro)
     val message = when (phase) {
         WildPhase.INTRO -> ""
-        WildPhase.APPEARED -> "A wild ${bro.name.uppercase()} appeared!"
+        WildPhase.APPEARED -> "${bro.name.uppercase()} jumped out of the group chat!"
         WildPhase.ASK -> "Check in with ${bro.name}? " + when (days) {
             0L -> "You talked today. Legend."
             1L -> "Last check-in: yesterday."
             else -> "It's been $days days."
         }
         WildPhase.RESULT -> when (result) {
-            CheckInResult.CHECKED_IN -> "You checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} bond pts. It's super effective!"
+            CheckInResult.CHECKED_IN -> "You checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} bond pts. It hit DIFFERENT."
             CheckInResult.ALREADY_TODAY -> "Already checked in with ${bro.name} today. Still, nice to say hi!"
             else -> "${bro.name} got away..."
         }
@@ -329,7 +329,7 @@ private fun BattleText(
     }
     val paper = Color(0xFFF7F4E8)
     val ink = Color(0xFF16161C)
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     Column(
         Modifier
             .fillMaxWidth()
@@ -337,7 +337,7 @@ private fun BattleText(
             .background(paper, shape)
             .border(4.dp, ink, shape)
             .padding(4.dp)
-            .border(2.dp, DexColors.DexRed, CutCornerShape(4.dp))
+            .border(2.dp, DexColors.DexRed, DexShape(4.dp))
             .clickable(enabled = phase == WildPhase.APPEARED, role = Role.Button, onClickLabel = "Next") {
                 if (shown < message.length) shown = message.length else onNext()
             }

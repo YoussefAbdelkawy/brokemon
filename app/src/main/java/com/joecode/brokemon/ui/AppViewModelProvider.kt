@@ -19,6 +19,10 @@ import com.joecode.brokemon.ui.squads.SquadsViewModel
 import com.joecode.brokemon.ui.trade.TradeViewModel
 import com.joecode.brokemon.ui.trainer.TrainerViewModel
 import com.joecode.brokemon.ui.wild.WildBroViewModel
+import com.joecode.brokemon.battle.NearbyLink
+import com.joecode.brokemon.ui.battle.BattleRecordsViewModel
+import com.joecode.brokemon.ui.battle.BattleViewModel
+import com.joecode.brokemon.ui.battle.TournamentsViewModel
 
 /** One factory for every screen's ViewModel; dependencies come from [AppContainer]. */
 object AppViewModelProvider {
@@ -36,6 +40,12 @@ object AppViewModelProvider {
         initializer { RoomViewModel(createSavedStateHandle(), container().repository, container().prefs) }
         initializer { TrainerViewModel(container().repository, container().prefs) }
         initializer { WildBroViewModel(container().repository, container().prefs) }
+        initializer {
+            val app = this[APPLICATION_KEY] as BrokemonApplication
+            BattleViewModel(createSavedStateHandle(), container().repository, container().prefs) { NearbyLink(app) }
+        }
+        initializer { BattleRecordsViewModel(container().repository, container().prefs) }
+        initializer { TournamentsViewModel(createSavedStateHandle(), container().repository, container().prefs) }
         initializer { SettingsViewModel(container().repository, container().backup, container().prefs) }
     }
 }

@@ -31,20 +31,29 @@ data class TrainerProgress(
     val quests: List<QuestStatus> = emptyList(),
     val unlocked: Set<Reward> = emptySet(),
     val frames: List<TrainerFrame> = listOf(TrainerFrame.BASIC),
+    val trophies: Int = 0,
+    val battleWins: Int = 0,
 ) {
     val questsDone: Int get() = quests.count { it.done }
     val rewardsReady: Int get() = quests.count { it.claimable }
     val journalComplete: Boolean get() = quests.isNotEmpty() && quests.all { it.claimed }
 
     companion object {
-        fun from(bros: List<Bro>, trainer: Trainer?, claimed: Set<String>, tradedQr: Boolean): TrainerProgress {
+        fun from(
+            bros: List<Bro>,
+            trainer: Trainer?,
+            claimed: Set<String>,
+            tradedQr: Boolean,
+            shinyEarned: Boolean = false,
+            champion: Boolean = false,
+        ): TrainerProgress {
             val quests = Journal.status(trainer != null, bros, tradedQr, claimed)
             return TrainerProgress(
                 trainer = trainer,
                 level = TrainerLevel.info(TrainerLevel.xp(bros, trainer != null, quests.count { it.claimed })),
                 totals = TrainerTotals(bros.size, bros.sumOf { it.checkInCount }, bros.sumOf { it.memories.size }),
                 quests = quests,
-                unlocked = Journal.unlocked(claimed),
+                unlocked = Journal.unlocked(claimed, shinyEarned, champion),
                 frames = Journal.unlockedFrames(claimed),
             )
         }
@@ -52,8 +61,20 @@ data class TrainerProgress(
 }
 
 fun trainerProgressFlow(repository: BroRepository, prefs: UserPrefs) =
-    combine(repository.bros, prefs.trainer, prefs.claimedQuests, prefs.tradedQr) { bros, trainer, claimed, traded ->
-        TrainerProgress.from(bros, trainer, claimed, traded)
+    combine(
+        combine(repository.bros, prefs.trainer, prefs.claimedQuests, prefs.tradedQr) { bros, trainer, claimed, traded ->
+            TrainerProgress.from(bros, trainer, claimed, traded)
+        },
+        prefs.shinyEarned,
+        prefs.tournamentWon,
+        prefs.claimedQuests,
+    ) { base, shiny, champ, claimed ->
+        base.copy(unlocked = Journal.unlocked(claimed, shiny, champ))
+    }.let { flow ->
+        combine(flow, repository.bros, prefs.battleWins, prefs.dailyQuestsDone, prefs.trophies) { p, bros, wins, daily, trophies ->
+            val xp = TrainerLevel.xp(bros, p.trainer != null, p.quests.count { it.claimed }, wins, daily)
+            p.copy(level = TrainerLevel.info(xp), trophies = trophies, battleWins = wins)
+        }
     }
 
 class TrainerViewModel(repository: BroRepository, private val prefs: UserPrefs) : ViewModel() {

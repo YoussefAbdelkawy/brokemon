@@ -20,7 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.PersonAdd
@@ -50,7 +50,12 @@ import com.joecode.brokemon.ui.components.RewardIcon
 import com.joecode.brokemon.ui.components.SegmentedBar
 import com.joecode.brokemon.ui.components.TiltState
 import com.joecode.brokemon.ui.components.TypeBadge
-import com.joecode.brokemon.ui.components.holoSheen
+import com.joecode.brokemon.ui.components.DeviceTilt
+import com.joecode.brokemon.ui.components.HoloLevel
+import com.joecode.brokemon.ui.components.HoloLight
+import com.joecode.brokemon.ui.components.HoloStyle
+import com.joecode.brokemon.ui.components.holoFoil
+import com.joecode.brokemon.ui.components.holoFoilBorder
 import com.joecode.brokemon.ui.components.scanlines
 import com.joecode.brokemon.ui.components.tilt3d
 import com.joecode.brokemon.ui.theme.DexColors
@@ -67,10 +72,12 @@ fun TrainerCard(
     totals: TrainerTotals,
     unlocked: Set<Reward>,
     modifier: Modifier = Modifier,
+    trophies: Int = 0,
     tilt: TiltState? = null,
+    deviceTilt: DeviceTilt? = null,
 ) {
     val frame = trainer.resolvedFrame
-    val shape = CutCornerShape(12.dp)
+    val shape = DexShape(12.dp)
     val frameBrush = Brush.linearGradient(frame.colors.map { Color(it) })
     val xpProgress by animateFloatAsState(level.progress, tween(900), label = "xp")
     Column(
@@ -81,8 +88,13 @@ fun TrainerCard(
             .tilt3d(tilt, 14f)
             .clip(shape)
             .background(DexColors.Surface)
-            .holoSheen(tilt, if (frame.holo) 0.5f else 0.12f)
             .border(5.dp, frameBrush, shape)
+            .holoFoilBorder(
+                light = HoloLight(tilt, deviceTilt),
+                style = HoloStyle(if (frame.holo) HoloLevel.FULL else HoloLevel.SUBTLE, shiny = frame.holo),
+                shape = shape,
+                width = 5.dp,
+            )
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -95,10 +107,14 @@ fun TrainerCard(
             Box(
                 Modifier
                     .size(104.dp)
-                    .clip(CutCornerShape(6.dp))
+                    .clip(DexShape(6.dp))
                     .background(Brush.radialGradient(listOf(trainer.type.color.copy(alpha = 0.4f), DexColors.Screen)))
-                    .border(2.dp, frameBrush, CutCornerShape(6.dp))
-                    .scanlines(),
+                    .border(2.dp, frameBrush, DexShape(6.dp))
+                    .scanlines()
+                    .holoFoil(
+                        HoloLight(tilt, deviceTilt).takeIf { tilt != null || deviceTilt != null },
+                        HoloStyle(if (frame.holo) HoloLevel.FULL else HoloLevel.NONE, shiny = frame.holo),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 BroSprite(trainer.look, 0, false, Modifier.fillMaxSize(0.9f))
@@ -143,6 +159,10 @@ fun TrainerCard(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("BADGES", style = PixelText.Tiny, color = DexColors.TextMuted)
             Reward.entries.filter { it.kind == RewardKind.BADGE }.forEach { RewardIcon(it, it in unlocked, size = 26.dp) }
+            if (trophies > 0) {
+                Spacer(Modifier.weight(1f))
+                Text("🏆 x$trophies", style = PixelText.Label, color = DexColors.Gold)
+            }
         }
     }
 }
@@ -171,7 +191,7 @@ fun TrainerStrip(
     onOpenJournal: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = CutCornerShape(8.dp)
+    val shape = DexShape(8.dp)
     val pulse by rememberInfiniteTransition(label = "ready").animateFloat(
         initialValue = 0.45f,
         targetValue = 1f,
@@ -196,7 +216,7 @@ fun TrainerStrip(
             Box(
                 Modifier
                     .size(44.dp)
-                    .background(DexColors.Screen, CutCornerShape(4.dp)),
+                    .background(DexColors.Screen, DexShape(4.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (trainer != null) {
@@ -237,7 +257,7 @@ fun TrainerStrip(
                             .align(Alignment.TopEnd)
                             .size(9.dp)
                             .graphicsLayer { alpha = pulse }
-                            .background(DexColors.LedRed, CutCornerShape(2.dp)),
+                            .background(DexColors.LedRed, DexShape(2.dp)),
                     )
                 }
             }

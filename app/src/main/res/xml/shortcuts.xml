@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Long-press the app icon. MainActivity maps each action to a screen. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="catch"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_catch"
+        android:shortcutShortLabel="@string/shortcut_catch"
+        android:shortcutLongLabel="@string/shortcut_catch">
+        <intent
+            android:action="com.joecode.brokemon.action.CATCH"
+            android:targetClass="com.joecode.brokemon.MainActivity"
+            android:targetPackage="@string/shortcut_package" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="scan"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_scan"
+        android:shortcutShortLabel="@string/shortcut_scan"
+        android:shortcutLongLabel="@string/shortcut_scan">
+        <intent
+            android:action="com.joecode.brokemon.action.SCAN"
+            android:targetClass="com.joecode.brokemon.MainActivity"
+            android:targetPackage="@string/shortcut_package" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="random"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_random"
+        android:shortcutShortLabel="@string/shortcut_random"
+        android:shortcutLongLabel="@string/shortcut_random">
+        <intent
+            android:action="com.joecode.brokemon.action.RANDOM"
+            android:targetClass="com.joecode.brokemon.MainActivity"
+            android:targetPackage="@string/shortcut_package" />
+    </shortcut>
+</shortcuts>

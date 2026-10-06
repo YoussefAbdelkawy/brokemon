@@ -24,6 +24,7 @@ data class CaughtResult(val id: Long, val name: String, val isShiny: Boolean, va
 data class BroState(
     val name: String = "",
     val catchLocation: String = "",
+    val habitat: String = "",
     val flavorText: String = "",
     val type1: BroType? = null,
     val type2: BroType? = null,
@@ -85,6 +86,8 @@ class BroViewModel(
 
     fun onLocationChanged(value: String) = _state.update { it.copy(catchLocation = value.take(40)) }
 
+    fun onHabitatChanged(value: String) = _state.update { it.copy(habitat = value.take(Bro.MAX_HABITAT)) }
+
     fun onFlavorChanged(value: String) = _state.update { it.copy(flavorText = value.take(Bro.MAX_FLAVOR)) }
 
     fun onType1Selected(type: BroType) = _state.update {
@@ -134,7 +137,8 @@ class BroViewModel(
         if (!current.canSave) return
         _state.update { it.copy(isSaving = true) }
         viewModelScope.launch {
-            val isShiny = random.nextInt(SHINY_ODDS) == 0
+            // Shinies are earned later through memories (ShinyHunt), never rolled at catch.
+            val isShiny = false
             // Caught during a limited event? Stamp the event frame on forever.
             val eventFrame = events.now()?.let { SeasonEvents.stamp(it, LocalDate.now()) }
             val bro = Bro(
@@ -154,6 +158,7 @@ class BroViewModel(
                 look = current.look,
                 eventFrame = eventFrame,
                 flavorText = current.flavorText.trim(),
+                habitat = current.habitat.trim().ifBlank { null },
             )
             val id = repository.insert(bro)
             val eventLabel = SeasonEvents.parse(eventFrame)?.label
@@ -161,8 +166,4 @@ class BroViewModel(
         }
     }
 
-    companion object {
-        /** 1 in 10 catches is shiny. Purely cosmetic. */
-        const val SHINY_ODDS = 10
-    }
 }

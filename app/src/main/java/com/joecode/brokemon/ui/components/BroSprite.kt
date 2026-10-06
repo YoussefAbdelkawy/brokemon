@@ -27,13 +27,13 @@ fun BroSprite(
     modifier: Modifier = Modifier,
     tint: Color? = null,
 ) {
-    val bitmap = remember(look, stage, shiny, tint) { spriteBitmap(look, stage, shiny, tint) }
+    val bitmap = remember(look, stage, shiny, tint) { AvatarBitmaps.portrait(look, stage, shiny, tint?.toArgb()).asImageBitmap() }
     Image(
         bitmap = bitmap,
         contentDescription = null,
         modifier = modifier,
         contentScale = ContentScale.Fit,
-        filterQuality = FilterQuality.None,
+        filterQuality = AvatarBitmaps.filterQuality,
     )
 }
 
@@ -41,18 +41,30 @@ fun BroSprite(
 fun BroSprite(bro: Bro, stage: Int, modifier: Modifier = Modifier, tint: Color? = null) =
     BroSprite(bro.resolvedLook, stage, bro.isShiny, modifier, tint)
 
-private fun spriteBitmap(look: BroLook, stage: Int, shiny: Boolean, tint: Color?): ImageBitmap {
-    val pixels = HumanSprite.render(look, stage, shiny)
-    if (tint != null) {
-        // Silhouettes / evolution flashes: every drawn pixel becomes the tint.
-        val t = tint.toArgb()
-        for (i in pixels.indices) if (pixels[i] != HumanSprite.CLEAR) pixels[i] = t
+/**
+ * Avatar bitmaps in the current style: 32x32 / 32x52 pixel art (classic) or
+ * smooth flat vector art (cosmos). Used by cards, share images and the widget.
+ */
+object AvatarBitmaps {
+    val smooth: Boolean get() = com.joecode.brokemon.ui.theme.AppStyle.flat
+    val filterQuality: FilterQuality get() = if (smooth) FilterQuality.Medium else FilterQuality.None
+
+    fun portrait(look: BroLook, stage: Int, shiny: Boolean, tint: Int? = null): Bitmap {
+        if (smooth) return FlatAvatar.portrait(look, stage, shiny, 256, tint)
+        val pixels = HumanSprite.render(look, stage, shiny)
+        if (tint != null) for (i in pixels.indices) if (pixels[i] != HumanSprite.CLEAR) pixels[i] = tint
+        return Bitmap.createBitmap(pixels, HumanSprite.SIZE, HumanSprite.SIZE, Bitmap.Config.ARGB_8888)
     }
-    val size = HumanSprite.SIZE
-    return Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
+
+    fun fullBody(look: BroLook, stage: Int, shiny: Boolean, sitting: Boolean, tint: Int? = null): Bitmap {
+        if (smooth) return FlatAvatar.fullBody(look, stage, shiny, sitting, 200, tint)
+        val pixels = HumanSprite.renderFullBody(look, stage, shiny, sitting)
+        if (tint != null) for (i in pixels.indices) if (pixels[i] != HumanSprite.CLEAR) pixels[i] = tint
+        return Bitmap.createBitmap(pixels, HumanSprite.BODY_W, HumanSprite.BODY_H, Bitmap.Config.ARGB_8888)
+    }
 }
 
-/** Full standing (or sitting) figure, 32x52, nearest-neighbor scaled like the portraits. */
+/** Full standing (or sitting) figure in the current style. */
 @Composable
 fun BroFullBody(
     look: BroLook,
@@ -63,18 +75,13 @@ fun BroFullBody(
     tint: Color? = null,
 ) {
     val bitmap = remember(look, stage, shiny, sitting, tint) {
-        val pixels = HumanSprite.renderFullBody(look, stage, shiny, sitting)
-        if (tint != null) {
-            val t = tint.toArgb()
-            for (i in pixels.indices) if (pixels[i] != HumanSprite.CLEAR) pixels[i] = t
-        }
-        Bitmap.createBitmap(pixels, HumanSprite.BODY_W, HumanSprite.BODY_H, Bitmap.Config.ARGB_8888).asImageBitmap()
+        AvatarBitmaps.fullBody(look, stage, shiny, sitting, tint?.toArgb()).asImageBitmap()
     }
     Image(
         bitmap = bitmap,
         contentDescription = null,
         modifier = modifier,
         contentScale = ContentScale.Fit,
-        filterQuality = FilterQuality.None,
+        filterQuality = AvatarBitmaps.filterQuality,
     )
 }

@@ -28,7 +28,7 @@ data class WildState(
 )
 
 /**
- * "A wild bro appeared!": picks a random bro, leaning toward whoever you
+ * Wild bro encounters: picks a random bro, leaning toward whoever you
  * haven't talked to in a while, and skipping anyone you already checked in
  * with today when possible.
  */

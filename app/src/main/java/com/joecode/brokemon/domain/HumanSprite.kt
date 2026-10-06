@@ -57,6 +57,7 @@ object HumanSprite {
     private const val LOCS = 13
     private const val PONYTAIL = 14
     private const val WAVES = 15
+    private const val ANIME = 16
 
     // Hats
     private const val CAP = 1
@@ -66,6 +67,12 @@ object HumanSprite {
     private const val BACKWARDS = 5
     private const val HIJAB = 6
     private const val TRAINER_CAP = 7
+    private const val HEADSET = 8
+    private const val HEADPHONES = 9
+    private const val NINJA_BAND = 10
+
+    // Glasses
+    private const val HERO_MASK = 6
 
     // Outfits
     private const val TEE = 0
@@ -74,28 +81,62 @@ object HumanSprite {
     private const val SUIT = 3
     private const val GALABEYA = 4
     private const val JACKET = 5
+    private const val KIT = 6
+    private const val CAPTAIN_KIT = 7
+
+    // Accessory slots
+    private const val HAND_MANGA = 1
+    private const val HAND_COMIC = 2
+    private const val HAND_BALL = 3
+    private const val HAND_CONTROLLER = 4
+    private const val HAND_COFFEE = 5
+    private const val HAND_SHAWARMA = 6
+    private const val HAND_GYM_BAG = 7
+    private const val HAND_GLOVES = 8
+    private const val BACK_HERO_CAPE = 1
+    private const val BACK_COSPLAY_CAPE = 2
+    private const val BACK_BACKPACK = 3
+    private const val BACK_SCARF = 4
+    private const val BG_POW = 1
+    private const val BG_CHAIR = 2
+    private const val BG_PITCH = 3
+    private const val BG_SPEED = 4
+    private const val BG_TROPHY = 5
+    private const val NEON_GREEN = 0xFF7CFF5C.toInt()
+    private const val CRIMSON = 0xFFB0172F.toInt()
 
     /** Card portrait, 32x32. */
     fun render(look: BroLook, stage: Int, shiny: Boolean): IntArray {
         val c = Canvas(SIZE, SIZE)
         val p = Palette(look, shiny)
+        drawBackBehind(c, look.back, p, fullBody = false)
         drawBody(c, look, p, bottom = 31, fullBody = false)
+        drawBackFront(c, look.back, p, fullBody = false)
         drawHead(c, look, p)
         if (stage >= 1) drawChain(c)
         if (stage >= 2) drawCrown(c)
-        return c.outlined()
+        drawHandItem(c, look.hand, p, hx = 24, hy = 29)
+        val figure = c.outlined()
+        if (look.background == 0) return figure
+        // The backdrop goes behind the outlined figure, so the outline survives.
+        val bg = Canvas(SIZE, SIZE).also { drawBackground(it, look.background, p) }.px
+        for (i in figure.indices) if (figure[i] != CLEAR) bg[i] = figure[i]
+        return bg
     }
 
     /** Full figure for the room, 32x52. Sitting bros have shorter, bent legs. */
     fun renderFullBody(look: BroLook, stage: Int, shiny: Boolean, sitting: Boolean): IntArray {
         val c = Canvas(BODY_W, BODY_H)
         val p = Palette(look, shiny)
+        drawBackBehind(c, look.back, p, fullBody = true)
         drawLegs(c, look, p, sitting)
         drawArms(c, look, p)
         drawBody(c, look, p, bottom = if (look.outfit == GALABEYA) (if (sitting) 46 else 49) else 39, fullBody = true)
+        drawBackFront(c, look.back, p, fullBody = true)
         drawHead(c, look, p)
         if (stage >= 1) drawChain(c)
         if (stage >= 2) drawCrown(c)
+        drawHandItem(c, look.hand, p, hx = 25, hy = 37)
         return c.outlined()
     }
 
@@ -348,6 +389,21 @@ object HumanSprite {
                     if (t in 12..19) put(t, 2, light)
                 }
             }
+            ANIME -> {
+                shortTop()
+                // Big swept spikes, anime-protagonist style.
+                val spikes = listOf(Triple(6, 9, -2), Triple(10, 3, -1), Triple(15, 0, 0), Triple(20, 2, 1), Triple(25, 7, 2))
+                spikes.forEach { (tipX, tipY, lean) ->
+                    for (y in tipY..9) {
+                        val half = (y - tipY) / 2
+                        val cx = tipX - lean * (9 - y) / 4
+                        row(y, cx - half, cx + half)
+                        if (half > 0) put(cx - half, y, light)
+                    }
+                }
+                for (y in 10..14) { put(6, y, hair); put(25, y, hair) }
+                for ((x, y) in listOf(12 to 9, 13 to 10, 18 to 9, 19 to 10)) put(x, y, shade)
+            }
             CURLY -> for (y in 1..14) for (x in 3..28) {
                 val dx = (x - 15.5f) / 12.5f
                 val dy = (y - 8.5f) / 7.5f
@@ -488,6 +544,32 @@ object HumanSprite {
                 c.row(9, 7, 24, shade)
                 c.row(10, 6, 25, LEATHER)
             }
+            HEADSET, HEADPHONES -> {
+                val cup = if (hat == HEADSET) 0xFF2A2A33.toInt() else color
+                val band = if (hat == HEADSET) 0xFF3A3A46.toInt() else shade
+                c.row(3, 12, 19, band)
+                c.row(4, 9, 11, band); c.row(4, 20, 22, band)
+                for (y in 5..10) { c[7, y] = band; c[24, y] = band }
+                for (y in 11..17) { c.row(y, 5, 8, cup); c.row(y, 23, 26, cup) }
+                c[6, 12] = light; c[24, 12] = light
+                if (hat == HEADSET) {
+                    // Mic boom reaching toward the mouth.
+                    for (x in 7..12) c[x, 18 + (x - 7) / 3] = band
+                    c.row(20, 12, 13, RUBY)
+                    c[25, 14] = NEON_GREEN
+                }
+            }
+            NINJA_BAND -> {
+                val cloth = 0xFF22325C.toInt()
+                c.row(9, 7, 24, cloth)
+                c.row(10, 7, 24, cloth)
+                // A blank metal plate: generic, no symbol.
+                for (y in 8..11) c.row(y, 12, 19, 0xFFB8BCC8.toInt())
+                c.row(8, 12, 19, WHITE)
+                c.row(11, 12, 19, 0xFF7A808C.toInt())
+                c[12, 9] = 0xFF7A808C.toInt(); c[19, 9] = 0xFF7A808C.toInt()
+                for (y in 10..14) { c[5, y] = cloth; c[4, y + 1] = cloth }
+            }
             HIJAB -> {
                 for (y in 2..26) for (x in 3..28) {
                     val dx = (x - 15.5f) / 12.5f
@@ -549,6 +631,16 @@ object HumanSprite {
                 c.row(13, 14, 17, GOLD_DARK)
                 c.row(13, 8, 9, GOLD_DARK)
                 c.row(13, 22, 23, GOLD_DARK)
+            }
+            HERO_MASK -> { // Generic domino mask
+                val mask = 0xFF1B1B26.toInt()
+                for (y in 12..16) for (x in 8..23) {
+                    val eye = (y in 14..15) && (x in 11..12 || x in 19..20)
+                    if (!eye) c[x, y] = mask
+                }
+                c.row(12, 8, 10, CRIMSON); c.row(12, 21, 23, CRIMSON)
+                c[7, 14] = mask; c[24, 14] = mask
+                c[12, 14] = WHITE; c[20, 14] = WHITE
             }
             5 -> { // Thick frames
                 lenses.forEach { (x0, x1) ->
@@ -634,6 +726,15 @@ object HumanSprite {
                 for (y in 26..30) { c[12, y] = blend(LEATHER, WHITE, 0.2f); c[19, y] = blend(LEATHER, WHITE, 0.2f) }
                 for (y in 27..bottom) c[13, y] = 0xFFB8BCC8.toInt() // zipper
             }
+            KIT, CAPTAIN_KIT -> {
+                // Made-up club: vertical stripes and a blank shield crest.
+                for (y in 26..bottom) for (x in 0 until c.w) if (c[x, y] == base && (x / 2) % 2 == 0) c[x, y] = WHITE
+                c.row(25, 14, 17, p.skin)
+                c[15, 26] = p.skin; c[16, 26] = p.skin
+                c.row(25, 12, 13, p.outfitShade); c.row(25, 18, 19, p.outfitShade)
+                c.row(28, 19, 21, GOLD); c.row(29, 19, 21, GOLD); c[20, 30] = GOLD_DARK
+                if (style == CAPTAIN_KIT && !fullBody) for (y in 27..29) c.row(y, 4, 6, 0xFFFFD23F.toInt())
+            }
             else -> { // Tee
                 c.row(25, 14, 17, p.skin)
                 c.row(26, 15, 16, p.skinShade)
@@ -649,7 +750,7 @@ object HumanSprite {
             JACKET -> LEATHER
             else -> p.outfit
         }
-        val sleeveEnd = if (style == TEE || style == JERSEY) 30 else 36
+        val sleeveEnd = if (style == TEE || style == JERSEY || style == KIT || style == CAPTAIN_KIT) 30 else 36
         for ((x0, x1) in listOf(5 to 7, 24 to 26)) {
             for (y in 26..36) {
                 val color = if (y <= sleeveEnd) sleeve else p.skin
@@ -657,6 +758,7 @@ object HumanSprite {
                 c[if (x0 < 16) x0 else x1, y] = if (y <= sleeveEnd) blend(sleeve, BLACK, 0.25f) else p.skinShade
             }
             if (style == JERSEY) c.row(29, x0, x1, WHITE)
+            if (style == CAPTAIN_KIT && x0 < 16) c.row(29, x0, x1, 0xFFFFD23F.toInt())
             c.row(37, x0, x1, p.skin) // hands
             c.row(38, x0 + 1, x1 - 1, p.skinShade)
         }
@@ -683,6 +785,165 @@ object HumanSprite {
             }
             for (y in 49..50) legs.forEach { (x0, x1) -> c.row(y, x0 - 1, x1, SNEAKER) }
             legs.forEach { (x0, x1) -> c.row(51, x0 - 1, x1, SOLE) }
+        }
+    }
+
+    // --- Accessories -----------------------------------------------------------
+
+    /** Back items that sit behind the body (capes, the backpack itself). */
+    private fun drawBackBehind(c: Canvas, back: Int, p: Palette, fullBody: Boolean) {
+        when (back) {
+            BACK_HERO_CAPE, BACK_COSPLAY_CAPE -> {
+                val cape = if (back == BACK_HERO_CAPE) CRIMSON else 0xFF5B2A86.toInt()
+                val inner = blend(cape, BLACK, 0.35f)
+                val bottom = if (fullBody) 47 else 31
+                for (y in 24..bottom) {
+                    val spread = if (fullBody) 9 + (y - 24) / 4 else 13 + (y - 24) / 3
+                    c.row(y, 16 - spread, 15 + spread, if ((y + 1) % 6 == 0) inner else cape)
+                }
+                if (back == BACK_COSPLAY_CAPE) for (y in 24..bottom) {
+                    val spread = if (fullBody) 9 + (y - 24) / 4 else 13 + (y - 24) / 3
+                    c[16 - spread, y] = GOLD; c[15 + spread, y] = GOLD
+                }
+            }
+            BACK_BACKPACK -> if (fullBody) {
+                for (y in 27..37) c.row(y, 25, 28, 0xFF2E6F5E.toInt())
+                c.row(30, 25, 28, 0xFF1F4D41.toInt())
+            } else {
+                for (y in 26..31) { c.row(y, 1, 3, 0xFF2E6F5E.toInt()); c.row(y, 28, 30, 0xFF2E6F5E.toInt()) }
+            }
+        }
+    }
+
+    /** Back items worn over the front (straps, scarf). */
+    private fun drawBackFront(c: Canvas, back: Int, p: Palette, fullBody: Boolean) {
+        when (back) {
+            BACK_HERO_CAPE, BACK_COSPLAY_CAPE -> {
+                val clasp = if (back == BACK_HERO_CAPE) GOLD else 0xFFB8BCC8.toInt()
+                c[11, 25] = clasp; c[20, 25] = clasp
+            }
+            BACK_BACKPACK -> {
+                val strap = 0xFF1F4D41.toInt()
+                val bottom = if (fullBody) 36 else 31
+                for (y in 25..bottom) { c[11, y] = strap; c[20, y] = strap }
+            }
+            BACK_SCARF -> {
+                // Two-tone made-up supporter scarf.
+                for (x in 11..20) { c[x, 23] = if (x % 2 == 0) CRIMSON else WHITE; c[x, 24] = if (x % 2 == 0) WHITE else CRIMSON }
+                for (y in 25..(if (fullBody) 33 else 30)) { c[12, y] = if (y % 2 == 0) CRIMSON else WHITE; c[13, y] = if (y % 2 == 0) WHITE else CRIMSON }
+            }
+        }
+    }
+
+    /** Something held up in the right hand, around (hx, hy). */
+    private fun drawHandItem(c: Canvas, item: Int, p: Palette, hx: Int, hy: Int) {
+        if (item == 0) return
+        fun hand() { c.row(hy, hx - 1, hx + 1, p.skin); c.row(hy + 1, hx - 1, hx + 1, p.skinShade) }
+        when (item) {
+            HAND_MANGA, HAND_COMIC -> {
+                val cover = if (item == HAND_MANGA) WHITE else 0xFFFFD23F.toInt()
+                for (y in hy - 7..hy - 1) c.row(y, hx - 3, hx + 2, cover)
+                c.row(hy - 7, hx - 3, hx + 2, if (item == HAND_MANGA) BLACK else RUBY)
+                if (item == HAND_MANGA) { c.row(hy - 5, hx - 2, hx + 1, EYE); c.row(hy - 3, hx - 2, hx, EYE) }
+                else { c[hx - 1, hy - 4] = RUBY; c[hx, hy - 5] = RUBY; c[hx + 1, hy - 4] = RUBY; c[hx, hy - 3] = RUBY }
+                for (y in hy - 7..hy - 1) c[hx - 3, y] = blend(cover, BLACK, 0.3f)
+                hand()
+            }
+            HAND_BALL -> {
+                for (y in hy - 5..hy - 1) c.row(y, hx - 2, hx + 2, WHITE)
+                c.row(hy - 6, hx - 1, hx + 1, WHITE); c.row(hy, hx - 1, hx + 1, WHITE)
+                c[hx, hy - 3] = BLACK; c[hx - 2, hy - 5] = BLACK; c[hx + 2, hy - 1] = BLACK; c[hx + 2, hy - 5] = BLACK
+                hand()
+            }
+            HAND_CONTROLLER -> {
+                for (y in hy - 3..hy - 1) c.row(y, hx - 4, hx + 3, 0xFF2A2A33.toInt())
+                c.row(hy, hx - 4, hx - 3, 0xFF2A2A33.toInt()); c.row(hy, hx + 2, hx + 3, 0xFF2A2A33.toInt())
+                c[hx - 3, hy - 2] = WHITE; c[hx + 1, hy - 3] = RUBY; c[hx + 2, hy - 2] = SAPPHIRE; c[hx + 1, hy - 1] = NEON_GREEN
+                c.row(hy + 1, hx - 4, hx - 3, p.skin); c.row(hy + 1, hx + 2, hx + 3, p.skin)
+            }
+            HAND_COFFEE -> {
+                for (y in hy - 6..hy - 1) c.row(y, hx - 2, hx + 2, WHITE)
+                c.row(hy - 7, hx - 3, hx + 3, 0xFF3A2A22.toInt())
+                for (y in hy - 4..hy - 2) c.row(y, hx - 2, hx + 2, 0xFFB5651D.toInt())
+                c[hx - 1, hy - 9] = 0xFFDDE3EC.toInt(); c[hx + 1, hy - 10] = 0xFFDDE3EC.toInt()
+                hand()
+            }
+            HAND_SHAWARMA -> {
+                // Wrap in paper: filling peeking out the top.
+                c.row(hy - 8, hx - 1, hx + 1, 0xFF4CAF50.toInt())
+                c.row(hy - 7, hx - 2, hx + 2, RUBY)
+                for (y in hy - 6..hy - 3) c.row(y, hx - 2, hx + 2, 0xFFD9A066.toInt())
+                c[hx - 1, hy - 5] = 0xFFB07A3E.toInt(); c[hx + 1, hy - 4] = 0xFFB07A3E.toInt()
+                for (y in hy - 2..hy) c.row(y, hx - 2, hx + 2, WHITE)
+                hand()
+            }
+            HAND_GYM_BAG -> {
+                c.row(hy - 1, hx - 1, hx + 1, BLACK)
+                c[hx - 2, hy] = BLACK; c[hx + 2, hy] = BLACK
+                for (y in hy + 1..hy + 4) c.row(y, hx - 4, hx + 4, p.outfitShade)
+                c.row(hy + 2, hx - 4, hx + 4, WHITE)
+                hand()
+            }
+            HAND_GLOVES -> {
+                // Big neon keeper gloves on both hands.
+                val left = c.w - 1 - hx
+                for ((x0, x1) in listOf(hx - 2 to hx + 2, left - 2 to left + 2)) {
+                    for (y in hy - 3..hy + 1) c.row(y, x0, x1, NEON_GREEN)
+                    c.row(hy - 3, x0, x1, 0xFF2A2A33.toInt())
+                    c.row(hy + 1, x0, x1, 0xFF4CAF50.toInt())
+                }
+            }
+        }
+    }
+
+    /** Portrait backdrop, drawn on its own canvas behind the outlined figure. */
+    private fun drawBackground(c: Canvas, bg: Int, p: Palette) {
+        when (bg) {
+            BG_POW -> {
+                val yellow = 0xFFFFD23F.toInt()
+                for (y in 0 until SIZE) for (x in 0 until SIZE) {
+                    val dx = x - 15.5f
+                    val dy = y - 12f
+                    val angle = kotlin.math.atan2(dy, dx)
+                    val r = kotlin.math.sqrt(dx * dx + dy * dy)
+                    val jag = 13f + 3f * kotlin.math.sin(angle * 9f)
+                    c[x, y] = when {
+                        r < jag - 2 -> yellow
+                        r < jag -> RUBY
+                        else -> 0xFF2B1F5C.toInt()
+                    }
+                }
+                for ((x, y) in listOf(3 to 27, 28 to 4, 27 to 26, 4 to 3)) c[x, y] = WHITE
+            }
+            BG_CHAIR -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, 0xFF1A1A24.toInt())
+                for (y in 2..31) c.row(y, 6, 25, 0xFF2A2A33.toInt())
+                for (y in 2..31) { c[9, y] = RUBY; c[22, y] = RUBY }
+                c.row(2, 8, 23, 0xFF3A3A46.toInt())
+            }
+            BG_PITCH -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, if ((y / 4) % 2 == 0) 0xFF2E8B45.toInt() else 0xFF3AA155.toInt())
+                c.row(20, 0, SIZE - 1, WHITE)
+                for (x in 0 until SIZE) if (x % 3 != 2) c[x, 5] = 0xFFE8E8EE.toInt()
+            }
+            BG_SPEED -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, WHITE)
+                for (i in 0 until 24) {
+                    val a = i * (Math.PI * 2 / 24)
+                    for (r in 9..24) {
+                        val x = (15.5 + kotlin.math.cos(a) * r).toInt()
+                        val y = (14 + kotlin.math.sin(a) * r).toInt()
+                        c[x, y] = 0xFF9AA5B8.toInt()
+                    }
+                }
+            }
+            BG_TROPHY -> {
+                for (y in 0 until SIZE) for (x in 0 until SIZE) {
+                    val angle = kotlin.math.atan2(y - 14f, x - 15.5f)
+                    val ray = ((angle / (Math.PI / 8)).toInt() % 2 == 0)
+                    c[x, y] = if (ray) 0xFFFFC23D.toInt() else 0xFFC99A1E.toInt()
+                }
+            }
         }
     }
 

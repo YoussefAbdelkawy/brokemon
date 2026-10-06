@@ -35,7 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -88,7 +88,7 @@ internal val ProfessorLook = BroLook(
 
 private val introPages = listOf(
     listOf(
-        "Hello there! Welcome to the world of BROS!",
+        "Yo! You made it. Welcome to the wild world of BROS!",
         "My name is BROMLEY. People around here call me the Bro Prof.",
     ),
     listOf(
@@ -290,7 +290,7 @@ private fun DialogueBox(speaker: String, text: String, fullText: String, showNex
     )
     val paper = Color(0xFFF7F4E8)
     val ink = Color(0xFF16161C)
-    val outer = CutCornerShape(6.dp)
+    val outer = DexShape(6.dp)
     Column {
         Text(
             speaker,
@@ -298,7 +298,7 @@ private fun DialogueBox(speaker: String, text: String, fullText: String, showNex
             color = DexColors.Text,
             modifier = Modifier
                 .offset(x = 12.dp, y = 4.dp)
-                .background(DexColors.DexRed, CutCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                .background(DexColors.DexRed, DexShape(topStart = 4.dp, topEnd = 4.dp))
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         )
         Box(
@@ -308,7 +308,7 @@ private fun DialogueBox(speaker: String, text: String, fullText: String, showNex
                 .background(paper, outer)
                 .border(4.dp, ink, outer)
                 .padding(4.dp)
-                .border(2.dp, DexColors.ScreenBorder, CutCornerShape(4.dp))
+                .border(2.dp, DexColors.ScreenBorder, DexShape(4.dp))
                 .clickable(role = Role.Button, onClickLabel = "Next", onClick = onClick)
                 .semantics { contentDescription = "$speaker says: $fullText" }
                 .padding(horizontal = 14.dp, vertical = 12.dp),
@@ -343,8 +343,8 @@ private fun ConsentStep(onAgree: () -> Unit) {
         Box(
             Modifier
                 .size(112.dp)
-                .background(DexColors.Screen, CutCornerShape(8.dp))
-                .border(2.dp, DexColors.ScreenBorder, CutCornerShape(8.dp))
+                .background(DexColors.Screen, DexShape(8.dp))
+                .border(2.dp, DexColors.ScreenBorder, DexShape(8.dp))
                 .scanlines(),
             contentAlignment = Alignment.Center,
         ) {

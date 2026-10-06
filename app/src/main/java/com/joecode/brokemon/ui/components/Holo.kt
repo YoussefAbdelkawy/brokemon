@@ -40,7 +40,7 @@ class TiltState {
 fun rememberTiltState(): TiltState = remember { TiltState() }
 
 /**
- * Pokémon TCG Pocket-style handling: press and drag on the card and it leans
+ * Hold-the-card handling: press and drag on the card and it leans
  * toward your finger in 3D, with the foil following. Let go and it springs back.
  */
 fun Modifier.dragToTilt(state: TiltState, scope: CoroutineScope): Modifier = pointerInput(state) {
@@ -70,7 +70,7 @@ fun Modifier.dragToTilt(state: TiltState, scope: CoroutineScope): Modifier = poi
     }
 }
 
-/** Rotates the card a few degrees with the phone, like holding a real card. */
+/** Leans the card toward the finger in 3D, like holding a real card. */
 fun Modifier.tilt3d(tilt: TiltState?, maxDegrees: Float = 7f): Modifier =
     if (tilt == null) this else graphicsLayer {
         rotationY = tilt.x * maxDegrees
@@ -78,47 +78,3 @@ fun Modifier.tilt3d(tilt: TiltState?, maxDegrees: Float = 7f): Modifier =
         cameraDistance = 14f * density
     }
 
-/** How strong the holo foil is: Common has none; shiny cards get a bit even if Common. */
-fun holoStrength(rarity: Rarity, shiny: Boolean): Float = when {
-    rarity == Rarity.LEGENDARY -> 0.5f
-    rarity == Rarity.RARE -> 0.32f
-    shiny -> 0.28f
-    else -> 0f
-}
-
-private val foil = listOf(
-    Color(0xFFFF6EC7), Color(0xFFFFE66D), Color(0xFF7CFFCB), Color(0xFF74B9FF), Color(0xFFB892FF), Color(0xFFFF6EC7),
-)
-
-/**
- * Holographic foil: rainbow bands plus a white glare that slide across the
- * card as the phone tilts. Values are read in the draw phase, so tilting
- * never recomposes.
- */
-fun Modifier.holoSheen(tilt: TiltState?, strength: Float): Modifier =
-    if (tilt == null || strength <= 0f) this else drawWithContent {
-        drawContent()
-        // Flat phone: foil band and glare rest near the top-left corner, off the face.
-        // Tilting slides them across the whole card.
-        val fx = (0.2f + tilt.x * 0.8f).coerceIn(-0.3f, 1.3f)
-        val fy = (0.15f + tilt.y * 0.8f).coerceIn(-0.3f, 1.3f)
-        val cx = size.width * fx
-        val cy = size.height * fy
-        drawRect(
-            brush = Brush.linearGradient(
-                colors = foil.map { it.copy(alpha = strength * 0.28f) },
-                start = Offset(cx - size.width * 0.25f, cy - size.height * 0.25f),
-                end = Offset(cx + size.width * 0.25f, cy + size.height * 0.25f),
-                tileMode = TileMode.Mirror,
-            ),
-            blendMode = BlendMode.Overlay,
-        )
-        drawRect(
-            brush = Brush.radialGradient(
-                listOf(Color.White.copy(alpha = strength * 0.45f), Color.Transparent),
-                center = Offset(cx, cy),
-                radius = size.minDimension * 0.4f,
-            ),
-            blendMode = BlendMode.Screen,
-        )
-    }

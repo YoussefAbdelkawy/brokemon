@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Mic
@@ -115,8 +115,8 @@ fun AudioPlayButton(player: AudioPlayerState, uri: String, modifier: Modifier = 
     val playing = player.isPlaying(uri)
     Row(
         modifier
-            .background(DexColors.SurfaceHigh, CutCornerShape(6.dp))
-            .border(2.dp, DexColors.LedGreen.copy(alpha = 0.6f), CutCornerShape(6.dp))
+            .background(DexColors.SurfaceHigh, DexShape(6.dp))
+            .border(2.dp, DexColors.LedGreen.copy(alpha = 0.6f), DexShape(6.dp))
             .clickable { player.toggle(uri) }
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .semantics { contentDescription = if (playing) "Pause" else "Play ${label ?: "voice note"}" },
@@ -264,8 +264,8 @@ fun VoiceRecorderDialog(
     Dialog(onDismissRequest = ::close) {
         Column(
             Modifier
-                .background(DexColors.Surface, CutCornerShape(8.dp))
-                .border(2.dp, DexColors.Outline, CutCornerShape(8.dp))
+                .background(DexColors.Surface, DexShape(8.dp))
+                .border(2.dp, DexColors.Outline, DexShape(8.dp))
                 .padding(18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -278,7 +278,7 @@ fun VoiceRecorderDialog(
                 Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .background(DexColors.Screen, CutCornerShape(4.dp))
+                    .background(DexColors.Screen, DexShape(4.dp))
                     .padding(8.dp),
             ) {
                 Canvas(Modifier.fillMaxWidth().height(40.dp)) {

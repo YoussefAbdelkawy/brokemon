@@ -33,6 +33,11 @@ import com.joecode.brokemon.ui.trainer.JournalScreen
 import com.joecode.brokemon.ui.trainer.TrainerEditScreen
 import com.joecode.brokemon.ui.trainer.TrainerScreen
 import com.joecode.brokemon.ui.wild.WildBroScreen
+import com.joecode.brokemon.ui.battle.BattleHubScreen
+import com.joecode.brokemon.ui.battle.BattleRecordsScreen
+import com.joecode.brokemon.ui.battle.BattleScreen
+import com.joecode.brokemon.ui.battle.TournamentScreen
+import com.joecode.brokemon.ui.battle.TournamentsScreen
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -41,6 +46,9 @@ fun BrokemonApp(
     onOnboardingDone: () -> Unit,
     openBroId: Long? = null,
     onOpenHandled: () -> Unit = {},
+    /** A route to open from an app shortcut (catch, scan). */
+    openRoute: String? = null,
+    onRouteHandled: () -> Unit = {},
 ) {
     val nav = rememberNavController()
 
@@ -51,6 +59,13 @@ fun BrokemonApp(
             nav.navigate(Routes.broDetail(openBroId)) { launchSingleTop = true }
         }
         onOpenHandled()
+    }
+    LaunchedEffect(openRoute) {
+        if (openRoute == null) return@LaunchedEffect
+        if (nav.currentDestination?.route != Routes.ONBOARDING) {
+            nav.navigate(openRoute) { launchSingleTop = true }
+        }
+        onRouteHandled()
     }
     val back: () -> Unit = { nav.popBackStack() }
     val duration = 280
@@ -89,8 +104,50 @@ fun BrokemonApp(
                 onTrainer = { nav.navigate(Routes.TRAINER) },
                 onJournal = { nav.navigate(Routes.JOURNAL) },
                 onWild = { nav.navigate(Routes.WILD) { launchSingleTop = true } },
+                onBattle = { nav.navigate(Routes.BATTLE_HUB) },
             )
             }
+        }
+        composable(Routes.BATTLE_HUB) {
+            BattleHubScreen(
+                onBack = back,
+                onPlay = { nav.navigate(Routes.battle(it.name)) },
+                onTournaments = { nav.navigate(Routes.TOURNAMENTS) },
+                onRecords = { nav.navigate(Routes.BATTLE_RECORDS) },
+            )
+        }
+        composable(
+            Routes.BATTLE_PLAY,
+            arguments = listOf(
+                navArgument("kind") { type = NavType.StringType },
+                navArgument("tournamentId") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("round") { type = NavType.IntType; defaultValue = -1 },
+                navArgument("index") { type = NavType.IntType; defaultValue = -1 },
+            ),
+        ) { BattleScreen(onBack = back) }
+        composable(
+            Routes.BATTLE_REPLAY,
+            arguments = listOf(
+                navArgument("replayId") { type = NavType.LongType },
+                navArgument("kind") { type = NavType.StringType; defaultValue = "REPLAY" },
+            ),
+        ) { BattleScreen(onBack = back) }
+        composable(Routes.BATTLE_RECORDS) {
+            BattleRecordsScreen(onBack = back, onReplay = { nav.navigate(Routes.replay(it)) })
+        }
+        composable(Routes.TOURNAMENTS) {
+            TournamentsScreen(onBack = back, onOpen = { nav.navigate(Routes.tournament(it)) })
+        }
+        composable(
+            Routes.TOURNAMENT,
+            arguments = listOf(navArgument("tournamentId") { type = NavType.LongType }),
+        ) { entry ->
+            val id = entry.arguments?.getLong("tournamentId") ?: 0L
+            TournamentScreen(
+                onBack = back,
+                onPlayHere = { m -> nav.navigate(Routes.battle("LOCAL", id, m.round, m.index)) },
+                onPlayNearby = { m -> nav.navigate(Routes.battle("HOST", id, m.round, m.index)) },
+            )
         }
         composable(Routes.TRAINER) {
             TrainerScreen(
@@ -181,6 +238,14 @@ fun BrokemonApp(
                 onBack = back,
                 onShareBro = { nav.navigate(Routes.shareBro(it)) },
                 onOpenBro = { nav.navigate(Routes.broDetail(it)) { popUpTo(Routes.HOME) } },
+            )
+        }
+        composable(Routes.TRADE_SCAN) {
+            TradeScreen(
+                onBack = back,
+                onShareBro = { nav.navigate(Routes.shareBro(it)) },
+                onOpenBro = { nav.navigate(Routes.broDetail(it)) { popUpTo(Routes.HOME) } },
+                autoScan = true,
             )
         }
         composable(Routes.CHECK_ON_BRO) {

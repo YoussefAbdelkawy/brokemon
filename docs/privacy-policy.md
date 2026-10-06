@@ -33,6 +33,11 @@ Data leaves your device only when you choose to display a card's QR code and som
 - Photos and videos are taken with your device's camera app, and existing media is chosen through the Android system photo picker. Brokemon does not request camera or storage permissions and can only access the specific items you capture or select.
 - QR scanning uses the Google Play services code scanner, which runs inside Google Play services. Google may process limited diagnostic data under the [Google Privacy Policy](https://policies.google.com/privacy).
 
+## Nearby battles
+Bro Battles can connect two phones that are next to each other using Google Nearby Connections (Bluetooth and Wi-Fi, no internet and no server). This needs the "Nearby devices" permission (on Android 11 and older, the location permission, which Android requires for Bluetooth scanning). Brokemon never reads, stores or shares your location, and only uses these permissions while you are hosting or joining a battle.
+
+During a battle, only a "battle card" is sent to the other phone: each bro's name, appearance, types, level, base stats and four moves, plus your trainer name. Photos, videos, voice recordings, facts, dates and habitats are never sent. Battle records and tournaments stay on your phone. Practice and same-phone battles don't use any connection at all.
+
 ## People in your photos
 Please only add photos, videos and details of friends who are comfortable with it.
 

@@ -17,8 +17,13 @@ data class BroLook(
     val outfit: Int = 0,
     val outfitColor: Int = 0,
     val extra: Int = 0,
+    /** Accessory slots (one item each): something held, something worn on the back, a backdrop. */
+    val hand: Int = 0,
+    val back: Int = 0,
+    val background: Int = 0,
 ) {
-    fun toList(): List<Int> = listOf(skin, hair, hairColor, expression, facialHair, glasses, hat, outfit, outfitColor, extra)
+    fun toList(): List<Int> =
+        listOf(skin, hair, hairColor, expression, facialHair, glasses, hat, outfit, outfitColor, extra, hand, back, background)
 
     operator fun get(part: LookPart): Int = toList()[part.ordinal]
 
@@ -42,6 +47,9 @@ data class BroLook(
                 outfit = at(LookPart.OUTFIT),
                 outfitColor = at(LookPart.OUTFIT_COLOR),
                 extra = at(LookPart.EXTRA),
+                hand = at(LookPart.HAND),
+                back = at(LookPart.BACK),
+                background = at(LookPart.BACKGROUND),
             )
         }
 
@@ -82,7 +90,10 @@ enum class LookPart(val label: String, val count: Int) {
     HAT("Hat", LookOptions.hats.size),
     OUTFIT("Fit", LookOptions.outfits.size),
     OUTFIT_COLOR("Fit color", LookOptions.outfitColors.size),
-    EXTRA("Extras", LookOptions.extras.size);
+    EXTRA("Extras", LookOptions.extras.size),
+    HAND("Hand", LookOptions.handItems.size),
+    BACK("Back", LookOptions.backItems.size),
+    BACKGROUND("Backdrop", LookOptions.backgrounds.size);
 
     /** Color parts show swatches; the rest show a label under the preview. */
     val isColor: Boolean get() = this == SKIN || this == HAIR_COLOR || this == OUTFIT_COLOR
@@ -95,6 +106,9 @@ enum class LookPart(val label: String, val count: Int) {
         HAT -> LookOptions.hats[index]
         OUTFIT -> LookOptions.outfits[index]
         EXTRA -> LookOptions.extras[index]
+        HAND -> LookOptions.handItems[index]
+        BACK -> LookOptions.backItems[index]
+        BACKGROUND -> LookOptions.backgrounds[index]
         else -> null
     }
 }
@@ -115,16 +129,22 @@ object LookOptions {
 
     val hairStyles = listOf(
         "Buzz", "Short", "Spiky", "Curly", "Long", "Mohawk", "Bald", "Bun", "Side part", "Mullet",
-        "Fade", "Afro", "Braids", "Locs", "Ponytail", "Waves",
+        "Fade", "Afro", "Braids", "Locs", "Ponytail", "Waves", "Anime spikes",
     )
     val expressions = listOf("Smile", "Grin", "Chill", "Smirk", "Shocked", "Sleepy")
     val facialHair = listOf("None", "Stubble", "Mustache", "Beard", "Goatee")
-    val glasses = listOf("None", "Round", "Square", "Shades", "Aviators", "Thick")
-    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab", "Trainer cap")
+    val glasses = listOf("None", "Round", "Square", "Shades", "Aviators", "Thick", "Hero mask")
+    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab", "Trainer cap", "Headset", "Headphones", "Ninja band")
 
     /** Hats you unlock through the Trainer's Journal instead of having from the start. */
     const val TRAINER_CAP = 7
-    val outfits = listOf("Tee", "Hoodie", "Jersey", "Suit", "Galabeya", "Leather")
+    /** Football kits use made-up colors and a blank crest, never a real club's. */
+    val outfits = listOf("Tee", "Hoodie", "Jersey", "Suit", "Galabeya", "Leather", "Football kit", "Captain kit")
+    val handItems = listOf(
+        "None", "Manga", "Comic", "Football", "Controller", "Coffee", "Shawarma", "Gym bag", "Keeper gloves",
+    )
+    val backItems = listOf("None", "Hero cape", "Cosplay cape", "Backpack", "Scarf")
+    val backgrounds = listOf("None", "POW!", "Gaming chair", "Pitch", "Speed lines", "Trophy glow")
     val extras = listOf("None", "Earring", "Freckles", "Blush", "Nose ring", "Scar", "Mole")
 
     val outfitColors = listOf(

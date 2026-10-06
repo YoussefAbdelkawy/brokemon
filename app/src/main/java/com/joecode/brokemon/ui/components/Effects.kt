@@ -34,6 +34,7 @@ import kotlin.random.Random
 fun Modifier.rarityGlow(rarity: Rarity, cornerRadius: Float = 18f): Modifier = when (rarity) {
     Rarity.COMMON -> this
     Rarity.RARE -> this.shimmer()
+    Rarity.EPIC -> this.shimmer()
     Rarity.LEGENDARY -> this.legendaryGlow(cornerRadius)
 }
 
@@ -146,7 +147,7 @@ private fun DrawScope.drawPixelStar(center: Offset, strength: Float, color: Colo
 }
 
 /** Faint horizontal scanlines for the LCD "screen" panels. */
-fun Modifier.scanlines(alpha: Float = 0.07f): Modifier = drawWithContent {
+fun Modifier.scanlines(alpha: Float = 0.07f): Modifier = if (com.joecode.brokemon.ui.theme.AppStyle.flat) this else drawWithContent {
     drawContent()
     val step = 3.dp.toPx()
     var y = 0f

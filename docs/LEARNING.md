@@ -68,6 +68,13 @@ Study: weighted random selection, `HorizontalPager`, and reading pager offsets i
 - Stat hexagon: `ui/components/StatHexagon.kt`. Study: `Canvas`, `Path`, polar coordinates, `rememberTextMeasurer` + `drawText`.
 - Wild bro: `ui/wild/*`. Study: `TYPE_ACCELEROMETER` + `LifecycleResumeEffect` (listen only while visible), an explicit-package `Intent` for WhatsApp with a share-sheet fallback, and a single 0..1 `Animatable` driving a whole timeline.
 
+## Battles, foil, flavors
+- Battle engine: `domain/battle/BattleEngine.kt` + `BattleEngineTest`. Study: pure reducers (state, actions, seed → state), seeded `kotlin.random.Random` for lockstep multiplayer, validating untrusted input by recomputing instead of trusting.
+- Nearby: `battle/NearbyLink.kt`. Study: Google Nearby Connections (advertise/discover, connection lifecycle, byte payloads), runtime permissions that differ by Android version.
+- Foil: `ui/components/HoloFoil.kt`. Study: AGSL `RuntimeShader` + `ShaderBrush`, `BlendMode.Screen`, `clipPath` with `Path.combine` for masks, low-pass filtering sensor data.
+- Regional dexes: `data/model/RegionalDex.kt`. Study: many-to-many in Room with a cross-ref entity, `@Relation` + `Junction`, foreign keys with cascade.
+- Two styles: `src/classic` / `src/cosmos` `AppStyle`, `FlatAvatar`, `FlatRoom`. Study: Gradle product flavors and flavor source sets, `androidComponents.onVariants` resValues (app shortcuts need the final package name).
+
 ## M9–M10: Privacy and publishing
 See `docs/PLAY_STORE.md` and `docs/privacy-policy.md`.
 

@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -119,7 +119,7 @@ fun HintBubble(text: String, arrow: ArrowSide, arrowBias: Float, onDismiss: () -
         animationSpec = infiniteRepeatable(tween(520), RepeatMode.Reverse),
         label = "bob",
     )
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     val paper = Color(0xFFF7F4E8)
     val ink = Color(0xFF16161C)
     Column(

@@ -53,12 +53,15 @@ object Evolution {
         min(facts, FACTS_CAP) * FACT_POINTS +
         min(monthsKnown, MONTHS_CAP) * MONTH_POINTS
 
+    /** Battle wins add a little bond (at most one point a day, capped), so it can't be farmed. */
+    const val BATTLE_BONUS_CAP = 10
+
     fun score(bro: Bro, now: Long = System.currentTimeMillis()): Int = score(
         memories = bro.memories.size,
         checkIns = bro.checkInCount,
         facts = bro.facts.size,
         monthsKnown = monthsKnown(bro.catchDate, now),
-    )
+    ) + min(bro.resolvedBattle.winBonus, BATTLE_BONUS_CAP)
 
     fun stageFor(score: Int): EvolutionStage =
         EvolutionStage.entries.last { score >= it.threshold }

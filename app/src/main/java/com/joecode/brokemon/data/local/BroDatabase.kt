@@ -8,24 +8,39 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.Squad
+import com.joecode.brokemon.data.model.RegionalDex
+import com.joecode.brokemon.data.model.BroDexCrossRef
+import com.joecode.brokemon.data.model.BattleRecord
+import com.joecode.brokemon.data.model.Tournament
 
 @Database(
-    entities = [Bro::class, Squad::class],
-    version = 5,
+    entities = [
+        Bro::class,
+        Squad::class,
+        RegionalDex::class,
+        BroDexCrossRef::class,
+        BattleRecord::class,
+        Tournament::class,
+    ],
+    version = 6,
     exportSchema = true,
     // Room writes these migrations from the exported schemas in app/schemas.
     // v2: `look`. v3: `voiceLine` + `eventFrame`. v4: `room`. v5: `flavorText`.
+    // v6: `habitat`, `battle`, regional dexes, battle records, tournaments.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
+        AutoMigration(from = 5, to = 6),
     ],
 )
 @TypeConverters(Converters::class)
 abstract class BroDatabase : RoomDatabase() {
     abstract fun broDao(): BroDao
     abstract fun squadDao(): SquadDao
+    abstract fun dexDao(): DexDao
+    abstract fun battleDao(): BattleDao
 
     companion object {
         @Volatile

@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.LookOptions
 import com.joecode.brokemon.data.model.LookPart
-import com.joecode.brokemon.domain.Reward
+import com.joecode.brokemon.domain.AvatarLocks
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
@@ -55,7 +55,7 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             items(LookPart.entries) { p ->
                 val selected = p == part
-                val shape = CutCornerShape(4.dp)
+                val shape = DexShape(4.dp)
                 Text(
                     p.label.uppercase(),
                     style = PixelText.Tiny,
@@ -73,7 +73,7 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
         LazyRow(state = optionsState, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items((0 until part.count).toList()) { i ->
                 // Journal rewards stay visible but locked until they're earned.
-                val locked = part == LookPart.HAT && i == LookOptions.TRAINER_CAP && Reward.TRAINER_CAP !in unlocked
+                val locked = AvatarLocks.requiredReward(part, i)?.let { it !in unlocked } ?: false
                 OptionTile(look, part, i, selected = look[part] == i, locked = locked) {
                     if (!locked) onLookChange(look.with(part, i))
                 }
@@ -84,13 +84,13 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
 
 @Composable
 private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Boolean, locked: Boolean, onClick: () -> Unit) {
-    val shape = CutCornerShape(4.dp)
-    val label = if (locked) "Journal" else part.optionLabel(index)
+    val shape = DexShape(4.dp)
+    val label = if (locked) "Locked" else part.optionLabel(index)
     Column(
         Modifier
             .width(72.dp)
             .semantics {
-                contentDescription = "${part.label} ${label ?: "color ${index + 1}"}" + if (locked) ", locked: earn it in the Trainer's Journal" else ""
+                contentDescription = "${part.label} ${label ?: "color ${index + 1}"}" + if (locked) ", locked: see Rewards on your Trainer Card" else ""
                 this.selected = selected
             }
             .clickable(onClick = onClick),
@@ -116,8 +116,8 @@ private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Bool
                         .align(Alignment.BottomEnd)
                         .padding(4.dp)
                         .size(14.dp)
-                        .background(Color(color), CutCornerShape(2.dp))
-                        .border(1.dp, Color.Black.copy(alpha = 0.6f), CutCornerShape(2.dp)),
+                        .background(Color(color), DexShape(2.dp))
+                        .border(1.dp, Color.Black.copy(alpha = 0.6f), DexShape(2.dp)),
                 )
             } else if (locked) {
                 BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(4.dp), tint = DexColors.Outline)

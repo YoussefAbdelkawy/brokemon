@@ -1,6 +1,5 @@
 package com.joecode.brokemon.ui.theme
 
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -30,11 +29,11 @@ private val DexColorScheme = darkColorScheme(
 
 // Chamfered corners read as "pixel" without looking jagged.
 private val DexShapes = Shapes(
-    extraSmall = CutCornerShape(2.dp),
-    small = CutCornerShape(4.dp),
-    medium = CutCornerShape(6.dp),
-    large = CutCornerShape(8.dp),
-    extraLarge = CutCornerShape(12.dp),
+    extraSmall = DexShape(2.dp),
+    small = DexShape(4.dp),
+    medium = DexShape(6.dp),
+    large = DexShape(8.dp),
+    extraLarge = DexShape(12.dp),
 )
 
 /** Dark mode only, by design. */

@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.LookOptions
 import com.joecode.brokemon.data.model.TrainerFrame
+import com.joecode.brokemon.domain.AvatarLocks
 import com.joecode.brokemon.domain.Reward
 import com.joecode.brokemon.domain.RewardKind
 import com.joecode.brokemon.ui.theme.DexColors
@@ -39,7 +40,7 @@ fun RewardIcon(reward: Reward, unlocked: Boolean, modifier: Modifier = Modifier,
             RewardKind.BADGE -> PixelGrid(badgeGrid(reward), badgePalette(reward), unlocked, Modifier.fillMaxSize())
             RewardKind.FRAME -> FrameIcon(reward.frame ?: TrainerFrame.BASIC, unlocked, Modifier.fillMaxSize(0.8f))
             RewardKind.PART -> BroSprite(
-                look = BroLook(skin = 2, hair = 1, hat = LookOptions.TRAINER_CAP, outfit = 1, outfitColor = 0),
+                look = AvatarLocks.showcase(reward),
                 stage = 0,
                 shiny = false,
                 modifier = Modifier.fillMaxSize(),
@@ -52,7 +53,7 @@ fun RewardIcon(reward: Reward, unlocked: Boolean, modifier: Modifier = Modifier,
 
 @Composable
 fun FrameIcon(frame: TrainerFrame, unlocked: Boolean, modifier: Modifier = Modifier) {
-    val shape = CutCornerShape(3.dp)
+    val shape = DexShape(3.dp)
     val colors = frame.colors.map { Color(it) }
     Box(
         modifier

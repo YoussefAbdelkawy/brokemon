@@ -1,6 +1,6 @@
 # Data schema plan
 
-Room database `brokemon.db`, currently **version 5**. Schemas are exported to `app/schemas/` (keep that folder committed). Every version bump so far has been an `AutoMigration`, so nobody's data gets wiped.
+Room database `brokemon.db`, currently **version 6**. Schemas are exported to `app/schemas/` (keep that folder committed). Every version bump so far has been an `AutoMigration`, so nobody's data gets wiped.
 
 | Version | Change | Why |
 |---|---|---|
@@ -9,6 +9,7 @@ Room database `brokemon.db`, currently **version 5**. Schemas are exported to `a
 | 3 | `bros.voiceLine`, `bros.eventFrame` (nullable TEXT) | Voice lines, limited event frames |
 | 4 | `bros.room` (nullable TEXT, list of option indices) | Decoratable bro rooms |
 | 5 | `bros.flavorText` (TEXT NOT NULL DEFAULT '') | Dex entries |
+| 6 | `bros.habitat`, `bros.battle` (nullable TEXT); tables `regional_dexes`, `bro_dex_cross_ref` (FKs, cascade), `battle_records`, `tournaments` | Habitat, battles, regional dexes, tournaments |
 
 ## How the planned fields map
 
@@ -27,6 +28,11 @@ Room database `brokemon.db`, currently **version 5**. Schemas are exported to `a
 | Trainer Card | DataStore `trainer` (Gson JSON of `Trainer`) | Your own card. Not a bro, so it's not in Room. Included in backups |
 | Journal | DataStore `claimed_quests` (string set) + `traded_qr` | Quest completion is computed from the bros. Only claims are stored |
 | Trainer level | **Computed**: `TrainerLevel.xp(...)` | Never stored |
+| Habitat | `Bro.habitat: String?` (max 40) | Not in QR trades |
+| Battle loadout | `Bro.battle: BattleLoadout?` (JSON: equipped move keys, custom moves, win bonus, championships) | |
+| Regional dexes | `RegionalDex` + `BroDexCrossRef(broId, dexId, regionalNumber)`, `@Relation` + `Junction` | National Dex = all bros, not stored |
+| Battle history | `BattleRecord` (seed + actions + both team snapshots = full replay) | |
+| Earned shinies | DataStore `shiny_roll_<id>` (epoch day of the last roll), `shiny_earned` | One roll per bro per day |
 | Coach marks / dex view | DataStore `seen_hints` (string set), `dex_view` | Survive "delete everything" and restores |
 
 ## Rules for future changes

@@ -31,7 +31,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
@@ -42,6 +42,8 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,7 +72,7 @@ import com.joecode.brokemon.ui.theme.PixelText
 import com.joecode.brokemon.ui.theme.color
 
 /**
- * The device shell every screen sits in: a red Pokédex-style header with a
+ * The device shell every screen sits in: a red handheld-style header with a
  * big pulsing lens, indicator LEDs and the screen title.
  */
 @Composable
@@ -99,10 +101,20 @@ private fun DexHeader(
     onBack: (() -> Unit)?,
     actions: @Composable RowScope.() -> Unit,
 ) {
+    val flat = com.joecode.brokemon.ui.theme.AppStyle.flat
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(DexColors.DexRed, DexColors.DexRedDark)))
+            .then(
+                if (flat) {
+                    // Cosmos: a night-sky gradient bar with soft rounded bottom corners.
+                    Modifier
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                        .background(Brush.linearGradient(listOf(DexColors.DexRedDark, Color(0xFF2B1D6B), Color(0xFF1B1446))))
+                } else {
+                    Modifier.background(Brush.verticalGradient(listOf(DexColors.DexRed, DexColors.DexRedDark)))
+                },
+            )
             .windowInsetsPadding(WindowInsets.statusBars),
     ) {
         Row(
@@ -118,7 +130,7 @@ private fun DexHeader(
             } else {
                 LensLed(Modifier.padding(start = 6.dp, end = 4.dp))
             }
-            LedCluster(Modifier.padding(horizontal = 8.dp))
+            if (!flat) LedCluster(Modifier.padding(horizontal = 8.dp)) else Spacer(Modifier.width(10.dp))
             Text(
                 text = title.uppercase(),
                 style = PixelText.Header,
@@ -130,12 +142,16 @@ private fun DexHeader(
             actions()
         }
         // Hinge line under the header, like the seam of a flip device.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .background(Color.Black.copy(alpha = 0.45f)),
-        )
+        if (!flat) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(Color.Black.copy(alpha = 0.45f)),
+            )
+        } else {
+            Spacer(Modifier.height(6.dp))
+        }
     }
 }
 
@@ -149,6 +165,17 @@ fun LensLed(modifier: Modifier = Modifier, size: Dp = 34.dp) {
         animationSpec = infiniteRepeatable(tween(1400), RepeatMode.Reverse),
         label = "lensGlow",
     )
+    if (com.joecode.brokemon.ui.theme.AppStyle.flat) {
+        // Cosmos: a little ringed planet that breathes.
+        Canvas(modifier.size(size)) {
+            val r = this.size.minDimension / 2
+            drawCircle(DexColors.LedBlue.copy(alpha = 0.25f * glow), r)
+            drawCircle(Brush.radialGradient(listOf(Color(0xFF9FE6FF), DexColors.LedBlue, Color(0xFF2E6FD6)), center - Offset(r * 0.25f, r * 0.25f), r), r * 0.62f)
+            drawOval(DexColors.DexRed, Offset(r * 0.08f, r * 0.86f), Size(r * 1.84f, r * 0.34f), style = androidx.compose.ui.graphics.drawscope.Stroke(r * 0.12f))
+            drawCircle(Color.White.copy(alpha = 0.8f), r * 0.12f, center - Offset(r * 0.25f, r * 0.25f))
+        }
+        return
+    }
     Canvas(modifier.size(size)) {
         val r = this.size.minDimension / 2
         drawCircle(Color.White, r)
@@ -203,7 +230,25 @@ fun ScreenPanel(
     contentPadding: Dp = 12.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = CutCornerShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 14.dp, bottomEnd = 4.dp)
+    if (com.joecode.brokemon.ui.theme.AppStyle.flat) {
+        // Cosmos: a soft rounded card with a faint glow at the top.
+        val shape = androidx.compose.foundation.shape.RoundedCornerShape(22.dp)
+        Column(
+            modifier
+                .clip(shape)
+                .background(Brush.verticalGradient(listOf(DexColors.SurfaceHigh, DexColors.Surface)))
+                .border(1.dp, Color.White.copy(alpha = 0.08f), shape)
+                .padding(contentPadding + 2.dp),
+        ) {
+            if (title != null) {
+                Text(title, style = PixelText.Tiny, color = DexColors.TextMuted)
+                Spacer(Modifier.height(8.dp))
+            }
+            content()
+        }
+        return
+    }
+    val shape = DexShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 14.dp, bottomEnd = 4.dp)
     Column(
         modifier
             .background(DexColors.SurfaceHigh, shape)
@@ -228,9 +273,9 @@ fun ScreenPanel(
         Column(
             Modifier
                 .fillMaxWidth()
-                .clip(CutCornerShape(3.dp))
+                .clip(DexShape(3.dp))
                 .background(DexColors.Screen)
-                .border(1.dp, DexColors.ScreenBorder, CutCornerShape(3.dp))
+                .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
                 .scanlines()
                 .padding(contentPadding),
             content = content,
@@ -253,8 +298,34 @@ fun PixelButton(
     val pressed by interaction.collectIsPressedAsState()
     val depth = 4.dp
     val offset by animateFloatAsState(if (pressed) 1f else 0f, tween(60), label = "press")
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     val face = if (enabled) color else DexColors.Outline
+    if (com.joecode.brokemon.ui.theme.AppStyle.flat) {
+        val pill = androidx.compose.foundation.shape.RoundedCornerShape(50)
+        val scale by animateFloatAsState(if (pressed) 0.96f else 1f, tween(90), label = "pressScale")
+        Box(
+            modifier
+                .alpha(if (enabled) 1f else 0.55f)
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .clip(if (stacked) androidx.compose.foundation.shape.RoundedCornerShape(20.dp) else pill)
+                .background(Brush.verticalGradient(listOf(lerp(face, Color.White, 0.18f), face)))
+                .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (stacked) {
+                Column(Modifier.padding(horizontal = 8.dp, vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (leading != null) { leading(); Spacer(Modifier.height(6.dp)) }
+                    Text(text, style = PixelText.Tiny, color = DexColors.Text, textAlign = TextAlign.Center, maxLines = 1)
+                }
+            } else {
+                Row(Modifier.padding(horizontal = 20.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (leading != null) { leading(); Spacer(Modifier.width(8.dp)) }
+                    Text(text, style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
+                }
+            }
+        }
+        return
+    }
     Box(
         modifier
             .alpha(if (enabled) 1f else 0.6f)
@@ -306,7 +377,7 @@ fun PixelButton(
 
 @Composable
 fun TypeBadge(type: BroType, modifier: Modifier = Modifier, compact: Boolean = false) {
-    val shape = CutCornerShape(4.dp)
+    val shape = DexShape(4.dp)
     Text(
         text = type.label.uppercase(),
         style = if (compact) PixelText.Tiny else PixelText.Label,
@@ -408,6 +479,21 @@ fun EmptyState(
  */
 @Composable
 fun CatchCube(modifier: Modifier = Modifier, coreGlow: Float = 1f, lidOpen: Float = 0f) {
+    if (com.joecode.brokemon.ui.theme.AppStyle.flat) {
+        // Cosmos: the "Bro Planet", a little ringed world with a glowing core.
+        // (Deliberately not a two-tone ball with a band and button.)
+        Canvas(modifier) {
+            val r = size.minDimension / 2 * 0.62f
+            val lift = -lidOpen * r * 0.5f
+            val c = Offset(center.x, center.y + lift)
+            drawCircle(DexColors.LedBlue.copy(alpha = 0.25f * coreGlow), r * 1.5f, c)
+            drawCircle(Brush.radialGradient(listOf(Color(0xFFFFB3C7), DexColors.DexRedLight, Color(0xFFB0306E)), c - Offset(r * 0.35f, r * 0.35f), r * 1.3f), r, c)
+            drawArc(Color(0x55130E30), 300f, 120f, false, Offset(c.x - r * 0.7f, c.y - r * 0.7f), Size(r * 1.4f, r * 1.4f), style = androidx.compose.ui.graphics.drawscope.Stroke(r * 0.18f))
+            drawOval(DexColors.LedYellow, Offset(c.x - r * 1.55f, c.y - r * 0.22f), Size(r * 3.1f, r * 0.5f), style = androidx.compose.ui.graphics.drawscope.Stroke(r * 0.16f))
+            drawCircle(Color.White.copy(alpha = 0.85f * coreGlow), r * 0.16f, c - Offset(r * 0.4f, r * 0.42f))
+        }
+        return
+    }
     Canvas(modifier) {
         val px = size.minDimension / 12f
         fun cell(x: Int, y: Int, c: Color, dy: Float = 0f) =

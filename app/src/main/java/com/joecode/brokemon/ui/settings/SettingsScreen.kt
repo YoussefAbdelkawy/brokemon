@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Article
@@ -41,6 +41,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -180,6 +182,26 @@ fun SettingsScreen(
                     onChange = { on -> viewModel.setWeeklyNudge(on); if (on) ensureNotificationPermission() },
                 )
             }
+            ScreenPanel(title = "Battle text speed") {
+                Text("How fast battle messages type out.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Slow", "Normal", "Fast").forEachIndexed { i, label ->
+                        val selected = state.textSpeed == i
+                        Text(
+                            label.uppercase(),
+                            style = PixelText.Tiny,
+                            color = if (selected) Color(0xFF101014) else DexColors.ScreenText,
+                            modifier = Modifier
+                                .semantics { this.selected = selected }
+                                .background(if (selected) DexColors.ScreenText else Color.Transparent, DexShape(3.dp))
+                                .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
+                                .clickable { viewModel.setTextSpeed(i) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                        )
+                    }
+                }
+            }
             if (isDebug) {
                 ScreenPanel(title = "Debug: event preview") {
                     Text(
@@ -263,7 +285,7 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsRow(label: String, icon: ImageVector, color: Color, onClick: () -> Unit) {
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     Row(
         Modifier
             .fillMaxWidth()

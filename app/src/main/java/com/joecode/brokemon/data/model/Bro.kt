@@ -37,19 +37,26 @@ data class Bro(
     val eventFrame: String? = null,
     /** The bro's decorated room. Null = default room. */
     val room: BroRoom? = null,
-    /** The Pokédex-style "dex entry": one funny line about them. Blank = use the type's blurb. */
+    /** The "dex entry": one funny line about them. Blank = use the type's blurb. */
     @ColumnInfo(defaultValue = "") val flavorText: String = "",
+    /** Where you usually find them, e.g. "Uni cafeteria", "Discord". */
+    val habitat: String? = null,
+    /** Battle moves and battle history bits. Null = default loadout. */
+    val battle: BattleLoadout? = null,
 ) {
     val dexNumber: String get() = "#%03d".format(id)
     val types: List<BroType> get() = listOfNotNull(BroType.from(type1), BroType.from(type2))
     val primaryType: BroType get() = BroType.from(type1) ?: BroType.CHILL_GUY
     val resolvedLook: BroLook get() = look ?: BroLook.random(avatarSeed)
     val resolvedRoom: BroRoom get() = room ?: BroRoom()
+    val resolvedBattle: BattleLoadout get() = battle ?: BattleLoadout()
 
     /** What the dex says about them: their own entry, or their type's blurb as a fallback. */
     val dexEntry: String get() = flavorText.ifBlank { primaryType.blurb + "." }
 
     companion object {
         const val MAX_FLAVOR = 90
+        const val MAX_HABITAT = 40
+        val HABITAT_PICKS = listOf("Uni", "Gym", "Café", "Discord", "Street", "Home")
     }
 }

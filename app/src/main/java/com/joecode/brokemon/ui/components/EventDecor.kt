@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -56,7 +56,7 @@ fun EventIconView(event: SeasonEvent, size: Dp, modifier: Modifier = Modifier) {
 /** "★ RAMADAN 2027" limited-edition ribbon shown on event cards. */
 @Composable
 fun EventRibbon(stamp: EventStamp, modifier: Modifier = Modifier, compact: Boolean = false) {
-    val shape = CutCornerShape(3.dp)
+    val shape = DexShape(3.dp)
     Row(
         modifier
             .background(stamp.event.primaryColor.copy(alpha = 0.25f), shape)

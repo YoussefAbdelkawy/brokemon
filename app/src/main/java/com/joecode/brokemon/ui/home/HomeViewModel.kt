@@ -11,6 +11,7 @@ import com.joecode.brokemon.data.UserPrefs
 import com.joecode.brokemon.data.model.Bro
 import com.joecode.brokemon.data.model.BroType
 import com.joecode.brokemon.data.model.Rarity
+import com.joecode.brokemon.data.model.RegionalDex
 import com.joecode.brokemon.domain.CheckOnBro
 import com.joecode.brokemon.domain.Evolution
 import com.joecode.brokemon.domain.EvolutionStage
@@ -25,7 +26,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Year
 
-data class DexEntry(val bro: Bro, val stage: EvolutionStage)
+/** A bro as shown in the current dex: [number] is the National number or the regional one. */
+data class DexEntry(val bro: Bro, val stage: EvolutionStage, val number: String = bro.dexNumber)
 
 enum class SortOrder(val label: String) {
     DEX("Dex number"),
@@ -61,7 +63,7 @@ data class BroFilter(
     }
 
     fun sorted(entries: List<DexEntry>): List<DexEntry> = when (sort) {
-        SortOrder.DEX -> entries.sortedBy { it.bro.id }
+        SortOrder.DEX -> entries.sortedBy { it.number }
         SortOrder.NAME -> entries.sortedBy { it.bro.name.lowercase() }
         SortOrder.NEWEST -> entries.sortedByDescending { it.bro.catchDate }
         SortOrder.NEEDS_CHECK_IN -> entries.sortedByDescending { CheckOnBro.daysSinceContact(it.bro) }
@@ -87,16 +89,38 @@ data class HomeUiState(
     val mysterySlots: List<Long> = emptyList(),
     val view: DexView = DexView.CARDS,
     val progress: TrainerProgress = TrainerProgress(),
+    /** All bros, whatever dex is selected (decides the first-run empty state). */
+    val nationalCount: Int = 0,
+    val dexes: List<RegionalDex> = emptyList(),
+    /** Null = the National Dex (every bro). */
+    val selectedDex: RegionalDex? = null,
 )
+
+/** The bros in the selected dex, each with its number in that dex. */
+private data class DexScope(val dex: RegionalDex?, val dexes: List<RegionalDex>, val entries: List<DexEntry>, val national: Int)
 
 class HomeViewModel(private val repository: BroRepository, events: EventClock, private val prefs: UserPrefs) : ViewModel() {
 
     private val query = MutableStateFlow("")
     private val filter = MutableStateFlow(BroFilter())
 
+    private val selectedDexId = MutableStateFlow<Long?>(null)
+
+    private val scope = combine(repository.bros, repository.dexes, repository.dexRefs, selectedDexId) { bros, dexes, refs, sel ->
+        val dex = dexes.firstOrNull { it.id == sel }
+        val entries = if (dex == null) {
+            bros.map { DexEntry(it, Evolution.info(it).stage) }
+        } else {
+            val numbers = refs.filter { it.dexId == dex.id }.associate { it.broId to it.regionalNumber }
+            bros.filter { it.id in numbers }.map { DexEntry(it, Evolution.info(it).stage, "#%03d".format(numbers.getValue(it.id))) }
+        }
+        DexScope(dex, dexes, entries, bros.size)
+    }
+
     private val dexState =
-        combine(repository.bros, query, filter, events.current, prefs.roomHintSeen) { bros, q, f, event, hintSeen ->
-            val all = bros.map { DexEntry(it, Evolution.info(it).stage) }
+        combine(scope, query, filter, events.current, prefs.roomHintSeen) { sc, q, f, event, hintSeen ->
+            val all = sc.entries
+            val bros = all.map { it.bro }
             val shown = all.filter { e -> (q.isBlank() || e.bro.name.contains(q.trim(), ignoreCase = true)) && f.matches(e) }
             HomeUiState(
                 isLoading = false,
@@ -111,8 +135,11 @@ class HomeViewModel(private val repository: BroRepository, events: EventClock, p
                 event = event,
                 showRoomHint = !hintSeen && bros.isNotEmpty(),
                 mysterySlots = if (q.isBlank() && f == BroFilter()) {
-                    ((bros.maxOfOrNull { it.id } ?: 0L) + 1..MIN_SLOTS).toList()
+                    ((all.maxOfOrNull { it.number.drop(1).toLongOrNull() ?: 0L } ?: 0L) + 1..MIN_SLOTS).toList()
                 } else emptyList(),
+                nationalCount = sc.national,
+                dexes = sc.dexes,
+                selectedDex = sc.dex,
             )
         }
 
@@ -120,6 +147,43 @@ class HomeViewModel(private val repository: BroRepository, events: EventClock, p
         combine(dexState, trainerProgressFlow(repository, prefs), prefs.dexView) { state, progress, view ->
             state.copy(progress = progress, view = view)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+
+    fun selectDex(id: Long?) = selectedDexId.update { id }
+
+    fun createDex(name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            val id = repository.createDex(name, colorIndex = uiState.value.dexes.size)
+            selectedDexId.update { id }
+        }
+    }
+
+    fun renameDex(dex: RegionalDex, name: String) {
+        if (name.isBlank()) return
+        viewModelScope.launch { repository.renameDex(dex, name) }
+    }
+
+    fun deleteDex(dex: RegionalDex) {
+        viewModelScope.launch {
+            repository.deleteDex(dex)
+            selectedDexId.update { null }
+        }
+    }
+
+    /** Puts [broIds] in the dex (new ones get the next numbers) and takes everyone else out. */
+    fun setDexMembers(dex: RegionalDex, broIds: Set<Long>) {
+        viewModelScope.launch {
+            val current = repository.allDexRefsOnce().filter { it.dexId == dex.id }.map { it.broId }.toSet()
+            (current - broIds).forEach { repository.removeFromDex(it, dex.id) }
+            (broIds - current).sorted().forEach { repository.addToDex(it, dex.id) }
+        }
+    }
+
+    val dexRefs: StateFlow<List<com.joecode.brokemon.data.model.BroDexCrossRef>> =
+        repository.dexRefs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Every bro (National Dex), for the "add bros" picker. */
+    val allBros: StateFlow<List<Bro>> = repository.bros.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setView(view: DexView) {
         viewModelScope.launch { prefs.setDexView(view) }

@@ -6,7 +6,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
@@ -32,7 +32,7 @@ fun Modifier.sharedCard(broId: Long): Modifier {
             enter = fadeIn(tween(250)),
             exit = fadeOut(tween(250)),
             boundsTransform = { _, _ -> tween(520) },
-            clipInOverlayDuringTransition = OverlayClip(CutCornerShape(10.dp)),
+            clipInOverlayDuringTransition = OverlayClip(DexShape(10.dp)),
         )
     }
 }

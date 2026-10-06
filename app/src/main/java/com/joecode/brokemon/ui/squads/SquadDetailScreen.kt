@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -203,7 +203,7 @@ private fun MatchupPanel(report: List<TypeMatchups.TypeReport>) {
                     TypeMatchups.Verdict.EVEN -> DexColors.Outline
                     TypeMatchups.Verdict.WEAK -> DexColors.LedRed
                 }
-                val shape = CutCornerShape(4.dp)
+                val shape = DexShape(4.dp)
                 Column(
                     Modifier
                         .background(if (selected == r.opponent) r.opponent.color.copy(alpha = 0.25f) else Color.Transparent, shape)

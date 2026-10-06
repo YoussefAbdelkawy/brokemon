@@ -4,7 +4,9 @@ import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
+import com.joecode.brokemon.data.model.BattleLoadout
 import com.joecode.brokemon.data.model.BroLook
+import com.joecode.brokemon.data.model.sanitized
 import com.joecode.brokemon.data.model.BroRoom
 import com.joecode.brokemon.data.model.BroStats
 import com.joecode.brokemon.data.model.Fact
@@ -75,6 +77,14 @@ class Converters {
     @TypeConverter
     fun jsonToLook(value: String?): BroLook? = value?.let {
         runCatching { BroLook.fromList(gson.fromJson(it, object : TypeToken<List<Int>>() {}.type)) }.getOrNull()
+    }
+
+    @TypeConverter
+    fun battleToJson(value: BattleLoadout?): String? = value?.let { gson.toJson(it) }
+
+    @TypeConverter
+    fun jsonToBattle(value: String?): BattleLoadout? = value?.let {
+        runCatching { gson.fromJson(it, BattleLoadout::class.java)?.sanitized() }.getOrNull()
     }
 
     @TypeConverter

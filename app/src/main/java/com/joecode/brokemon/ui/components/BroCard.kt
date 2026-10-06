@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -54,16 +54,22 @@ fun BroCard(
     modifier: Modifier = Modifier,
     tilt: TiltState? = null,
     tiltDegrees: Float = 7f,
-    holoFloor: Float = 0f,
+    /** Phone tilt from the gyro; only the big card on a bro's page passes one. */
+    deviceTilt: DeviceTilt? = null,
     onLongClick: (() -> Unit)? = null,
-    /** Show the Pokédex-style dex entry under the types (big cards: detail, binder). */
+    /** Show the handheld-style dex entry under the types (big cards: detail, binder). */
     showDexEntry: Boolean = false,
+    /** The number to print: National by default, or the bro's number in a regional dex. */
+    number: String = bro.dexNumber,
     onClick: (() -> Unit)? = null,
 ) {
-    val shape = CutCornerShape(10.dp)
+    val shape = DexShape(10.dp)
     val event = SeasonEvents.parse(bro.eventFrame)
     // Event cards wear the event's colors as a limited-edition frame.
     val borderBrush = bro.frameBrush()
+    val holo = HoloStyle.of(bro.rarity, bro.isShiny)
+    val light = if (tilt != null || deviceTilt != null) HoloLight(tilt, deviceTilt) else null
+    val borderWidth = if (event != null) 4.dp else 3.dp
     Column(
         modifier
             .semantics(mergeDescendants = true) {
@@ -75,8 +81,8 @@ fun BroCard(
             .rarityGlow(bro.rarity)
             .clip(shape)
             .background(DexColors.Surface)
-            .holoSheen(tilt, maxOf(holoFloor, holoStrength(bro.rarity, bro.isShiny)))
-            .border(if (event != null) 4.dp else 3.dp, borderBrush, shape)
+            .border(borderWidth, borderBrush, shape)
+            .holoFoilBorder(light, holo, shape, borderWidth)
             .then(
                 if (onClick != null || onLongClick != null) {
                     Modifier.combinedClickable(
@@ -89,10 +95,13 @@ fun BroCard(
             .padding(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(bro.dexNumber, style = PixelText.Tiny, color = DexColors.TextMuted)
+            Text(number, style = PixelText.Tiny, color = DexColors.TextMuted)
             Spacer(Modifier.weight(1f))
             if (bro.isTraded) {
                 Icon(Icons.Filled.SwapHoriz, "Traded", tint = DexColors.LedBlue, modifier = Modifier.size(12.dp))
+            }
+            if (bro.resolvedBattle.championships > 0) {
+                Text("🏆", style = PixelText.Tiny, modifier = Modifier.semantics { contentDescription = "Tournament champion" })
             }
             if (!bro.isTradeable) {
                 Icon(Icons.Filled.Lock, "Locked", tint = DexColors.TextMuted, modifier = Modifier.size(12.dp))
@@ -100,7 +109,7 @@ fun BroCard(
             RarityStars(bro.rarity, size = 10.dp)
         }
         Spacer(Modifier.height(6.dp))
-        SpriteWindow(bro, stage, Modifier.fillMaxWidth().aspectRatio(1f), eventIconSize = 16.dp)
+        SpriteWindow(bro, stage, Modifier.fillMaxWidth().aspectRatio(1f), eventIconSize = 16.dp, light = light)
         event?.let {
             Spacer(Modifier.height(6.dp))
             EventRibbon(it, compact = true)
@@ -123,6 +132,10 @@ fun BroCard(
         if (showDexEntry) {
             Spacer(Modifier.height(8.dp))
             DexEntryText(bro, Modifier.fillMaxWidth())
+            bro.habitat?.let {
+                Spacer(Modifier.height(6.dp))
+                Text("HABITAT: ${it.uppercase()}", style = PixelText.Tiny, color = DexColors.TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
     }
 }
@@ -138,22 +151,28 @@ fun DexEntryText(bro: Bro, modifier: Modifier = Modifier, maxLines: Int = 4) {
         maxLines = maxLines,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
-            .background(DexColors.Screen, CutCornerShape(3.dp))
-            .border(1.dp, DexColors.ScreenBorder, CutCornerShape(3.dp))
+            .background(DexColors.Screen, DexShape(3.dp))
+            .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
             .padding(horizontal = 8.dp, vertical = 6.dp),
     )
 }
 
 /**
- * The portrait window shared by every view (card grid, Pokédex list, binder):
+ * The portrait window shared by every view (card grid, dex list, binder):
  * type-colored glow, scanlines, the sprite, shiny sparkles and event corners.
  */
 @Composable
-fun SpriteWindow(bro: Bro, stage: EvolutionStage, modifier: Modifier = Modifier, eventIconSize: Dp = 12.dp) {
+fun SpriteWindow(
+    bro: Bro,
+    stage: EvolutionStage,
+    modifier: Modifier = Modifier,
+    eventIconSize: Dp = 12.dp,
+    light: HoloLight? = null,
+) {
     val event = SeasonEvents.parse(bro.eventFrame)
     Box(
         modifier
-            .clip(CutCornerShape(4.dp))
+            .clip(DexShape(4.dp))
             .background(Brush.radialGradient(listOf(bro.primaryType.color.copy(alpha = 0.35f), DexColors.Screen)))
             .scanlines(),
         contentAlignment = Alignment.Center,
@@ -161,27 +180,34 @@ fun SpriteWindow(bro: Bro, stage: EvolutionStage, modifier: Modifier = Modifier,
         BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.86f))
         if (bro.isShiny) Sparkles(Modifier.fillMaxSize(), seed = bro.id.toInt())
         event?.let { EventCorners(it.event, Modifier.fillMaxSize(), iconSize = eventIconSize) }
+        // Foil over the art only (it's clipped to the window), never over the name or types.
+        Box(Modifier.matchParentSize().holoFoil(light, HoloStyle.of(bro.rarity, bro.isShiny)))
     }
 }
 
 /** Type-colored frame used by both the card and the list row, so the two views read as one dex. */
 fun Bro.frameBrush(): Brush {
+    // Tournament champions wear a gold champion frame.
+    if (resolvedBattle.championships > 0) {
+        return Brush.linearGradient(listOf(DexColors.Gold, androidx.compose.ui.graphics.Color(0xFFFFF3B0), DexColors.Legendary, DexColors.Gold))
+    }
     val event = SeasonEvents.parse(eventFrame)
     return event?.let { Brush.linearGradient(listOf(it.event.primaryColor, it.event.accentColor, it.event.primaryColor)) }
         ?: Brush.linearGradient(listOf(primaryType.color, (types.getOrNull(1) ?: primaryType).color))
 }
 
-/** Pokédex list view row: sprite, number + name, dex entry, types, rarity. */
+/** Dex list view row: sprite, number + name, dex entry, types, rarity. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DexListRow(
     bro: Bro,
     stage: EvolutionStage,
     modifier: Modifier = Modifier,
+    number: String = bro.dexNumber,
     onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
-    val shape = CutCornerShape(8.dp)
+    val shape = DexShape(8.dp)
     Row(
         modifier
             .fillMaxWidth()
@@ -205,7 +231,7 @@ fun DexListRow(
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(bro.dexNumber, style = PixelText.Tiny, color = DexColors.TextMuted)
+                Text(number, style = PixelText.Tiny, color = DexColors.TextMuted)
                 Spacer(Modifier.width(6.dp))
                 Text(
                     bro.name,
@@ -244,7 +270,7 @@ private val mysteryShade = Color(0xFF24242C)
 /** An uncaught dex slot: dark "???" silhouette, so the Brodex is never just empty. */
 @Composable
 fun MysteryCard(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val shape = CutCornerShape(10.dp)
+    val shape = DexShape(10.dp)
     Column(
         modifier
             .semantics(mergeDescendants = true) { contentDescription = "Empty slot ${"#%03d".format(number)}. Tap to catch a bro." }
@@ -260,7 +286,7 @@ fun MysteryCard(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .clip(CutCornerShape(4.dp))
+                .clip(DexShape(4.dp))
                 .background(DexColors.Screen)
                 .scanlines(),
             contentAlignment = Alignment.Center,
@@ -271,7 +297,7 @@ fun MysteryCard(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit
         Spacer(Modifier.height(8.dp))
         Text("???", style = PixelText.Label, color = DexColors.Outline)
         Spacer(Modifier.height(6.dp))
-        Box(Modifier.size(width = 64.dp, height = 14.dp).background(DexColors.SurfaceHigh, CutCornerShape(3.dp)))
+        Box(Modifier.size(width = 64.dp, height = 14.dp).background(DexColors.SurfaceHigh, DexShape(3.dp)))
         Spacer(Modifier.height(6.dp))
         Text("NOT CAUGHT", style = PixelText.Tiny, color = DexColors.Outline)
     }
@@ -279,7 +305,7 @@ fun MysteryCard(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit
 
 @Composable
 fun MysteryRow(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val shape = CutCornerShape(8.dp)
+    val shape = DexShape(8.dp)
     Row(
         modifier
             .fillMaxWidth()
@@ -290,7 +316,7 @@ fun MysteryRow(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(64.dp).background(DexColors.Screen, CutCornerShape(4.dp)), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(64.dp).background(DexColors.Screen, DexShape(4.dp)), contentAlignment = Alignment.Center) {
             BroSprite(BroLook.random(number * 7919), 0, false, Modifier.fillMaxSize(0.86f), tint = mysteryShade)
         }
         Spacer(Modifier.width(10.dp))
@@ -311,7 +337,7 @@ fun BroRow(
     modifier: Modifier = Modifier,
     trailing: @Composable () -> Unit = {},
 ) {
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     Row(
         modifier
             .fillMaxWidth()
@@ -323,7 +349,7 @@ fun BroRow(
         Box(
             Modifier
                 .size(48.dp)
-                .background(DexColors.Screen, CutCornerShape(3.dp)),
+                .background(DexColors.Screen, DexShape(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
             BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.9f))

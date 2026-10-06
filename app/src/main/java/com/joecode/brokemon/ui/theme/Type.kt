@@ -2,20 +2,19 @@ package com.joecode.brokemon.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.sp
-import com.joecode.brokemon.R
 
-/** Press Start 2P (SIL OFL 1.1) — headers, stat labels, dex numbers. */
-val PixelFont = FontFamily(Font(R.font.press_start_2p))
+/** Display font for headers, stat labels and dex numbers (Press Start 2P or Fredoka, per style). */
+val PixelFont: FontFamily = AppStyle.display
 
 /** Pixel styles. Pixel fonts read best at small, whole sizes with extra line height. */
 object PixelText {
-    val Title = TextStyle(fontFamily = PixelFont, fontSize = 18.sp, lineHeight = 26.sp)
-    val Header = TextStyle(fontFamily = PixelFont, fontSize = 13.sp, lineHeight = 20.sp)
-    val Label = TextStyle(fontFamily = PixelFont, fontSize = 10.sp, lineHeight = 16.sp)
-    val Tiny = TextStyle(fontFamily = PixelFont, fontSize = 8.sp, lineHeight = 12.sp)
+    private val s = AppStyle.sizes
+    val Title = TextStyle(fontFamily = PixelFont, fontSize = s.title.sp, lineHeight = (s.title * s.lineScale).sp)
+    val Header = TextStyle(fontFamily = PixelFont, fontSize = s.header.sp, lineHeight = (s.header * s.lineScale).sp)
+    val Label = TextStyle(fontFamily = PixelFont, fontSize = s.label.sp, lineHeight = (s.label * s.lineScale).sp)
+    val Tiny = TextStyle(fontFamily = PixelFont, fontSize = s.tiny.sp, lineHeight = (s.tiny * s.lineScale).sp)
 }
 
 val BrokemonTypography = Typography().let { base ->

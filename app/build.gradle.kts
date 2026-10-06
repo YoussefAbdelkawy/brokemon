@@ -1,3 +1,4 @@
+import com.android.build.api.variant.ResValue
 import java.util.Properties
 
 plugins {
@@ -21,8 +22,22 @@ android {
         applicationId = "com.joecode.brokemon"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.2.0"
+    }
+
+    // Two art styles from one codebase. Both can be installed side by side
+    // and battle each other over Nearby.
+    flavorDimensions += "style"
+    productFlavors {
+        create("classic") {
+            dimension = "style"
+        }
+        create("cosmos") {
+            dimension = "style"
+            applicationIdSuffix = ".cosmos"
+            versionNameSuffix = "-cosmos"
+        }
     }
 
     signingConfigs {
@@ -58,11 +73,22 @@ android {
 
     buildFeatures {
         compose = true
+        resValues = true
     }
 }
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// Static app shortcuts need the final package name (it differs per build type and flavor).
+androidComponents {
+    onVariants { variant ->
+        variant.resValues.put(
+            variant.makeResValueKey("string", "shortcut_package"),
+            variant.applicationId.map { ResValue(it, "Package that app shortcuts launch") },
+        )
+    }
 }
 
 dependencies {
@@ -90,6 +116,8 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.zxing.core)
     implementation(libs.play.services.code.scanner)
+    // Phone-to-phone battles over Bluetooth/Wi-Fi. Free, no server, works offline.
+    implementation(libs.play.services.nearby)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.work.runtime.ktx)
 

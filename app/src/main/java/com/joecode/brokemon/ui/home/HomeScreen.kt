@@ -35,7 +35,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Close
@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SportsMma
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material.icons.filled.WavingHand
@@ -76,6 +77,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.joecode.brokemon.data.DexView
 import com.joecode.brokemon.data.model.Rarity
+import com.joecode.brokemon.data.model.RegionalDex
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.runtime.remember
 import com.joecode.brokemon.ui.AppViewModelProvider
 import com.joecode.brokemon.ui.components.ArrowSide
 import com.joecode.brokemon.ui.components.BroCard
@@ -112,6 +117,7 @@ fun HomeScreen(
     onTrainer: () -> Unit = {},
     onJournal: () -> Unit = {},
     onWild: () -> Unit = {},
+    onBattle: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -119,7 +125,10 @@ fun HomeScreen(
     val haptics = LocalHapticFeedback.current
     val seen = rememberSeenHints()
     val dismissHint = rememberHintDismisser()
-    val hasBros = state.totalCaught > 0
+    val hasBros = state.nationalCount > 0
+    var showNewDex by rememberSaveable { mutableStateOf(false) }
+    var managingDex by remember { mutableStateOf<RegionalDex?>(null) }
+    var pickingFor by remember { mutableStateOf<RegionalDex?>(null) }
 
     // Shake the phone: a wild bro appears.
     ShakeEffect(enabled = hasBros && !state.isLoading) {
@@ -151,7 +160,12 @@ fun HomeScreen(
         onTrainer = onTrainer,
         onJournal = { dismissHint(Hints.HOME_JOURNAL); onJournal() },
         onWild = { dismissHint(Hints.HOME_WILD); onWild() },
+        onBattle = onBattle,
         onOpenFilters = { showFilters = true },
+        onSelectDex = viewModel::selectDex,
+        onNewDex = { showNewDex = true },
+        onManageDex = { managingDex = it },
+        onAddToDex = { pickingFor = it },
     )
 
     DexScaffold(
@@ -185,11 +199,40 @@ fun HomeScreen(
             ) { view ->
                 when (view) {
                     DexView.CARDS -> CardGrid(state, activeHint, actions, viewModel)
-                    DexView.LIST -> PokedexList(state, activeHint, actions, viewModel)
+                    DexView.LIST -> DexList(state, activeHint, actions, viewModel)
                     DexView.BINDER -> Binder(state, actions, viewModel)
                 }
             }
         }
+    }
+    if (showNewDex) {
+        DexNameDialog(
+            title = "New regional dex",
+            initial = "",
+            onConfirm = { viewModel.createDex(it); showNewDex = false },
+            onDismiss = { showNewDex = false },
+        )
+    }
+    managingDex?.let { dex ->
+        DexNameDialog(
+            title = "Edit ${dex.name}",
+            initial = dex.name,
+            onConfirm = { viewModel.renameDex(dex, it); managingDex = null },
+            onDismiss = { managingDex = null },
+            onDelete = { viewModel.deleteDex(dex); managingDex = null },
+        )
+    }
+    pickingFor?.let { dex ->
+        val all by viewModel.allBros.collectAsStateWithLifecycle()
+        val refs by viewModel.dexRefs.collectAsStateWithLifecycle()
+        val members = refs.filter { it.dexId == dex.id }.map { it.broId }.toSet()
+        BroPickerDialog(
+            title = "Bros in ${dex.name}",
+            bros = all,
+            initial = members,
+            onConfirm = { viewModel.setDexMembers(dex, it); pickingFor = null },
+            onDismiss = { pickingFor = null },
+        )
     }
     if (showFilters) {
         FilterSheet(
@@ -203,6 +246,11 @@ fun HomeScreen(
 }
 
 private class HomeActions(
+    val onBattle: () -> Unit,
+    val onSelectDex: (Long?) -> Unit,
+    val onNewDex: () -> Unit,
+    val onManageDex: (RegionalDex) -> Unit,
+    val onAddToDex: (RegionalDex) -> Unit,
     val onCatch: () -> Unit,
     val onBroClick: (Long) -> Unit,
     val onLongPress: (Long) -> Unit,
@@ -234,18 +282,19 @@ private fun CardGrid(state: HomeUiState, activeHint: String?, actions: HomeActio
                 stage = entry.stage,
                 onClick = { actions.onBroClick(entry.bro.id) },
                 onLongClick = { actions.onLongPress(entry.bro.id) },
+                number = entry.number,
                 modifier = Modifier.animateItem().sharedCard(entry.bro.id),
             )
         }
         items(state.mysterySlots, key = { "slot$it" }) { slot ->
-            MysteryCard(slot, Modifier.animateItem(), onClick = actions.onCatch)
+            MysteryCard(slot, Modifier.animateItem(), onClick = state.selectedDex?.let { d -> { actions.onAddToDex(d) } } ?: actions.onCatch)
         }
     }
 }
 
-/** The classic Pokédex list: one row per bro, sprite, number, name, types, rarity. */
+/** The classic dex list: one row per bro, sprite, number, name, types, rarity. */
 @Composable
-private fun PokedexList(state: HomeUiState, activeHint: String?, actions: HomeActions, viewModel: HomeViewModel) {
+private fun DexList(state: HomeUiState, activeHint: String?, actions: HomeActions, viewModel: HomeViewModel) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = listPadding,
@@ -258,11 +307,12 @@ private fun PokedexList(state: HomeUiState, activeHint: String?, actions: HomeAc
                 stage = entry.stage,
                 onClick = { actions.onBroClick(entry.bro.id) },
                 onLongClick = { actions.onLongPress(entry.bro.id) },
+                number = entry.number,
                 modifier = Modifier.animateItem().sharedCard(entry.bro.id),
             )
         }
         items(state.mysterySlots, key = { "slot$it" }) { slot ->
-            MysteryRow(slot, Modifier.animateItem(), onClick = actions.onCatch)
+            MysteryRow(slot, Modifier.animateItem(), onClick = state.selectedDex?.let { d -> { actions.onAddToDex(d) } } ?: actions.onCatch)
         }
     }
 }
@@ -271,6 +321,7 @@ private fun PokedexList(state: HomeUiState, activeHint: String?, actions: HomeAc
 @Composable
 private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeViewModel) {
     Column(Modifier.fillMaxSize()) {
+        DexSwitcher(state, actions, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
         Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
             SearchBar(
                 query = state.query,
@@ -284,7 +335,7 @@ private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeView
             )
         }
         if (state.entries.isEmpty()) {
-            NoMatches(viewModel)
+            if (state.selectedDex != null && state.totalCaught == 0) EmptyRegional(state.selectedDex, actions) else NoMatches(viewModel)
             return@Column
         }
         val pager = rememberPagerState { state.entries.size }
@@ -302,6 +353,7 @@ private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeView
                     bro = entry.bro,
                     stage = entry.stage,
                     showDexEntry = true,
+                    number = entry.number,
                     onClick = { actions.onBroClick(entry.bro.id) },
                     onLongClick = { actions.onLongPress(entry.bro.id) },
                     modifier = Modifier
@@ -335,7 +387,7 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CoachMark(
             id = Hints.HOME_VIEWS,
-            text = "New: switch between Cards, the Pokédex list and the Binder up here.",
+            text = "New: switch between Cards, the Dex list and the Binder up here.",
             visible = activeHint == Hints.HOME_VIEWS,
             arrow = ArrowSide.TOP,
             arrowBias = 0.72f,
@@ -356,7 +408,8 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
             arrow = ArrowSide.TOP,
             arrowBias = 0.93f,
         )
-        DexCounter(state.totalCaught, state.shinyCount, state.legendaryCount)
+        DexSwitcher(state, actions)
+        DexCounter(state.totalCaught, state.shinyCount, state.legendaryCount, state.selectedDex?.name)
         state.event?.let { EventBanner(it) }
         state.wrappedYear?.let { WrappedBanner(it, actions.onWrapped) }
         CoachMark(
@@ -367,6 +420,7 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
             arrowBias = 0.875f,
         )
         QuickActions(actions)
+        BattleBanner(actions.onBattle)
         SearchBar(
             query = state.query,
             onQueryChanged = viewModel::onQueryChanged,
@@ -378,7 +432,84 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
             total = state.totalCaught,
         )
         if (state.showRoomHint && activeHint == null) RoomHint(viewModel::dismissRoomHint)
-        if (state.entries.isEmpty()) NoMatches(viewModel)
+        when {
+            state.entries.isNotEmpty() -> Unit
+            state.selectedDex != null && state.totalCaught == 0 -> EmptyRegional(state.selectedDex, actions)
+            else -> NoMatches(viewModel)
+        }
+        state.selectedDex?.takeIf { state.totalCaught > 0 }?.let { dex ->
+            TextButton(onClick = { actions.onAddToDex(dex) }) {
+                Text("+ ADD OR REMOVE BROS IN ${dex.name.uppercase()}", style = PixelText.Tiny, color = DexColors.LedBlue)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyRegional(dex: RegionalDex, actions: HomeActions) {
+    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("${dex.name.uppercase()} IS EMPTY", style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Pick bros from your National Dex. They get their own ${dex.name} numbers, starting at #001.",
+            color = DexColors.TextMuted,
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(14.dp))
+        PixelButton("Add bros", { actions.onAddToDex(dex) })
+    }
+}
+
+/** National Dex + every regional dex as chips. Long-press a regional chip to rename or delete it. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun DexSwitcher(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
+    LazyRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item { DexChip("National", null, state.selectedDex == null, onClick = { actions.onSelectDex(null) }) }
+        items(state.dexes, key = { it.id }) { dex ->
+            DexChip(
+                dex.name,
+                dexColors[dex.colorIndex.mod(dexColors.size)],
+                state.selectedDex?.id == dex.id,
+                onClick = { actions.onSelectDex(dex.id) },
+                onLongClick = { actions.onManageDex(dex) },
+            )
+        }
+        item { DexChip("+ New dex", null, false, onClick = actions.onNewDex, dashed = true) }
+    }
+}
+
+private val dexColors = listOf(
+    Color(0xFF3FA7FF), Color(0xFF4CE07A), Color(0xFFFFD23F), Color(0xFFFF5A6E), Color(0xFFB892FF), Color(0xFF2EC4B6),
+)
+
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun DexChip(
+    label: String,
+    color: Color?,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    dashed: Boolean = false,
+) {
+    val shape = DexShape(5.dp)
+    val accent = color ?: DexColors.DexRedLight
+    Row(
+        Modifier
+            .semantics { this.selected = selected }
+            .background(if (selected) accent else DexColors.Surface, shape)
+            .border(if (dashed) 1.dp else 2.dp, if (dashed) DexColors.Outline else accent.copy(alpha = 0.7f), shape)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = onLongClick?.let { "Rename or delete $label" })
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (color != null && !selected) {
+            Box(Modifier.size(8.dp).background(color, DexShape(2.dp)))
+            Spacer(Modifier.width(6.dp))
+        }
+        Text(label.uppercase(), style = PixelText.Tiny, color = if (selected) Color(0xFF101014) else DexColors.Text, maxLines = 1)
     }
 }
 
@@ -455,10 +586,10 @@ private fun EmptyDex(state: HomeUiState, activeHint: String?, actions: HomeActio
     }
 }
 
-/** Card grid / Pokédex list / Binder switch in the top bar. */
+/** Card grid / dex list / Binder switch in the top bar. */
 @Composable
 private fun DexViewToggle(current: DexView, onChange: (DexView) -> Unit) {
-    val shape = CutCornerShape(5.dp)
+    val shape = DexShape(5.dp)
     Row(
         Modifier
             .background(Color.Black.copy(alpha = 0.3f), shape)
@@ -467,14 +598,14 @@ private fun DexViewToggle(current: DexView, onChange: (DexView) -> Unit) {
     ) {
         listOf(
             Triple(DexView.CARDS, Icons.Filled.GridView, "Card grid view"),
-            Triple(DexView.LIST, Icons.AutoMirrored.Filled.ViewList, "Pokédex list view"),
+            Triple(DexView.LIST, Icons.AutoMirrored.Filled.ViewList, "Dex list view"),
             Triple(DexView.BINDER, Icons.Filled.ViewCarousel, "Binder view"),
         ).forEach { (view, icon, label) ->
             val selected = view == current
             Box(
                 Modifier
                     .size(34.dp)
-                    .background(if (selected) DexColors.LedYellow else Color.Transparent, CutCornerShape(4.dp))
+                    .background(if (selected) DexColors.LedYellow else Color.Transparent, DexShape(4.dp))
                     .semantics { this.selected = selected }
                     .clickable(role = Role.Tab, onClickLabel = label) { onChange(view) },
                 contentAlignment = Alignment.Center,
@@ -498,15 +629,15 @@ private fun CatchFab(onClick: () -> Unit) {
         onClick = onClick,
         containerColor = DexColors.DexRed,
         contentColor = DexColors.Text,
-        shape = CutCornerShape(8.dp),
+        shape = DexShape(8.dp),
         icon = { CatchCube(Modifier.size(28.dp).graphicsLayer { rotationZ = wobble }) },
         text = { Text("CATCH", style = PixelText.Label) },
     )
 }
 
 @Composable
-private fun DexCounter(total: Int, shiny: Int, legendary: Int) {
-    ScreenPanel(title = "Dex status") {
+private fun DexCounter(total: Int, shiny: Int, legendary: Int, regional: String? = null) {
+    ScreenPanel(title = regional?.let { "$it status" } ?: "National Dex status") {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             Counter("CAUGHT", total, DexColors.ScreenText)
             Counter("SHINY", shiny, DexColors.Gold)
@@ -545,7 +676,7 @@ private fun WrappedBanner(year: Int, onOpen: () -> Unit) {
 
 @Composable
 private fun QuickAction(label: String, icon: ImageVector, color: Color, onClick: () -> Unit, modifier: Modifier) {
-    val shape = CutCornerShape(6.dp)
+    val shape = DexShape(6.dp)
     Column(
         modifier
             .background(DexColors.Surface, shape)
@@ -565,8 +696,8 @@ private fun RoomHint(onDismiss: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .background(DexColors.LedBlue.copy(alpha = 0.12f), CutCornerShape(6.dp))
-            .border(1.dp, DexColors.LedBlue.copy(alpha = 0.5f), CutCornerShape(6.dp))
+            .background(DexColors.LedBlue.copy(alpha = 0.12f), DexShape(6.dp))
+            .border(1.dp, DexColors.LedBlue.copy(alpha = 0.5f), DexShape(6.dp))
             .padding(start = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -579,5 +710,30 @@ private fun RoomHint(onDismiss: () -> Unit) {
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onDismiss) { Icon(Icons.Filled.Close, "Dismiss tip", tint = DexColors.TextMuted) }
+    }
+}
+
+/** Entry to Bro Battles, with today's daily quest type. */
+@Composable
+private fun BattleBanner(onClick: () -> Unit) {
+    val daily = com.joecode.brokemon.domain.battle.DailyBattleQuest.typeFor()
+    val shape = DexShape(6.dp)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(DexColors.DexRedDark, DexColors.Surface)), shape)
+            .border(2.dp, DexColors.DexRed, shape)
+            .clickable(onClickLabel = "Open Bro Battles", onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.SportsMma, null, tint = DexColors.Text)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text("BRO BATTLES", style = PixelText.Label, color = DexColors.Text)
+            Spacer(Modifier.height(4.dp))
+            Text("Daily: win with a ${daily.label}-type bro", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+        }
+        Text("FIGHT", style = PixelText.Tiny, color = DexColors.LedYellow)
     }
 }

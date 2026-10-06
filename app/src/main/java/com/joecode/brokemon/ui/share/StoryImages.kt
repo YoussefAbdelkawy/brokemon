@@ -37,7 +37,7 @@ import kotlin.random.Random
  */
 class StoryImages(private val context: Context) {
     private val pixelFont: Typeface =
-        ResourcesCompat.getFont(context, R.font.press_start_2p) ?: Typeface.MONOSPACE
+        ResourcesCompat.getFont(context, com.joecode.brokemon.ui.theme.AppStyle.displayFontRes) ?: Typeface.MONOSPACE
 
     private val bg = DexColors.Background.toArgb()
     private val surface = DexColors.Surface.toArgb()
@@ -64,6 +64,7 @@ class StoryImages(private val context: Context) {
         when (bro.rarity) {
             Rarity.LEGENDARY -> glow(c, card, gold, 90f)
             Rarity.RARE -> glow(c, card, DexColors.RareBlue.toArgb(), 50f)
+            Rarity.EPIC -> glow(c, card, DexColors.Epic.toArgb(), 70f)
             Rarity.COMMON -> Unit
         }
         val cardPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = surface }
@@ -230,13 +231,13 @@ class StoryImages(private val context: Context) {
     }
 
     private fun sprite(c: Canvas, bro: Bro, stage: Int, box: RectF, inset: Float) {
-        val px = HumanSprite.render(bro.resolvedLook, stage, bro.isShiny)
-        val s = HumanSprite.SIZE
-        val sprite = Bitmap.createBitmap(px, s, s, Bitmap.Config.ARGB_8888)
+        val sprite = com.joecode.brokemon.ui.components.AvatarBitmaps.portrait(bro.resolvedLook, stage, bro.isShiny)
+        val s = sprite.width
         val side = minOf(box.width(), box.height()) - inset * 2
         val dst = RectF(box.centerX() - side / 2, box.centerY() - side / 2, box.centerX() + side / 2, box.centerY() + side / 2)
         // Nearest-neighbor: keep the pixels crisp.
-        c.drawBitmap(sprite, Rect(0, 0, s, s), dst, Paint().apply { isFilterBitmap = false; isAntiAlias = false })
+        val smooth = com.joecode.brokemon.ui.components.AvatarBitmaps.smooth
+        c.drawBitmap(sprite, Rect(0, 0, s, s), dst, Paint().apply { isFilterBitmap = smooth; isAntiAlias = smooth })
     }
 
     private fun pixelIcon(c: Canvas, icon: EventIcon, left: Float, top: Float, px: Float, primary: Int, accent: Int) {

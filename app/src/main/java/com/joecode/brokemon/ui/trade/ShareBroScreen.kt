@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -84,9 +84,9 @@ fun ShareBroScreen(
                             Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
-                                .background(DexColors.LedGreen.copy(alpha = 0.25f * glow), CutCornerShape(6.dp))
+                                .background(DexColors.LedGreen.copy(alpha = 0.25f * glow), DexShape(6.dp))
                                 .padding(10.dp)
-                                .background(Color.White, CutCornerShape(4.dp))
+                                .background(Color.White, DexShape(4.dp))
                                 .padding(8.dp),
                         ) {
                             Image(

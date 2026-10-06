@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CutCornerShape
+import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -62,7 +62,7 @@ fun SquadsScreen(
                     onClick = { showCreate = true },
                     containerColor = DexColors.DexRed,
                     contentColor = DexColors.Text,
-                    shape = CutCornerShape(8.dp),
+                    shape = DexShape(8.dp),
                     icon = { Icon(Icons.Filled.Add, null) },
                     text = { Text("NEW SQUAD", style = PixelText.Tiny) },
                 )
@@ -115,7 +115,7 @@ fun SquadsScreen(
 
 @Composable
 private fun SquadCard(summary: SquadSummary, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val shape = CutCornerShape(8.dp)
+    val shape = DexShape(8.dp)
     Column(
         modifier
             .fillMaxWidth()
@@ -136,8 +136,8 @@ private fun SquadCard(summary: SquadSummary, modifier: Modifier = Modifier, onCl
                 Box(
                     Modifier
                         .size(38.dp)
-                        .background(DexColors.Screen, CutCornerShape(3.dp))
-                        .border(1.dp, DexColors.ScreenBorder, CutCornerShape(3.dp)),
+                        .background(DexColors.Screen, DexShape(3.dp))
+                        .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (entry != null) {
