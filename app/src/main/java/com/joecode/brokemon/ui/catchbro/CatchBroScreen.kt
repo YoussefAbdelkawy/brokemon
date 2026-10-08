@@ -222,7 +222,7 @@ private fun RevealStep(state: BroState, vm: BroViewModel) {
     )
     ScreenPanel(title = "Your new bro", modifier = Modifier.rarityGlow(state.rarity)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            BroSprite(state.look, 0, false, Modifier.size(104.dp))
+            BroSprite(state.look, 0, false, Modifier.size(104.dp), animated = true)
             Spacer(Modifier.width(Spacing.md))
             Column {
                 Text(state.name.uppercase(), style = PixelText.Header, color = DexColors.ScreenText)

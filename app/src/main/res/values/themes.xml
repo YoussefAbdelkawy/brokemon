@@ -6,7 +6,8 @@
 
     <style name="Theme.Brokemon.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/dex_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_cube</item>
+        <item name="windowSplashScreenAnimationDuration">800</item>
         <item name="postSplashScreenTheme">@style/Theme.Brokemon</item>
     </style>
 </resources>

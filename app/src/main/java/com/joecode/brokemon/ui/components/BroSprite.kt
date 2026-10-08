@@ -26,8 +26,12 @@ fun BroSprite(
     shiny: Boolean,
     modifier: Modifier = Modifier,
     tint: Color? = null,
+    /** Idle animation (breathing and blinking). Only turn this on for sprites that are the star of the screen. */
+    animated: Boolean = false,
+    frameSeed: Long = 0L,
 ) {
-    val bitmap = remember(look, stage, shiny, tint) { AvatarBitmaps.portrait(look, stage, shiny, tint?.toArgb()).asImageBitmap() }
+    val frame = rememberIdleFrame(frameSeed + look.hashCode(), enabled = animated)
+    val bitmap = remember(look, stage, shiny, tint, frame) { SpriteCache.portrait(look, stage, shiny, tint?.toArgb(), frame) }
     Image(
         bitmap = bitmap,
         contentDescription = null,
@@ -38,8 +42,8 @@ fun BroSprite(
 }
 
 @Composable
-fun BroSprite(bro: Bro, stage: Int, modifier: Modifier = Modifier, tint: Color? = null) =
-    BroSprite(bro.resolvedLook, stage, bro.isShiny, modifier, tint)
+fun BroSprite(bro: Bro, stage: Int, modifier: Modifier = Modifier, tint: Color? = null, animated: Boolean = false) =
+    BroSprite(bro.resolvedLook, stage, bro.isShiny, modifier, tint, animated, bro.id)
 
 /** Avatar bitmaps: 32x32 portraits and 32x52 full bodies of pixel art, scaled with nearest-neighbor. */
 object AvatarBitmaps {

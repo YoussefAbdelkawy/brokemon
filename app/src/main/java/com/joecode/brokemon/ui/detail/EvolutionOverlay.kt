@@ -1,5 +1,11 @@
 package com.joecode.brokemon.ui.detail
 
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.joecode.brokemon.ui.theme.Spacing
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -73,14 +79,30 @@ fun EvolutionOverlay(bro: Bro, event: EvolutionEvent, onFinished: () -> Unit) {
     var revealed by remember { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
     val newStage = EvolutionStage.entries[event.toStage]
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val prefs = remember { (context.applicationContext as com.joecode.brokemon.BrokemonApplication).container.prefs }
+    val seenBefore by prefs.evolutionCinematicSeen.collectAsStateWithLifecycle(initialValue = null)
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
+    val reduceMotion = com.joecode.brokemon.ui.feedback.LocalReduceMotion.current
+    var skip by remember { mutableStateOf(false) }
 
-    BackHandler { if (revealed) onFinished() }
+    BackHandler { if (revealed) onFinished() else skip = seenBefore == true }
 
     LaunchedEffect(Unit) {
-        charge.animateTo(1f, tween(3600, easing = LinearEasing))
-        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        // First time: the full build-up. After that it can be skipped. Reduce motion shortens it.
+        val duration = if (reduceMotion) 900 else 3600
+        coroutineScope {
+            val anim = launch { charge.animateTo(1f, tween(duration, easing = LinearEasing)) }
+            val watcher = launch { snapshotFlow { skip }.first { it }; anim.cancel() }
+            anim.join()
+            watcher.cancel()
+        }
+        charge.snapTo(1f)
+        feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.LEVEL_UP, 0.7f)
+        feedback?.thump() ?: haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         revealed = true
-        shock.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
+        prefs.setEvolutionCinematicSeen()
+        shock.animateTo(1f, tween(if (reduceMotion) 300 else 900, easing = FastOutSlowInEasing))
     }
 
     val transition = rememberInfiniteTransition(label = "evo")
@@ -184,7 +206,15 @@ fun EvolutionOverlay(bro: Bro, event: EvolutionEvent, onFinished: () -> Unit) {
                 Text("TAP TO CONTINUE", style = PixelText.Tiny, color = DexColors.TextMuted, modifier = Modifier.padding(top = 20.dp))
             }
         }
-        if (bolt) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.35f)))
+        if (bolt && !reduceMotion) Box(Modifier.fillMaxSize().background(Color.White.copy(alpha = 0.35f)))
+        if (!revealed && seenBefore == true) {
+            com.joecode.brokemon.ui.components.PixelButton(
+                "Skip",
+                onClick = { skip = true },
+                color = com.joecode.brokemon.ui.theme.DexColors.SurfaceHigh,
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(Spacing.lg),
+            )
+        }
     }
 }
 

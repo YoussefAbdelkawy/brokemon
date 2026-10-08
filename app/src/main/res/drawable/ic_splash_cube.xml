@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash animation: the Bro Cube drops in, squashes, pops, and its eye lights up. Under 1 second. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_splash_vector">
+    <target android:name="cube">
+        <aapt:attr name="android:animation" xmlns:aapt="http://schemas.android.com/aapt">
+            <set android:ordering="together">
+                <objectAnimator android:propertyName="translateY" android:valueFrom="-30" android:valueTo="0"
+                    android:duration="360" android:valueType="floatType" android:interpolator="@android:interpolator/bounce" />
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="0.55" android:valueTo="1"
+                    android:duration="420" android:valueType="floatType" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="0.55" android:valueTo="1"
+                    android:duration="420" android:valueType="floatType" android:interpolator="@android:interpolator/overshoot" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="eye6">
+        <aapt:attr name="android:animation" xmlns:aapt="http://schemas.android.com/aapt">
+            <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1"
+                android:startOffset="420" android:duration="220" android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="eye7">
+        <aapt:attr name="android:animation" xmlns:aapt="http://schemas.android.com/aapt">
+            <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1"
+                android:startOffset="420" android:duration="220" android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+</animated-vector>

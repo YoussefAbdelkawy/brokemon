@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.home
 
+import androidx.compose.ui.draw.alpha
 import com.joecode.brokemon.ui.theme.MinTouch
 import com.joecode.brokemon.ui.theme.Borders
 import com.joecode.brokemon.ui.components.pixelBox
@@ -222,20 +223,22 @@ fun HomeScreen(
                 CircularProgressIndicator(color = DexColors.DexRed)
             }
             !hasBros -> EmptyDex(state, activeHint, actions, Modifier.padding(padding))
-            else -> AnimatedContent(
+            else -> Box(Modifier.fillMaxSize().padding(padding)) {
+            com.joecode.brokemon.ui.components.HomeSky(Modifier.fillMaxWidth().height(280.dp).alpha(0.7f))
+            AnimatedContent(
                 targetState = state.view,
                 transitionSpec = {
                     (fadeIn(tween(260)) + scaleIn(tween(260), initialScale = 0.94f)) togetherWith
                         (fadeOut(tween(160)) + scaleOut(tween(160), targetScale = 1.04f))
                 },
                 label = "dexView",
-                modifier = Modifier.padding(padding),
             ) { view ->
                 when (view) {
                     DexView.CARDS -> CardGrid(state, activeHint, actions, viewModel)
                     DexView.LIST -> DexList(state, activeHint, actions, viewModel)
                     DexView.BINDER -> Binder(state, actions, viewModel)
                 }
+            }
             }
         }
     }

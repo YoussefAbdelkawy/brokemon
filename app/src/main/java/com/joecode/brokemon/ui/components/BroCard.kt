@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -40,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.data.model.Bro
+import com.joecode.brokemon.data.model.Rarity
 import com.joecode.brokemon.domain.EvolutionStage
 import com.joecode.brokemon.domain.SeasonEvents
 import com.joecode.brokemon.ui.theme.DexColors
@@ -71,6 +73,7 @@ fun BroCard(
     val holo = HoloStyle.of(bro.rarity, bro.isShiny)
     val light = if (tilt != null || deviceTilt != null) HoloLight(tilt, deviceTilt) else null
     val borderWidth = if (event != null) 4.dp else 3.dp
+    val frameClock = if (bro.rarity == Rarity.EPIC) rememberClock(15) else null
     Column(
         modifier
             .semantics(mergeDescendants = true) {
@@ -84,6 +87,7 @@ fun BroCard(
             .background(DexColors.Surface)
             .border(borderWidth, borderBrush, shape)
             .holoFoilBorder(light, holo, shape, borderWidth)
+            .rarityFrame(bro.rarity, frameClock)
             .then(
                 if (onClick != null || onLongClick != null) {
                     Modifier.combinedClickable(
@@ -169,8 +173,10 @@ fun SpriteWindow(
     modifier: Modifier = Modifier,
     eventIconSize: Dp = 12.dp,
     light: HoloLight? = null,
+    animated: Boolean = true,
 ) {
     val event = SeasonEvents.parse(bro.eventFrame)
+    val clock = rememberClock(12)
     Box(
         modifier
             .clip(DexShape(4.dp))
@@ -178,8 +184,19 @@ fun SpriteWindow(
             .scanlines(),
         contentAlignment = Alignment.Center,
     ) {
-        BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.86f))
-        if (bro.isShiny) Sparkles(Modifier.fillMaxSize(), seed = bro.id.toInt())
+        // Parallax: the three layers slide a little against each other as the card tilts.
+        ParticleLayer(
+            bro.primaryType, bro.id, clock,
+            Modifier.fillMaxSize().graphicsLayer { translationX = -(light?.x ?: 0f) * 5.dp.toPx(); translationY = -(light?.y ?: 0f) * 4.dp.toPx() },
+        )
+        BroSprite(
+            bro, stage.ordinal,
+            Modifier.fillMaxSize(0.86f).graphicsLayer { translationX = (light?.x ?: 0f) * 3.dp.toPx(); translationY = (light?.y ?: 0f) * 2.dp.toPx() },
+            animated = animated,
+        )
+        if (bro.isShiny) {
+            Sparkles(Modifier.fillMaxSize().graphicsLayer { translationX = (light?.x ?: 0f) * 8.dp.toPx() }, seed = bro.id.toInt())
+        }
         event?.let { EventCorners(it.event, Modifier.fillMaxSize(), iconSize = eventIconSize) }
         // Foil over the art only (it's clipped to the window), never over the name or types.
         Box(Modifier.matchParentSize().holoFoil(light, HoloStyle.of(bro.rarity, bro.isShiny)))
@@ -353,7 +370,7 @@ fun BroRow(
                 .background(DexColors.Screen, DexShape(3.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.9f))
+            BroSprite(bro, stage.ordinal, Modifier.fillMaxSize(0.9f), animated = true)
         }
         Column(
             Modifier
