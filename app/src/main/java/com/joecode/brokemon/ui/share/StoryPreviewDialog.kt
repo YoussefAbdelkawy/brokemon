@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.share
 
+import com.joecode.brokemon.ui.theme.Spacing
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,7 +48,7 @@ fun StoryPreviewDialog(
                 .border(2.dp, DexColors.Outline, DexShape(8.dp))
                 .padding(14.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             Text(title.uppercase(), style = PixelText.Label, color = DexColors.Text)
             Box(

@@ -198,6 +198,91 @@ class UserPrefs(private val context: Context) : HintStore {
         context.dataStore.edit { it[TEXT_SPEED] = value.coerceIn(0, 2) }
     }
 
+    // --- Comfort settings -----------------------------------------------------------
+
+    val soundsEnabled: Flow<Boolean> = context.dataStore.data.map { it[SOUNDS] ?: true }
+    val musicEnabled: Flow<Boolean> = context.dataStore.data.map { it[MUSIC] ?: false }
+    val hapticsEnabled: Flow<Boolean> = context.dataStore.data.map { it[HAPTICS] ?: true }
+    val reduceMotion: Flow<Boolean> = context.dataStore.data.map { it[REDUCE_MOTION] ?: false }
+    val holoEnabled: Flow<Boolean> = context.dataStore.data.map { it[HOLO] ?: true }
+
+    suspend fun setSounds(on: Boolean) { context.dataStore.edit { it[SOUNDS] = on } }
+    suspend fun setMusic(on: Boolean) { context.dataStore.edit { it[MUSIC] = on } }
+    suspend fun setHaptics(on: Boolean) { context.dataStore.edit { it[HAPTICS] = on } }
+    suspend fun setReduceMotion(on: Boolean) { context.dataStore.edit { it[REDUCE_MOTION] = on } }
+    suspend fun setHolo(on: Boolean) { context.dataStore.edit { it[HOLO] = on } }
+
+    // --- Catch draft, recent searches, release notes ---------------------------------
+
+    val catchDraft: Flow<String?> = context.dataStore.data.map { it[CATCH_DRAFT] }
+
+    suspend fun catchDraftOnce(): String? = catchDraft.first()
+
+    suspend fun setCatchDraft(json: String?) {
+        context.dataStore.edit { if (json == null) it.remove(CATCH_DRAFT) else it[CATCH_DRAFT] = json }
+    }
+
+    val recentSearches: Flow<List<String>> = context.dataStore.data.map { prefs ->
+        prefs[RECENT_SEARCHES]?.let { runCatching { gson.fromJson(it, Array<String>::class.java).toList() }.getOrNull() }.orEmpty()
+    }
+
+    suspend fun addRecentSearch(query: String) {
+        val q = query.trim().take(24)
+        if (q.length < 2) return
+        context.dataStore.edit { prefs ->
+            val current = prefs[RECENT_SEARCHES]?.let { runCatching { gson.fromJson(it, Array<String>::class.java).toList() }.getOrNull() }.orEmpty()
+            val next = (listOf(q) + current.filterNot { it.equals(q, ignoreCase = true) }).take(MAX_RECENT_SEARCHES)
+            prefs[RECENT_SEARCHES] = gson.toJson(next)
+        }
+    }
+
+    suspend fun clearRecentSearches() {
+        context.dataStore.edit { it.remove(RECENT_SEARCHES) }
+    }
+
+    /** The app version whose "What's new" the user has already seen (null on a fresh install). */
+    suspend fun lastSeenVersion(): Int? = context.dataStore.data.first()[LAST_SEEN_VERSION]
+
+    suspend fun setLastSeenVersion(code: Int) {
+        context.dataStore.edit { it[LAST_SEEN_VERSION] = code }
+    }
+
+    // --- Cosmetics: Daily Pack, stickers, trainer room, secrets --------------------------
+
+    val ownedCosmetics: Flow<Set<String>> = context.dataStore.data.map { it[OWNED_COSMETICS] ?: emptySet() }
+
+    suspend fun addCosmetic(id: String) {
+        context.dataStore.edit { it[OWNED_COSMETICS] = (it[OWNED_COSMETICS] ?: emptySet()) + id }
+    }
+
+    /** Epoch day the Daily Pack was last opened. A missed day costs nothing: the pack just waits. */
+    val packDay: Flow<Long?> = context.dataStore.data.map { it[PACK_DAY] }
+
+    suspend fun setPackDay(epochDay: Long) {
+        context.dataStore.edit { it[PACK_DAY] = epochDay }
+    }
+
+    val trainerRoom: Flow<List<Int>?> = context.dataStore.data.map { prefs ->
+        prefs[TRAINER_ROOM]?.let { runCatching { gson.fromJson(it, Array<Int>::class.java).toList() }.getOrNull() }
+    }
+
+    suspend fun setTrainerRoom(parts: List<Int>) {
+        context.dataStore.edit { it[TRAINER_ROOM] = gson.toJson(parts) }
+    }
+
+    val evolutionCinematicSeen: Flow<Boolean> = context.dataStore.data.map { it[EVO_CINEMATIC_SEEN] ?: false }
+
+    suspend fun setEvolutionCinematicSeen() {
+        context.dataStore.edit { it[EVO_CINEMATIC_SEEN] = true }
+    }
+
+    /** Epoch day the mascot's tip card was dismissed, so it shows at most once a day. */
+    val tipDismissedDay: Flow<Long?> = context.dataStore.data.map { it[TIP_DISMISSED_DAY] }
+
+    suspend fun setTipDismissedDay(epochDay: Long) {
+        context.dataStore.edit { it[TIP_DISMISSED_DAY] = epochDay }
+    }
+
     /** True once the user (as a player) has won a tournament. */
     val tournamentWon: Flow<Boolean> = context.dataStore.data.map { it[TOURNAMENT_WON] ?: false }
 
@@ -219,11 +304,11 @@ class UserPrefs(private val context: Context) : HintStore {
     suspend fun clear(keepProfile: Boolean = false) {
         context.dataStore.edit { prefs ->
             val keep: Map<Preferences.Key<*>, Any> = buildMap {
-                listOf(ONBOARDING_DONE, BIRTHDAY_REMINDERS, WEEKLY_NUDGE, DEX_VIEW, SEEN_HINTS, TEXT_SPEED).forEach { key ->
+                listOf(ONBOARDING_DONE, BIRTHDAY_REMINDERS, WEEKLY_NUDGE, DEX_VIEW, SEEN_HINTS, TEXT_SPEED, SOUNDS, MUSIC, HAPTICS, REDUCE_MOTION, HOLO, LAST_SEEN_VERSION, EVO_CINEMATIC_SEEN, TIP_DISMISSED_DAY).forEach { key ->
                     prefs[key]?.let { put(key, it) }
                 }
                 if (keepProfile) {
-                    listOf(TRAINER, CLAIMED_QUESTS, TRADED_QR, SHINY_EARNED, TOURNAMENT_WON, BATTLE_WINS, DAILY_QUESTS, DAILY_QUEST_DAY, TROPHIES).forEach { key -> prefs[key]?.let { put(key, it) } }
+                    listOf(TRAINER, CLAIMED_QUESTS, TRADED_QR, SHINY_EARNED, TOURNAMENT_WON, BATTLE_WINS, DAILY_QUESTS, DAILY_QUEST_DAY, TROPHIES, OWNED_COSMETICS, PACK_DAY, TRAINER_ROOM).forEach { key -> prefs[key]?.let { put(key, it) } }
                 }
             }
             prefs.clear()
@@ -256,5 +341,19 @@ class UserPrefs(private val context: Context) : HintStore {
         val DAILY_QUEST_DAY = longPreferencesKey("daily_quest_day")
         val TROPHIES = intPreferencesKey("trophies")
         val TEXT_SPEED = intPreferencesKey("text_speed")
+        val SOUNDS = booleanPreferencesKey("sounds")
+        val MUSIC = booleanPreferencesKey("music")
+        val HAPTICS = booleanPreferencesKey("haptics")
+        val REDUCE_MOTION = booleanPreferencesKey("reduce_motion")
+        val HOLO = booleanPreferencesKey("holo")
+        val CATCH_DRAFT = stringPreferencesKey("catch_draft")
+        val RECENT_SEARCHES = stringPreferencesKey("recent_searches")
+        const val MAX_RECENT_SEARCHES = 6
+        val LAST_SEEN_VERSION = intPreferencesKey("last_seen_version")
+        val OWNED_COSMETICS = stringSetPreferencesKey("owned_cosmetics")
+        val PACK_DAY = longPreferencesKey("pack_day")
+        val TRAINER_ROOM = stringPreferencesKey("trainer_room")
+        val EVO_CINEMATIC_SEEN = booleanPreferencesKey("evo_cinematic_seen")
+        val TIP_DISMISSED_DAY = longPreferencesKey("tip_dismissed_day")
     }
 }

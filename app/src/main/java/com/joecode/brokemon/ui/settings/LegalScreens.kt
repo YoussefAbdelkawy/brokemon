@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.settings
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -86,8 +87,8 @@ private fun LegalPage(title: String, sections: List<Pair<String, String>>, onBac
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             sections.forEach { (heading, body) ->
                 ScreenPanel(title = heading) {

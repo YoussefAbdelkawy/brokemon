@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.components
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -124,7 +125,7 @@ fun BroCard(
         )
         Spacer(Modifier.height(6.dp))
         // Long type names like "Main Character" wrap instead of overflowing the card.
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             bro.types.forEach { TypeBadge(it, compact = true) }
         }
         Spacer(Modifier.height(6.dp))
@@ -153,7 +154,7 @@ fun DexEntryText(bro: Bro, modifier: Modifier = Modifier, maxLines: Int = 4) {
         modifier = modifier
             .background(DexColors.Screen, DexShape(3.dp))
             .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = Spacing.sm, vertical = 6.dp),
     )
 }
 
@@ -224,7 +225,7 @@ fun DexListRow(
                 onLongClick = onLongClick,
                 onLongClickLabel = onLongClick?.let { "Enter ${bro.name}'s room" },
             )
-            .padding(8.dp),
+            .padding(Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SpriteWindow(bro, stage, Modifier.size(64.dp))
@@ -252,7 +253,7 @@ fun DexListRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(6.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 bro.types.forEach { TypeBadge(it, compact = true) }
             }
         }
@@ -313,7 +314,7 @@ fun MysteryRow(number: Long, modifier: Modifier = Modifier, onClick: () -> Unit)
             .background(DexColors.Surface.copy(alpha = 0.6f), shape)
             .border(2.dp, DexColors.Outline, shape)
             .clickable(onClick = onClick)
-            .padding(8.dp),
+            .padding(Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(64.dp).background(DexColors.Screen, DexShape(4.dp)), contentAlignment = Alignment.Center) {
@@ -343,7 +344,7 @@ fun BroRow(
             .fillMaxWidth()
             .background(DexColors.Surface, shape)
             .border(2.dp, bro.primaryType.color.copy(alpha = 0.6f), shape)
-            .padding(8.dp),
+            .padding(Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -367,7 +368,7 @@ fun BroRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(6.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
                 bro.types.forEach { TypeBadge(it, compact = true) }
             }
         }

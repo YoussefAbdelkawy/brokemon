@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.components
 
+import com.joecode.brokemon.ui.theme.Spacing
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
@@ -118,7 +119,7 @@ fun AudioPlayButton(player: AudioPlayerState, uri: String, modifier: Modifier = 
             .background(DexColors.SurfaceHigh, DexShape(6.dp))
             .border(2.dp, DexColors.LedGreen.copy(alpha = 0.6f), DexShape(6.dp))
             .clickable { player.toggle(uri) }
-            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .padding(horizontal = Spacing.md, vertical = 10.dp)
             .semantics { contentDescription = if (playing) "Pause" else "Play ${label ?: "voice note"}" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -279,7 +280,7 @@ fun VoiceRecorderDialog(
                     .fillMaxWidth()
                     .height(56.dp)
                     .background(DexColors.Screen, DexShape(4.dp))
-                    .padding(8.dp),
+                    .padding(Spacing.sm),
             ) {
                 Canvas(Modifier.fillMaxWidth().height(40.dp)) {
                     val n = 28

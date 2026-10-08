@@ -99,7 +99,12 @@ data class HomeUiState(
 /** The bros in the selected dex, each with its number in that dex. */
 private data class DexScope(val dex: RegionalDex?, val dexes: List<RegionalDex>, val entries: List<DexEntry>, val national: Int)
 
-class HomeViewModel(private val repository: BroRepository, events: EventClock, private val prefs: UserPrefs) : ViewModel() {
+class HomeViewModel(
+    private val repository: BroRepository,
+    events: EventClock,
+    private val prefs: UserPrefs,
+    private val broOrder: com.joecode.brokemon.data.BroOrder,
+) : ViewModel() {
 
     private val query = MutableStateFlow("")
     private val filter = MutableStateFlow(BroFilter())
@@ -122,9 +127,12 @@ class HomeViewModel(private val repository: BroRepository, events: EventClock, p
             val all = sc.entries
             val bros = all.map { it.bro }
             val shown = all.filter { e -> (q.isBlank() || e.bro.name.contains(q.trim(), ignoreCase = true)) && f.matches(e) }
+            val sorted = f.sorted(shown)
+            // The detail screen swipes through exactly what the user is looking at.
+            broOrder.set(sorted.map { it.bro.id })
             HomeUiState(
                 isLoading = false,
-                entries = f.sorted(shown),
+                entries = sorted,
                 totalCaught = bros.size,
                 shinyCount = bros.count { it.isShiny },
                 legendaryCount = bros.count { it.rarity == Rarity.LEGENDARY },

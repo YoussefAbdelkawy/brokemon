@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.room
 
+import com.joecode.brokemon.ui.theme.Spacing
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -200,14 +201,14 @@ private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBac
                 Text(
                     text,
                     style = PixelText.Tiny,
-                    color = Color(0xFF101014),
+                    color = DexColors.OnBright,
                     textAlign = TextAlign.Center,
                     maxLines = 2,
                     modifier = Modifier
                         .offset(x = px * (place.x - 14), y = px * (place.y - 13))
                         .width(px * 60)
                         .background(Color.White, DexShape(6.dp))
-                        .border(2.dp, Color(0xFF101014), DexShape(6.dp))
+                        .border(2.dp, DexColors.OnBright, DexShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 5.dp),
                 )
             }
@@ -216,7 +217,7 @@ private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBac
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(8.dp),
+                .padding(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(
@@ -230,7 +231,7 @@ private fun RoomStage(bro: Bro, stage: EvolutionStage, modifier: Modifier, onBac
                 color = Color.White,
                 modifier = Modifier
                     .background(Color.Black.copy(alpha = 0.55f), DexShape(4.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(horizontal = 10.dp, vertical = Spacing.sm),
             )
         }
     }
@@ -252,7 +253,7 @@ private fun RoomControls(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .navigationBarsPadding()
-            .padding(16.dp),
+            .padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Text(
@@ -315,16 +316,16 @@ private fun RoomDecorator(room: BroRoom, onRoomChange: (BroRoom) -> Unit) {
                 Text(
                     p.label.uppercase(),
                     style = PixelText.Tiny,
-                    color = if (selected) Color(0xFF101014) else DexColors.Text,
+                    color = if (selected) DexColors.OnBright else DexColors.Text,
                     modifier = Modifier
                         .background(if (selected) DexColors.LedYellow else DexColors.SurfaceHigh, DexShape(4.dp))
                         .clickable { part = p }
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                        .padding(horizontal = 10.dp, vertical = Spacing.sm),
                 )
             }
         }
         Spacer(Modifier.height(10.dp))
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             items((0 until part.count).toList()) { i ->
                 val option = room.with(part, i)
                 val preview = remember(option) { roomImage(option) }
@@ -377,7 +378,7 @@ private fun quip(bro: Bro): String {
 @Composable
 private fun RoomStats(bro: Bro, stage: EvolutionStage) {
     val days = CheckOnBro.daysSinceContact(bro)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         listOf(
             "BOND" to stage.title.uppercase(),
             "MEMORIES" to bro.memories.size.toString(),
@@ -411,7 +412,7 @@ private fun MemoryWall(bro: Bro) {
                 style = MaterialTheme.typography.bodySmall,
             )
         } else {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.md)) {
                 items(photos, key = { it.id }) { memory ->
                     val tilt = ((memory.id.hashCode() % 7) - 3).toFloat()
                     Column(
@@ -419,7 +420,7 @@ private fun MemoryWall(bro: Bro) {
                             .width(110.dp)
                             .graphicsLayer { rotationZ = tilt }
                             .background(Color(0xFFF5F2EA))
-                            .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 4.dp),
+                            .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = Spacing.xs),
                     ) {
                         MediaThumbnail(memory.fileUri, memory.mediaType, Modifier.fillMaxWidth().aspectRatio(1f), maxPx = 256)
                         Text(
@@ -427,7 +428,7 @@ private fun MemoryWall(bro: Bro) {
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(0xFF3A3A44),
                             maxLines = 1,
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = Spacing.xs),
                         )
                     }
                 }

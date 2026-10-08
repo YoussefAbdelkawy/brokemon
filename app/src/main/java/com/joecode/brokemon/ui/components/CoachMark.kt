@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.components
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -120,8 +121,8 @@ fun HintBubble(text: String, arrow: ArrowSide, arrowBias: Float, onDismiss: () -
         label = "bob",
     )
     val shape = DexShape(6.dp)
-    val paper = Color(0xFFF7F4E8)
-    val ink = Color(0xFF16161C)
+    val paper = DexColors.Paper
+    val ink = DexColors.Ink
     Column(
         modifier
             .fillMaxWidth()
@@ -135,11 +136,11 @@ fun HintBubble(text: String, arrow: ArrowSide, arrowBias: Float, onDismiss: () -
                 .fillMaxWidth()
                 .background(paper, shape)
                 .border(3.dp, DexColors.LedYellow, shape)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = Spacing.md, vertical = 10.dp),
         ) {
             Text(text, color = ink, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Spacer(Modifier.width(8.dp))
-            Text("GOT IT", style = PixelText.Tiny, color = DexColors.DexRed, modifier = Modifier.padding(top = 4.dp))
+            Text("GOT IT", style = PixelText.Tiny, color = DexColors.DexRed, modifier = Modifier.padding(top = Spacing.xs))
         }
         if (arrow == ArrowSide.BOTTOM) PixelArrow(arrowBias, pointingUp = false, fill = paper, edge = DexColors.LedYellow)
     }

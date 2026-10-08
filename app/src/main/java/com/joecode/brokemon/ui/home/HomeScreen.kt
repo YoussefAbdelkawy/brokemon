@@ -1,5 +1,7 @@
 package com.joecode.brokemon.ui.home
 
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.components.PixelChip
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -181,7 +183,6 @@ fun HomeScreen(
                 Icon(Icons.Filled.Settings, contentDescription = "Settings", tint = DexColors.Text)
             }
         },
-        floatingActionButton = { if (hasBros) CatchFab(onCatch) },
     ) { padding ->
         when {
             state.isLoading -> Box(Modifier.fillMaxSize().padding(padding), Alignment.Center) {
@@ -264,7 +265,7 @@ private class HomeActions(
     val onOpenFilters: () -> Unit,
 )
 
-private val listPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp)
+private val listPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = 96.dp)
 
 @Composable
 private fun CardGrid(state: HomeUiState, activeHint: String?, actions: HomeActions, viewModel: HomeViewModel) {
@@ -321,8 +322,8 @@ private fun DexList(state: HomeUiState, activeHint: String?, actions: HomeAction
 @Composable
 private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeViewModel) {
     Column(Modifier.fillMaxSize()) {
-        DexSwitcher(state, actions, Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp))
-        Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+        DexSwitcher(state, actions, Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.md))
+        Box(Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.md)) {
             SearchBar(
                 query = state.query,
                 onQueryChanged = viewModel::onQueryChanged,
@@ -348,7 +349,7 @@ private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeView
             verticalAlignment = Alignment.CenterVertically,
         ) { page ->
             val entry = state.entries[page]
-            Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().padding(vertical = Spacing.md), contentAlignment = Alignment.Center) {
                 BroCard(
                     bro = entry.bro,
                     stage = entry.stage,
@@ -377,7 +378,7 @@ private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeView
             style = PixelText.Tiny,
             color = DexColors.TextMuted,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(bottom = 96.dp, top = 4.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 96.dp, top = Spacing.xs),
         )
     }
 }
@@ -447,7 +448,7 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
 
 @Composable
 private fun EmptyRegional(dex: RegionalDex, actions: HomeActions) {
-    Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxWidth().padding(Spacing.xl), horizontalAlignment = Alignment.CenterHorizontally) {
         Text("${dex.name.uppercase()} IS EMPTY", style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(
@@ -465,7 +466,7 @@ private fun EmptyRegional(dex: RegionalDex, actions: HomeActions) {
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun DexSwitcher(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
-    LazyRow(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         item { DexChip("National", null, state.selectedDex == null, onClick = { actions.onSelectDex(null) }) }
         items(state.dexes, key = { it.id }) { dex ->
             DexChip(
@@ -484,7 +485,6 @@ private val dexColors = listOf(
     Color(0xFF3FA7FF), Color(0xFF4CE07A), Color(0xFFFFD23F), Color(0xFFFF5A6E), Color(0xFFB892FF), Color(0xFF2EC4B6),
 )
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun DexChip(
     label: String,
@@ -494,28 +494,12 @@ private fun DexChip(
     onLongClick: (() -> Unit)? = null,
     dashed: Boolean = false,
 ) {
-    val shape = DexShape(5.dp)
-    val accent = color ?: DexColors.DexRedLight
-    Row(
-        Modifier
-            .semantics { this.selected = selected }
-            .background(if (selected) accent else DexColors.Surface, shape)
-            .border(if (dashed) 1.dp else 2.dp, if (dashed) DexColors.Outline else accent.copy(alpha = 0.7f), shape)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick, onLongClickLabel = onLongClick?.let { "Rename or delete $label" })
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (color != null && !selected) {
-            Box(Modifier.size(8.dp).background(color, DexShape(2.dp)))
-            Spacer(Modifier.width(6.dp))
-        }
-        Text(label.uppercase(), style = PixelText.Tiny, color = if (selected) Color(0xFF101014) else DexColors.Text, maxLines = 1)
-    }
+    PixelChip(label, selected, onClick, color = color ?: DexColors.DexRedLight, onLongClick = onLongClick)
 }
 
 @Composable
 private fun NoMatches(viewModel: HomeViewModel) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(24.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(Spacing.xl)) {
         Text("No bros match.", color = DexColors.TextMuted, textAlign = TextAlign.Center)
         TextButton(onClick = { viewModel.onQueryChanged(""); viewModel.clearFilters() }) {
             Text("CLEAR SEARCH & FILTERS", style = PixelText.Tiny, color = DexColors.LedYellow)
@@ -562,13 +546,13 @@ private fun EmptyDex(state: HomeUiState, activeHint: String?, actions: HomeActio
                 )
                 DexCounter(0, 0, 0)
                 state.event?.let { EventBanner(it) }
-                Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.fillMaxWidth().padding(vertical = Spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
                     PixelButton(
                         text = "Catch your first Bro",
                         onClick = actions.onCatch,
                         leading = { CatchCube(Modifier.size(24.dp)) },
                         modifier = Modifier
-                            .padding(horizontal = 16.dp)
+                            .padding(horizontal = Spacing.lg)
                             .graphicsLayer { scaleX = pulse; scaleY = pulse }
                             .rarityGlow(Rarity.RARE),
                     )
@@ -610,7 +594,7 @@ private fun DexViewToggle(current: DexView, onChange: (DexView) -> Unit) {
                     .clickable(role = Role.Tab, onClickLabel = label) { onChange(view) },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = label, tint = if (selected) Color(0xFF101014) else DexColors.Text, modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = label, tint = if (selected) DexColors.OnBright else DexColors.Text, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -682,7 +666,7 @@ private fun QuickAction(label: String, icon: ImageVector, color: Color, onClick:
             .background(DexColors.Surface, shape)
             .border(2.dp, color.copy(alpha = 0.55f), shape)
             .clickable(onClick = onClick)
-            .padding(vertical = 12.dp),
+            .padding(vertical = Spacing.md),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(icon, contentDescription = null, tint = color)
@@ -698,7 +682,7 @@ private fun RoomHint(onDismiss: () -> Unit) {
             .fillMaxWidth()
             .background(DexColors.LedBlue.copy(alpha = 0.12f), DexShape(6.dp))
             .border(1.dp, DexColors.LedBlue.copy(alpha = 0.5f), DexShape(6.dp))
-            .padding(start = 12.dp),
+            .padding(start = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(Icons.Filled.TouchApp, null, tint = DexColors.LedBlue, modifier = Modifier.size(20.dp))
@@ -724,7 +708,7 @@ private fun BattleBanner(onClick: () -> Unit) {
             .background(androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(DexColors.DexRedDark, DexColors.Surface)), shape)
             .border(2.dp, DexColors.DexRed, shape)
             .clickable(onClickLabel = "Open Bro Battles", onClick = onClick)
-            .padding(12.dp),
+            .padding(Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(Icons.Filled.SportsMma, null, tint = DexColors.Text)

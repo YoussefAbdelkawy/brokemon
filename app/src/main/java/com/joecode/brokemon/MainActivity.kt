@@ -22,6 +22,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.joecode.brokemon.ui.navigation.BrokemonApp
 import com.joecode.brokemon.ui.navigation.Routes
 import androidx.lifecycle.lifecycleScope
+import com.joecode.brokemon.ui.feedback.FeedbackController
+import com.joecode.brokemon.ui.feedback.LocalFeedback
+import com.joecode.brokemon.ui.feedback.LocalReduceMotion
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.runtime.SideEffect
 import com.joecode.brokemon.ui.theme.BrokemonTheme
 import com.joecode.brokemon.ui.theme.DexColors
 import kotlinx.coroutines.launch
@@ -34,6 +39,19 @@ class MainActivity : ComponentActivity() {
     /** A route to open, set by an app-icon shortcut. */
     private val pendingRoute = mutableStateOf<String?>(null)
 
+    private lateinit var feedback: FeedbackController
+
+    override fun onStart() {
+        super.onStart()
+        feedback.refreshMotion()
+        feedback.resumeMusic()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        feedback.pauseMusic()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -44,6 +62,7 @@ class MainActivity : ComponentActivity() {
         }
 
         val prefs = (application as BrokemonApplication).container.prefs
+        feedback = FeedbackController(applicationContext, lifecycleScope, prefs)
         var onboardingKnown = false
         // Hold the splash until we know whether to show onboarding, so there's no flash.
         splash.setKeepOnScreenCondition { !onboardingKnown }
@@ -52,6 +71,9 @@ class MainActivity : ComponentActivity() {
             BrokemonTheme {
                 val done by prefs.onboardingDone.collectAsStateWithLifecycle(initialValue = null)
                 val scope = rememberCoroutineScope()
+                val view = LocalView.current
+                SideEffect { feedback.view = view }
+                val reduceMotion by feedback.reduceMotion.collectAsStateWithLifecycle()
                 Box(
                     Modifier
                         .fillMaxSize()
@@ -66,6 +88,8 @@ class MainActivity : ComponentActivity() {
                         val showOnboarding = remember { !isDone }
                         CompositionLocalProvider(
                             LocalHintStore provides prefs,
+                            LocalFeedback provides feedback,
+                            LocalReduceMotion provides reduceMotion,
                             LocalUnlockedRewards provides Journal.unlocked(claimed, shinyEarned, champion),
                         ) {
                             BrokemonApp(

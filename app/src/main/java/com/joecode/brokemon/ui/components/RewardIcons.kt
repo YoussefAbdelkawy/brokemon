@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.components
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -57,7 +58,7 @@ fun FrameIcon(frame: TrainerFrame, unlocked: Boolean, modifier: Modifier = Modif
     val colors = frame.colors.map { Color(it) }
     Box(
         modifier
-            .padding(horizontal = 4.dp)
+            .padding(horizontal = Spacing.xs)
             .background(DexColors.Surface, shape)
             .border(
                 4.dp,

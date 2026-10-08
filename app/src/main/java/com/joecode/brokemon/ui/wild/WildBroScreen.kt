@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.wild
 
+import com.joecode.brokemon.ui.theme.Spacing
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -203,7 +204,7 @@ private fun BattleField(bro: Bro, evolution: EvolutionInfo, trainerLook: BroLook
         animationSpec = infiniteRepeatable(tween(480), RepeatMode.Reverse),
         label = "bob",
     )
-    BoxWithConstraints(modifier.padding(horizontal = 16.dp)) {
+    BoxWithConstraints(modifier.padding(horizontal = Spacing.lg)) {
         val w = constraints.maxWidth.toFloat()
         // Wild bro: top right, slides in from the left edge.
         Column(Modifier.align(Alignment.TopEnd).padding(top = 64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -230,11 +231,11 @@ private fun BattleField(bro: Bro, evolution: EvolutionInfo, trainerLook: BroLook
             evolution,
             Modifier
                 .align(Alignment.TopStart)
-                .padding(top = 8.dp)
+                .padding(top = Spacing.sm)
                 .graphicsLayer { alpha = slide; translationX = -(1f - slide) * 80f },
         )
         // You: bottom left, slides in from the right.
-        Box(Modifier.align(Alignment.BottomStart).padding(bottom = 8.dp), contentAlignment = Alignment.BottomCenter) {
+        Box(Modifier.align(Alignment.BottomStart).padding(bottom = Spacing.sm), contentAlignment = Alignment.BottomCenter) {
             Platform(Modifier.size(170.dp, 38.dp))
             BroFullBody(
                 trainerLook ?: BroLook(),
@@ -242,7 +243,7 @@ private fun BattleField(bro: Bro, evolution: EvolutionInfo, trainerLook: BroLook
                 shiny = false,
                 tint = if (trainerLook == null) DexColors.Outline else null,
                 modifier = Modifier
-                    .padding(bottom = 12.dp)
+                    .padding(bottom = Spacing.md)
                     .size(width = 96.dp, height = 156.dp)
                     .graphicsLayer {
                         translationX = (1f - slide) * w
@@ -267,15 +268,15 @@ private fun InfoBox(bro: Bro, evolution: EvolutionInfo, modifier: Modifier) {
     Column(
         modifier
             .width(196.dp)
-            .background(Color(0xFFF7F4E8), shape)
-            .border(3.dp, Color(0xFF16161C), shape)
+            .background(DexColors.Paper, shape)
+            .border(3.dp, DexColors.Ink, shape)
             .padding(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 bro.name.uppercase(),
                 style = PixelText.Tiny,
-                color = Color(0xFF16161C),
+                color = DexColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -327,16 +328,16 @@ private fun BattleText(
             shown++
         }
     }
-    val paper = Color(0xFFF7F4E8)
-    val ink = Color(0xFF16161C)
+    val paper = DexColors.Paper
+    val ink = DexColors.Ink
     val shape = DexShape(6.dp)
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(12.dp)
+            .padding(Spacing.md)
             .background(paper, shape)
             .border(4.dp, ink, shape)
-            .padding(4.dp)
+            .padding(Spacing.xs)
             .border(2.dp, DexColors.DexRed, DexShape(4.dp))
             .clickable(enabled = phase == WildPhase.APPEARED, role = Role.Button, onClickLabel = "Next") {
                 if (shown < message.length) shown = message.length else onNext()
@@ -352,11 +353,11 @@ private fun BattleText(
         )
         when (phase) {
             WildPhase.APPEARED -> if (shown >= message.length) {
-                Text("TAP TO CONTINUE", style = PixelText.Tiny, color = DexColors.DexRed, modifier = Modifier.align(Alignment.End).padding(top = 8.dp))
+                Text("TAP TO CONTINUE", style = PixelText.Tiny, color = DexColors.DexRed, modifier = Modifier.align(Alignment.End).padding(top = Spacing.sm))
             }
             WildPhase.ASK -> {
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     PixelButton(
                         "WhatsApp",
                         onWhatsApp,
@@ -374,7 +375,7 @@ private fun BattleText(
                     )
                 }
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     PixelButton(
                         "Another",
                         onAnother,
@@ -395,7 +396,7 @@ private fun BattleText(
             }
             WildPhase.RESULT -> {
                 Spacer(Modifier.height(12.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     PixelButton("Open card", onOpenCard, Modifier.weight(1f), color = DexColors.SurfaceHigh)
                     PixelButton("Another", onAnother, Modifier.weight(1f))
                 }
@@ -408,7 +409,7 @@ private fun BattleText(
 @Composable
 private fun NoWildBros(onBack: () -> Unit, onCatch: () -> Unit) {
     Column(
-        Modifier.fillMaxSize().padding(32.dp),
+        Modifier.fillMaxSize().padding(Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

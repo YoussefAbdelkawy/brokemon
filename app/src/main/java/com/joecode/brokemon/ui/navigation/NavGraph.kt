@@ -1,5 +1,24 @@
 package com.joecode.brokemon.ui.navigation
 
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.feedback.PixelToastHost
+import com.joecode.brokemon.ui.feedback.LocalFeedback
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import com.joecode.brokemon.ui.theme.DexColors
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContentTransitionScope.SlideDirection
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -70,8 +89,22 @@ fun BrokemonApp(
     val back: () -> Unit = { nav.popBackStack() }
     val duration = 280
 
+    val backStack by nav.currentBackStackEntryAsState()
+    val currentRoute = backStack?.destination?.route
+    val showBar = currentRoute in Routes.TOP_LEVEL
+    fun openTab(tab: Tab) {
+        if (tab.route == currentRoute) return
+        nav.navigate(tab.route) {
+            popUpTo(Routes.HOME) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     SharedTransitionLayout {
     CompositionLocalProvider(LocalSharedTransitionScope provides this) {
+    Column(Modifier.fillMaxSize().background(DexColors.Background)) {
+    Box(Modifier.weight(1f).then(if (showBar) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier)) {
     NavHost(
         navController = nav,
         startDestination = if (showOnboarding) Routes.ONBOARDING else Routes.HOME,
@@ -110,7 +143,7 @@ fun BrokemonApp(
         }
         composable(Routes.BATTLE_HUB) {
             BattleHubScreen(
-                onBack = back,
+                onBack = null,
                 onPlay = { nav.navigate(Routes.battle(it.name)) },
                 onTournaments = { nav.navigate(Routes.TOURNAMENTS) },
                 onRecords = { nav.navigate(Routes.BATTLE_RECORDS) },
@@ -151,7 +184,7 @@ fun BrokemonApp(
         }
         composable(Routes.TRAINER) {
             TrainerScreen(
-                onBack = back,
+                onBack = null,
                 onEdit = { nav.navigate(Routes.TRAINER_EDIT) },
                 onJournal = { nav.navigate(Routes.JOURNAL) },
             )
@@ -211,12 +244,19 @@ fun BrokemonApp(
         composable(
             Routes.BRO_DETAIL,
             arguments = listOf(navArgument(Routes.ARG_BRO_ID) { type = NavType.LongType }),
+            // The card grows out of the grid (shared bounds), so the screen itself only fades.
+            enterTransition = { fadeIn(tween(200)) },
+            exitTransition = { fadeOut(tween(200)) },
+            popEnterTransition = { fadeIn(tween(200)) },
+            popExitTransition = { fadeOut(tween(250)) },
         ) {
-            BroDetailScreen(
-                onBack = back,
-                onShare = { nav.navigate(Routes.shareBro(it)) },
-                onVisitRoom = { nav.navigate(Routes.room(it)) },
-            )
+            CompositionLocalProvider(LocalNavAnimatedScope provides this) {
+                BroDetailScreen(
+                    onBack = back,
+                    onShare = { nav.navigate(Routes.shareBro(it)) },
+                    onVisitRoom = { nav.navigate(Routes.room(it)) },
+                )
+            }
         }
         composable(
             Routes.SHARE_BRO,
@@ -263,6 +303,12 @@ fun BrokemonApp(
         }
         composable(Routes.PRIVACY) { PrivacyPolicyScreen(onBack = back) }
         composable(Routes.LICENSES) { LicensesScreen(onBack = back) }
+    }
+    LocalFeedback.current?.let { PixelToastHost(it, Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.lg)) }
+    }
+    AnimatedVisibility(visible = showBar, enter = slideInVertically { it }, exit = slideOutVertically { it }) {
+        PixelBottomBar(currentRoute, onTab = ::openTab, onCatch = { nav.navigate(Routes.CATCH_BRO) })
+    }
     }
     }
     }

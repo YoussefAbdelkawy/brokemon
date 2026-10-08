@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.settings
 
+import com.joecode.brokemon.ui.theme.Spacing
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -26,7 +27,7 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.FlowRow
 import com.joecode.brokemon.data.EventClock
@@ -116,8 +117,8 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             ScreenPanel(title = "Your data") {
                 Text(
@@ -185,19 +186,19 @@ fun SettingsScreen(
             ScreenPanel(title = "Battle text speed") {
                 Text("How fast battle messages type out.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     listOf("Slow", "Normal", "Fast").forEachIndexed { i, label ->
                         val selected = state.textSpeed == i
                         Text(
                             label.uppercase(),
                             style = PixelText.Tiny,
-                            color = if (selected) Color(0xFF101014) else DexColors.ScreenText,
+                            color = if (selected) DexColors.OnBright else DexColors.ScreenText,
                             modifier = Modifier
                                 .semantics { this.selected = selected }
                                 .background(if (selected) DexColors.ScreenText else Color.Transparent, DexShape(3.dp))
                                 .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
                                 .clickable { viewModel.setTextSpeed(i) }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
                         )
                     }
                 }
@@ -242,7 +243,7 @@ fun SettingsScreen(
     }
 
     pendingRestore?.let { uri ->
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { pendingRestore = null },
             title = { Text("RESTORE BACKUP?", style = PixelText.Label, color = DexColors.LedYellow) },
             text = { Text("This replaces everything currently in your Brodex with the backup. Export first if you want to keep what's here.") },
@@ -255,7 +256,7 @@ fun SettingsScreen(
 
     if (confirmWipe) {
         var typed by rememberSaveable { mutableStateOf("") }
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { confirmWipe = false },
             title = { Text("WIPE THE BRODEX?", style = PixelText.Label, color = DexColors.LedRed) },
             text = {
@@ -292,7 +293,7 @@ private fun SettingsRow(label: String, icon: ImageVector, color: Color, onClick:
             .background(DexColors.Surface, shape)
             .border(2.dp, DexColors.Outline, shape)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(Spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null, tint = color)

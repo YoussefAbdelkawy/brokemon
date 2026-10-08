@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.engage
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -72,9 +73,9 @@ fun CheckOnBroScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             val wave by rememberInfiniteTransition(label = "wave").animateFloat(
                 initialValue = -12f,
@@ -115,7 +116,7 @@ fun CheckOnBroScreen(
                 )
                 ScreenPanel(title = "Conversation starters", modifier = Modifier.fillMaxWidth()) {
                     state.prompts.forEach {
-                        Text("> $it", color = DexColors.ScreenText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 4.dp))
+                        Text("> $it", color = DexColors.ScreenText, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = Spacing.xs))
                     }
                 }
                 PixelButton(

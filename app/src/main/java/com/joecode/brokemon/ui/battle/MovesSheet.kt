@@ -1,5 +1,7 @@
 package com.joecode.brokemon.ui.battle
 
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.components.PixelChip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -72,7 +74,7 @@ fun MovesSheet(bro: Bro, onSave: (equipped: List<String>, customs: List<CustomMo
         Column(
             Modifier
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = Spacing.lg)
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -95,7 +97,7 @@ fun MovesSheet(bro: Bro, onSave: (equipped: List<String>, customs: List<CustomMo
                 }
             }
             if (locked.isNotEmpty()) {
-                Text("LOCKED (FRIENDSHIP)", style = PixelText.Tiny, color = DexColors.TextMuted, modifier = Modifier.padding(top = 8.dp))
+                Text("LOCKED (FRIENDSHIP)", style = PixelText.Tiny, color = DexColors.TextMuted, modifier = Modifier.padding(top = Spacing.sm))
                 locked.forEach { move ->
                     Text(
                         "${move.name} · unlocks at Lv.${BattleMath.level(move.unlockScore)}",
@@ -149,18 +151,7 @@ fun MovesSheet(bro: Bro, onSave: (equipped: List<String>, customs: List<CustomMo
 
 @Composable
 private fun Chip(label: String, selected: Boolean, color: Color, onClick: () -> Unit) {
-    val shape = DexShape(4.dp)
-    Text(
-        label.uppercase(),
-        style = PixelText.Tiny,
-        color = if (selected) Color(0xFF101014) else color,
-        modifier = Modifier
-            .semantics { this.selected = selected }
-            .background(if (selected) color else Color.Transparent, shape)
-            .border(1.dp, color, shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 7.dp),
-    )
+    PixelChip(label, selected, onClick, color = color)
 }
 
 @Composable

@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.trade
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -62,9 +63,9 @@ fun ShareBroScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(Spacing.lg),
         ) {
             when {
                 entry != null -> {
@@ -87,7 +88,7 @@ fun ShareBroScreen(
                                 .background(DexColors.LedGreen.copy(alpha = 0.25f * glow), DexShape(6.dp))
                                 .padding(10.dp)
                                 .background(Color.White, DexShape(4.dp))
-                                .padding(8.dp),
+                                .padding(Spacing.sm),
                         ) {
                             Image(
                                 bitmap = qr,

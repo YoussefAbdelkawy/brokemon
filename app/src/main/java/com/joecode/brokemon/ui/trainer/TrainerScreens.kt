@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.trainer
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -81,7 +82,7 @@ import com.joecode.brokemon.ui.theme.PixelText
 
 @Composable
 fun TrainerScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onEdit: () -> Unit,
     onJournal: () -> Unit,
     viewModel: TrainerViewModel = viewModel(factory = AppViewModelProvider.Factory),
@@ -107,12 +108,12 @@ fun TrainerScreen(
                     .padding(padding)
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .padding(Spacing.lg),
             )
             else -> LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
             ) {
                 item {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -278,7 +279,7 @@ fun TrainerEditScreen(
                     .padding(padding)
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    .padding(Spacing.lg),
             )
         }
     }
@@ -303,8 +304,8 @@ fun JournalScreen(
         }
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             item {
                 ScreenPanel(title = "Starter quests") {
@@ -369,7 +370,7 @@ private fun QuestRow(number: Int, status: QuestStatus, onClaim: () -> Unit, onGo
             .fillMaxWidth()
             .background(DexColors.Surface, shape)
             .border(2.dp, border, shape)
-            .padding(12.dp),
+            .padding(Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -433,7 +434,7 @@ private fun RewardDialog(reward: Reward, masterToo: Boolean, onEquip: (() -> Uni
                 Text(reward.label.uppercase(), style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(6.dp))
                 Text(reward.description, color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
-                Text("+${TrainerLevel.QUEST_XP} XP", style = PixelText.Tiny, color = DexColors.LedBlue, modifier = Modifier.padding(top = 8.dp))
+                Text("+${TrainerLevel.QUEST_XP} XP", style = PixelText.Tiny, color = DexColors.LedBlue, modifier = Modifier.padding(top = Spacing.sm))
                 if (masterToo) {
                     Spacer(Modifier.height(12.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {

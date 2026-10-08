@@ -1,5 +1,7 @@
 package com.joecode.brokemon.ui.battle
 
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.components.PixelChip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,7 +36,7 @@ import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +79,7 @@ import java.util.Date
 /** Battle home: today's quest, how to play, tournaments and records. */
 @Composable
 fun BattleHubScreen(
-    onBack: () -> Unit,
+    onBack: (() -> Unit)?,
     onPlay: (BattleKind) -> Unit,
     onTournaments: () -> Unit,
     onRecords: () -> Unit,
@@ -87,8 +89,8 @@ fun BattleHubScreen(
     val daily = DailyBattleQuest.typeFor()
     DexScaffold(title = "Bro Battles", onBack = onBack) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             ScreenPanel(title = "Daily battle quest") {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -183,7 +185,7 @@ fun BattleRecordsScreen(
     DexScaffold(title = "Battle records", onBack = onBack) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
@@ -204,7 +206,7 @@ fun BattleRecordsScreen(
             if (s.rivals.isEmpty()) item { Text("No battles yet. Practice vs CPU or host a Nearby battle.", color = DexColors.TextMuted) }
             items(s.rivals, key = { "r" + it.name }) { r ->
                 Row(
-                    Modifier.fillMaxWidth().background(DexColors.Surface, DexShape(6.dp)).padding(12.dp),
+                    Modifier.fillMaxWidth().background(DexColors.Surface, DexShape(6.dp)).padding(Spacing.md),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(r.name, color = DexColors.Text, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -212,14 +214,14 @@ fun BattleRecordsScreen(
                     if (r.streak > 1) Text("  🔥${r.streak}", style = PixelText.Tiny, color = DexColors.LedYellow)
                 }
             }
-            item { Text("HISTORY & REPLAYS", style = PixelText.Label, color = DexColors.DexRedLight, modifier = Modifier.padding(top = 8.dp)) }
+            item { Text("HISTORY & REPLAYS", style = PixelText.Label, color = DexColors.DexRedLight, modifier = Modifier.padding(top = Spacing.sm)) }
             items(s.records, key = { it.id }) { r -> RecordRow(r) { onReplay(r.id) } }
             item {
                 Text(
                     "Records stay on this phone. The season table resets each month.",
                     color = DexColors.TextMuted,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier.padding(top = Spacing.sm),
                 )
             }
         }
@@ -234,7 +236,7 @@ private fun RecordRow(r: BattleRecord, onReplay: () -> Unit) {
         null -> if (r.mode == "LOCAL") "PLAYED" else "DRAW"
     }
     Row(
-        Modifier.fillMaxWidth().background(DexColors.Surface, DexShape(6.dp)).padding(start = 12.dp),
+        Modifier.fillMaxWidth().background(DexColors.Surface, DexShape(6.dp)).padding(start = Spacing.md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
@@ -265,7 +267,7 @@ fun TournamentsScreen(
         onBack = onBack,
         actions = { IconButton(onClick = { creating = true }) { Icon(Icons.Filled.Add, "New tournament", tint = DexColors.Text) } },
     ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(Spacing.lg), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item {
                 Text(
                     "Start a cup for a squad or a regional dex. The bracket lives on this phone: play matches here (same phone), on Nearby, or record who won.",
@@ -311,11 +313,11 @@ private fun CreateTournamentDialog(viewModel: TournamentsViewModel, onDismiss: (
     var newPlayer by remember { mutableStateOf("") }
     var dexId by remember { mutableStateOf<Long?>(null) }
     LaunchedEffect(Unit) { if (players.isEmpty()) players += viewModel.trainerName() }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("NEW TOURNAMENT", style = PixelText.Label) },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()).imePadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()).imePadding(), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(value = name, onValueChange = { name = it.take(24) }, label = { Text("Name") }, singleLine = true)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     TournamentFormat.entries.forEach { f -> SmallChip(f.label, f == format) { format = f } }
@@ -362,15 +364,7 @@ private fun CreateTournamentDialog(viewModel: TournamentsViewModel, onDismiss: (
 
 @Composable
 private fun SmallChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label.uppercase(),
-        style = PixelText.Tiny,
-        color = if (selected) Color(0xFF101014) else DexColors.Text,
-        modifier = Modifier
-            .background(if (selected) DexColors.LedYellow else DexColors.SurfaceHigh, DexShape(4.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 7.dp),
-    )
+    PixelChip(label, selected, onClick)
 }
 
 @Composable
@@ -390,7 +384,7 @@ fun TournamentScreen(
         actions = { IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Filled.Delete, "Delete tournament", tint = DexColors.Text) } },
     ) { padding ->
         if (v == null) return@DexScaffold
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             ScreenPanel(title = "${v.format.label} · code ${v.tournament.code}") {
                 Text(
                     v.tournament.champion?.let { "🏆 CHAMPION: ${it.uppercase()}" } ?: "${v.tournament.players.size} players. Tap a ready match to play it.",
@@ -420,7 +414,7 @@ fun TournamentScreen(
             } else {
                 Text("STANDINGS", style = PixelText.Label, color = DexColors.DexRedLight)
                 v.standings.forEachIndexed { i, st ->
-                    Row(Modifier.fillMaxWidth().background(DexColors.Surface, DexShape(4.dp)).padding(10.dp)) {
+                    Row(Modifier.fillMaxWidth().background(DexColors.Surface, DexShape(Spacing.xs)).padding(10.dp)) {
                         Text("${i + 1}. ${st.player}", modifier = Modifier.weight(1f), color = DexColors.Text)
                         Text("${st.wins}W ${st.losses}L", style = PixelText.Tiny, color = DexColors.ScreenText)
                     }
@@ -431,16 +425,16 @@ fun TournamentScreen(
         }
     }
     picking?.let { m ->
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { picking = null },
             title = { Text("${m.a} VS ${m.b}".uppercase(), style = PixelText.Label) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     Text("Play it here (pass the phone), host it on Nearby (you play as ${m.a}), or record a result from another phone.", style = MaterialTheme.typography.bodySmall)
                     PixelButton("Play on this phone", { picking = null; onPlayHere(m) }, Modifier.fillMaxWidth())
                     PixelButton("Host on Nearby", { picking = null; onPlayNearby(m) }, Modifier.fillMaxWidth(), color = DexColors.SurfaceHigh)
                     Text("OR RECORD THE WINNER", style = PixelText.Tiny, color = DexColors.TextMuted)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                         listOfNotNull(m.a, m.b).forEach { p ->
                             TextButton(onClick = { viewModel.recordWinner(m, p); picking = null }) { Text(p) }
                         }
@@ -451,7 +445,7 @@ fun TournamentScreen(
         )
     }
     if (confirmDelete) {
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("DELETE TOURNAMENT?", style = PixelText.Label) },
             text = { Text("The bracket is removed. Battle records stay.") },
@@ -470,7 +464,7 @@ private fun MatchCard(m: TournamentMatch, onClick: () -> Unit) {
             .background(DexColors.Surface, shape)
             .border(2.dp, if (m.ready) DexColors.LedYellow else DexColors.Outline, shape)
             .clickable(enabled = m.ready, onClick = onClick)
-            .padding(8.dp),
+            .padding(Spacing.sm),
     ) {
         listOf(m.a, m.b).forEach { p ->
             val won = p != null && m.winner == p

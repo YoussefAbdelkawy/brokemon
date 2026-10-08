@@ -1,5 +1,7 @@
 package com.joecode.brokemon.ui.catchbro
 
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.components.PixelChip
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -87,8 +89,8 @@ fun CatchBroScreen(
                     .padding(padding)
                     .imePadding()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(Spacing.lg),
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
             ) {
                 AvatarPreview(state, onLookChanged = viewModel::onLookChanged, onRandomize = viewModel::randomizeLook)
                 IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged, viewModel::onFlavorChanged, viewModel::onHabitatChanged)
@@ -285,17 +287,17 @@ internal fun TypeChoice(type: BroType, selected: Boolean, enabled: Boolean, onCl
             .background(if (selected) type.color else Color.Transparent, shape)
             .border(2.dp, type.color, shape)
             .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (selected) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = Color(0xFF101014), modifier = Modifier.size(12.dp))
+            Icon(Icons.Filled.Check, contentDescription = null, tint = DexColors.OnBright, modifier = Modifier.size(12.dp))
             Spacer(Modifier.width(4.dp))
         }
         Text(
             type.label.uppercase(),
             style = PixelText.Tiny,
-            color = if (selected) Color(0xFF101014) else type.color,
+            color = if (selected) DexColors.OnBright else type.color,
         )
     }
 }
@@ -462,18 +464,7 @@ internal fun HabitatField(
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             com.joecode.brokemon.data.model.Bro.HABITAT_PICKS.forEach { pick ->
-                val selected = value.equals(pick, ignoreCase = true)
-                val shape = DexShape(4.dp)
-                Text(
-                    pick.uppercase(),
-                    style = PixelText.Tiny,
-                    color = if (selected) Color(0xFF101014) else DexColors.ScreenText,
-                    modifier = Modifier
-                        .background(if (selected) DexColors.ScreenText else Color.Transparent, shape)
-                        .border(1.dp, DexColors.ScreenBorder, shape)
-                        .clickable { onChange(pick) }
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
-                )
+                PixelChip(pick, value.equals(pick, ignoreCase = true), { onChange(pick) }, color = DexColors.ScreenText)
             }
         }
     }

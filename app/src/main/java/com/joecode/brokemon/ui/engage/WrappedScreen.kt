@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.engage
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -92,14 +93,14 @@ fun WrappedScreen(
                     "DEBUG PREVIEW: in release builds Wrapped only appears Dec 20 to Jan 15.",
                     style = PixelText.Tiny,
                     color = DexColors.LedYellow,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.sm),
                 )
             }
             HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { page ->
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(Spacing.lg)
                         .graphicsLayer {
                             // Read the scroll offset here (draw phase) so paging doesn't recompose.
                             val offset = ((pager.currentPage - page) + pager.currentPageOffsetFraction).absoluteValue
@@ -118,8 +119,8 @@ fun WrappedScreen(
                 }
             }
             Row(
-                Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                Modifier.fillMaxWidth().padding(Spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally),
             ) {
                 repeat(PAGES) { i ->
                     Led(if (i == pager.currentPage) DexColors.LedGreen else DexColors.Outline, 1f, 10.dp)
@@ -156,7 +157,7 @@ private fun WrappedSlide(page: Int, s: WrappedSummary, stages: Map<Long, Evoluti
     Column(
         Modifier.fillMaxWidth().padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(Spacing.lg),
     ) {
         when (page) {
             0 -> {
@@ -211,7 +212,7 @@ private fun WrappedSlide(page: Int, s: WrappedSummary, stages: Map<Long, Evoluti
             4 -> {
                 Label("Rarest catches")
                 if (s.rarest.isEmpty()) Body("All commons this year. Commons are the backbone.")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     s.rarest.forEach { bro ->
                         BroCard(bro, stages[bro.id] ?: EvolutionStage.ROOKIE, Modifier.weight(1f))
                     }

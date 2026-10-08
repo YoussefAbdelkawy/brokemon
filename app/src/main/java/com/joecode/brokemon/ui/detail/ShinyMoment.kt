@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.detail
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -116,7 +117,7 @@ fun ShinyMoment(bro: Bro, stage: EvolutionStage, onShare: () -> Unit, onDismiss:
         }
         Sparkles(Modifier.fillMaxSize(), count = 22, seed = bro.id.toInt() + 3)
         Column(
-            Modifier.padding(24.dp).semantics { liveRegion = LiveRegionMode.Assertive },
+            Modifier.padding(Spacing.xl).semantics { liveRegion = LiveRegionMode.Assertive },
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

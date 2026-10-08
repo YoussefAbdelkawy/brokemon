@@ -141,6 +141,7 @@ class BackupManager(
                     moves = bro.moves.orEmpty(),
                     // Backups from before v5 have no flavor text; Gson would leave it null.
                     flavorText = bro.flavorText.orEmpty(),
+                    stickers = bro.stickers.orEmpty(),
                 )
             }
             repository.replaceAll(restored, data.squads.orEmpty(), data.dexes.orEmpty(), data.dexRefs.orEmpty())

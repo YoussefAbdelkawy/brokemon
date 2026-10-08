@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.squads
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -29,7 +30,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -107,8 +108,8 @@ fun SquadDetailScreen(
         }
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -162,7 +163,7 @@ fun SquadDetailScreen(
     }
     if (showRename && squad != null) {
         var name by rememberSaveable { mutableStateOf(squad.name) }
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { showRename = false },
             title = { Text("RENAME SQUAD", style = PixelText.Label) },
             text = { OutlinedTextField(name, { name = it.take(24) }, singleLine = true) },
@@ -171,7 +172,7 @@ fun SquadDetailScreen(
         )
     }
     if (showDelete) {
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { showDelete = false },
             title = { Text("DISBAND SQUAD?", style = PixelText.Label) },
             text = { Text("Your bros stay in the Brodex; only the squad goes away.") },
@@ -209,7 +210,7 @@ private fun MatchupPanel(report: List<TypeMatchups.TypeReport>) {
                         .background(if (selected == r.opponent) r.opponent.color.copy(alpha = 0.25f) else Color.Transparent, shape)
                         .border(2.dp, verdictColor, shape)
                         .clickable { selected = if (selected == r.opponent) null else r.opponent }
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = Spacing.sm, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(r.opponent.label.uppercase(), style = PixelText.Tiny, color = r.opponent.color)
@@ -229,7 +230,7 @@ private fun MatchupPanel(report: List<TypeMatchups.TypeReport>) {
         val detail = report.firstOrNull { it.opponent == selected }
         AnimatedVisibility(detail != null) {
             detail?.let { r ->
-                Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Column(Modifier.padding(top = Spacing.md), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("VS ${r.opponent.label.uppercase()}: ${r.verdict.label.uppercase()}", style = PixelText.Tiny, color = DexColors.Text)
                     r.counters.forEach { bro ->
                         val t = bro.types.first { r.opponent in TypeMatchups.beats(it) }
@@ -305,7 +306,7 @@ private fun MemberPicker(
     onDismiss: () -> Unit,
 ) {
     val chosen = remember { mutableStateListOf<Long>().apply { addAll(initial) } }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("PICK YOUR PARTY ${chosen.size}/${Squad.MAX_MEMBERS}", style = PixelText.Tiny) },
         text = {

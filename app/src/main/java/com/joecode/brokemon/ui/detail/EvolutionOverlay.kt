@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.detail
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -126,7 +127,7 @@ fun EvolutionOverlay(bro: Bro, event: EvolutionEvent, onFinished: () -> Unit) {
         }
         if (revealed) Sparkles(Modifier.fillMaxSize(), count = 30, color = DexColors.Gold, seed = bro.id.toInt())
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(Spacing.xxl)) {
             Text(if (revealed) "WHOA!" else "?!", style = PixelText.Title, color = DexColors.LedYellow)
             Spacer(Modifier.height(24.dp))
             Box(contentAlignment = Alignment.Center) {

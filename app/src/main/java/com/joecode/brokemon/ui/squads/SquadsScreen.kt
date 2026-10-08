@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.squads
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,7 +20,7 @@ import androidx.compose.foundation.lazy.items
 import com.joecode.brokemon.ui.theme.DexShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
@@ -79,8 +80,8 @@ fun SquadsScreen(
         } else {
             LazyColumn(
                 Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp, 16.dp, 16.dp, 96.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(Spacing.lg, Spacing.lg, Spacing.lg, 96.dp),
+                verticalArrangement = Arrangement.spacedBy(Spacing.md),
             ) {
                 items(state.squads, key = { it.squad.id }) { summary ->
                     SquadCard(summary, Modifier.animateItem()) { onSquadClick(summary.squad.id) }
@@ -91,7 +92,7 @@ fun SquadsScreen(
 
     if (showCreate) {
         var name by rememberSaveable { mutableStateOf("") }
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { showCreate = false },
             title = { Text("NAME YOUR SQUAD", style = PixelText.Label) },
             text = {

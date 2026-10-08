@@ -19,6 +19,9 @@ import com.joecode.brokemon.domain.EvolutionInfo
 import com.joecode.brokemon.domain.EvolutionMoves
 import com.joecode.brokemon.ui.navigation.Routes
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import com.joecode.brokemon.data.BroOrder
 import kotlinx.coroutines.flow.MutableStateFlow
 import com.joecode.brokemon.domain.ShinyHunt
 import com.joecode.brokemon.data.model.RegionalDex
@@ -47,13 +50,32 @@ class BroDetailViewModel(
     private val repository: BroRepository,
     private val media: MediaStorage,
     private val prefs: UserPrefs,
+    private val order: BroOrder,
 ) : ViewModel() {
 
-    private val broId: Long = checkNotNull(savedStateHandle[Routes.ARG_BRO_ID])
+    /** The bro on screen. Swiping left/right through the dex changes it without leaving the screen. */
+    private val broIdFlow = MutableStateFlow<Long>(checkNotNull(savedStateHandle[Routes.ARG_BRO_ID]))
+    private val broId: Long get() = broIdFlow.value
+    val currentBroId: StateFlow<Long> = broIdFlow.asStateFlow()
 
-    val uiState: StateFlow<DetailUiState> = repository.bro(broId)
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<DetailUiState> = broIdFlow.flatMapLatest { repository.bro(it) }
         .map { bro -> DetailUiState(isLoading = false, bro = bro, evolution = bro?.let { Evolution.info(it) }) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailUiState())
+
+    /** Position in the current dex view, e.g. 3 of 12; null if this bro isn't in it. */
+    val position: StateFlow<Pair<Int, Int>?> = kotlinx.coroutines.flow.combine(broIdFlow, order.ids) { id, _ -> order.position(id) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** +1 = next bro, -1 = previous. Returns false if there's nobody to swipe to. */
+    fun swipe(step: Int): Boolean {
+        val next = order.neighbor(broId, step) ?: return false
+        _evolutionEvent.value = null
+        _captionTarget.value = null
+        savedStateHandle[Routes.ARG_BRO_ID] = next
+        broIdFlow.value = next
+        return true
+    }
 
     private val _evolutionEvent = MutableStateFlow<EvolutionEvent?>(null)
     val evolutionEvent: StateFlow<EvolutionEvent?> = _evolutionEvent.asStateFlow()
@@ -64,9 +86,10 @@ class BroDetailViewModel(
 
     init {
         viewModelScope.launch {
-            repository.bro(broId).filterNotNull().collect { bro ->
+            @OptIn(ExperimentalCoroutinesApi::class)
+            broIdFlow.flatMapLatest { repository.bro(it) }.filterNotNull().collect { bro ->
                 val stage = Evolution.info(bro).stage.ordinal
-                val seen = prefs.seenStage(broId)
+                val seen = prefs.seenStage(bro.id)
                 when {
                     stage > seen && _evolutionEvent.value == null -> {
                         // Evolving teaches a bonus move per stage gained.
@@ -74,7 +97,7 @@ class BroDetailViewModel(
                         _evolutionEvent.value = EvolutionEvent(seen, stage, learned)
                         if (learned.isNotEmpty()) repository.update(bro.copy(moves = bro.moves + learned))
                     }
-                    stage < seen -> prefs.setSeenStage(broId, stage)
+                    stage < seen -> prefs.setSeenStage(bro.id, stage)
                 }
             }
         }

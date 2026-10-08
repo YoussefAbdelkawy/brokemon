@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.components
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -59,18 +60,18 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
                 Text(
                     p.label.uppercase(),
                     style = PixelText.Tiny,
-                    color = if (selected) Color(0xFF101014) else DexColors.Text,
+                    color = if (selected) DexColors.OnBright else DexColors.Text,
                     modifier = Modifier
                         .semantics { this.selected = selected }
                         .background(if (selected) DexColors.LedYellow else DexColors.SurfaceHigh, shape)
                         .border(1.dp, if (selected) DexColors.LedYellow else DexColors.Outline, shape)
                         .clickable { part = p }
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                        .padding(horizontal = 10.dp, vertical = Spacing.sm),
                 )
             }
         }
         val unlocked = LocalUnlockedRewards.current
-        LazyRow(state = optionsState, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(state = optionsState, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             items((0 until part.count).toList()) { i ->
                 // Journal rewards stay visible but locked until they're earned.
                 val locked = AvatarLocks.requiredReward(part, i)?.let { it !in unlocked } ?: false
@@ -110,20 +111,20 @@ private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Bool
                     else -> LookOptions.outfitColors[index]
                 }
                 // Swatch in the corner + the bro wearing it.
-                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(4.dp))
+                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(Spacing.xs))
                 Box(
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(4.dp)
+                        .padding(Spacing.xs)
                         .size(14.dp)
                         .background(Color(color), DexShape(2.dp))
                         .border(1.dp, Color.Black.copy(alpha = 0.6f), DexShape(2.dp)),
                 )
             } else if (locked) {
-                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(4.dp), tint = DexColors.Outline)
+                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(Spacing.xs), tint = DexColors.Outline)
                 Icon(Icons.Filled.Lock, null, tint = DexColors.LedYellow, modifier = Modifier.size(18.dp))
             } else {
-                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(4.dp))
+                BroSprite(look.with(part, index), 0, false, Modifier.fillMaxSize().padding(Spacing.xs))
             }
         }
         if (label != null) {

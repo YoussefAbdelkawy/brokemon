@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.catchbro
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -124,7 +125,7 @@ fun CatchOverlay(result: CaughtResult, onViewBro: () -> Unit, onDone: () -> Unit
                 Column(
                     Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 32.dp),
+                        .padding(horizontal = Spacing.xxl),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {

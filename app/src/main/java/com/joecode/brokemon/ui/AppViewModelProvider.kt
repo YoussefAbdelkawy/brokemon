@@ -27,10 +27,10 @@ import com.joecode.brokemon.ui.battle.TournamentsViewModel
 /** One factory for every screen's ViewModel; dependencies come from [AppContainer]. */
 object AppViewModelProvider {
     val Factory = viewModelFactory {
-        initializer { HomeViewModel(container().repository, container().events, container().prefs) }
+        initializer { HomeViewModel(container().repository, container().events, container().prefs, container().broOrder) }
         initializer { BroViewModel(container().repository, container().events) }
         initializer {
-            BroDetailViewModel(createSavedStateHandle(), container().repository, container().media, container().prefs)
+            BroDetailViewModel(createSavedStateHandle(), container().repository, container().media, container().prefs, container().broOrder)
         }
         initializer { SquadsViewModel(container().repository) }
         initializer { SquadDetailViewModel(createSavedStateHandle(), container().repository) }

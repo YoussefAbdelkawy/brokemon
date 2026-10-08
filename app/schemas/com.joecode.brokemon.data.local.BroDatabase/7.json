@@ -1,0 +1,474 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 7,
+    "identityHash": "a8a8a7f4228bab319d7e308ce09951a7",
+    "entities": [
+      {
+        "tableName": "bros",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type1` TEXT NOT NULL, `type2` TEXT, `stats` TEXT NOT NULL, `moves` TEXT NOT NULL, `catchLocation` TEXT NOT NULL, `rarity` TEXT NOT NULL, `isShiny` INTEGER NOT NULL, `catchDate` INTEGER NOT NULL, `realMeetDate` INTEGER, `checkInCount` INTEGER NOT NULL, `lastCheckIn` INTEGER, `memories` TEXT NOT NULL, `facts` TEXT NOT NULL, `avatarSeed` INTEGER NOT NULL, `look` TEXT, `isTradeable` INTEGER NOT NULL, `isTraded` INTEGER NOT NULL, `voiceLine` TEXT, `eventFrame` TEXT, `room` TEXT, `flavorText` TEXT NOT NULL DEFAULT '', `habitat` TEXT, `battle` TEXT, `cardFrame` TEXT, `stickers` TEXT NOT NULL DEFAULT '[]')",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type1",
+            "columnName": "type1",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type2",
+            "columnName": "type2",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "stats",
+            "columnName": "stats",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "moves",
+            "columnName": "moves",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catchLocation",
+            "columnName": "catchLocation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rarity",
+            "columnName": "rarity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isShiny",
+            "columnName": "isShiny",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "catchDate",
+            "columnName": "catchDate",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "realMeetDate",
+            "columnName": "realMeetDate",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "checkInCount",
+            "columnName": "checkInCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastCheckIn",
+            "columnName": "lastCheckIn",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "memories",
+            "columnName": "memories",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "facts",
+            "columnName": "facts",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "avatarSeed",
+            "columnName": "avatarSeed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "look",
+            "columnName": "look",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isTradeable",
+            "columnName": "isTradeable",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTraded",
+            "columnName": "isTraded",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "voiceLine",
+            "columnName": "voiceLine",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "eventFrame",
+            "columnName": "eventFrame",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "room",
+            "columnName": "room",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "flavorText",
+            "columnName": "flavorText",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "habitat",
+            "columnName": "habitat",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "battle",
+            "columnName": "battle",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cardFrame",
+            "columnName": "cardFrame",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "stickers",
+            "columnName": "stickers",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "squads",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `memberIds` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "memberIds",
+            "columnName": "memberIds",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "regional_dexes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `colorIndex` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorIndex",
+            "columnName": "colorIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "bro_dex_cross_ref",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`broId` INTEGER NOT NULL, `dexId` INTEGER NOT NULL, `regionalNumber` INTEGER NOT NULL, PRIMARY KEY(`broId`, `dexId`), FOREIGN KEY(`broId`) REFERENCES `bros`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`dexId`) REFERENCES `regional_dexes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "broId",
+            "columnName": "broId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dexId",
+            "columnName": "dexId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "regionalNumber",
+            "columnName": "regionalNumber",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "broId",
+            "dexId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_bro_dex_cross_ref_dexId",
+            "unique": false,
+            "columnNames": [
+              "dexId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_bro_dex_cross_ref_dexId` ON `${TABLE_NAME}` (`dexId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "bros",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "broId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "regional_dexes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "dexId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "battle_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` INTEGER NOT NULL, `mode` TEXT NOT NULL, `opponentName` TEXT NOT NULL, `won` INTEGER, `mvpBroId` INTEGER, `mvpName` TEXT NOT NULL, `seed` INTEGER NOT NULL, `fairMode` INTEGER NOT NULL, `snapshotsJson` TEXT NOT NULL, `actionsJson` TEXT NOT NULL, `tournamentId` INTEGER, `mySide` INTEGER NOT NULL, `sideNames` TEXT NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mode",
+            "columnName": "mode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "opponentName",
+            "columnName": "opponentName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "won",
+            "columnName": "won",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mvpBroId",
+            "columnName": "mvpBroId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mvpName",
+            "columnName": "mvpName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "seed",
+            "columnName": "seed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fairMode",
+            "columnName": "fairMode",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "snapshotsJson",
+            "columnName": "snapshotsJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actionsJson",
+            "columnName": "actionsJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tournamentId",
+            "columnName": "tournamentId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mySide",
+            "columnName": "mySide",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sideNames",
+            "columnName": "sideNames",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "tournaments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `code` TEXT NOT NULL, `format` TEXT NOT NULL, `players` TEXT NOT NULL, `matchesJson` TEXT NOT NULL, `dexId` INTEGER, `createdAt` INTEGER NOT NULL, `champion` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "format",
+            "columnName": "format",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "players",
+            "columnName": "players",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "matchesJson",
+            "columnName": "matchesJson",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dexId",
+            "columnName": "dexId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "champion",
+            "columnName": "champion",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a8a8a7f4228bab319d7e308ce09951a7')"
+    ]
+  }
+}

@@ -22,17 +22,18 @@ import com.joecode.brokemon.data.model.Tournament
         BattleRecord::class,
         Tournament::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
     // Room writes these migrations from the exported schemas in app/schemas.
     // v2: `look`. v3: `voiceLine` + `eventFrame`. v4: `room`. v5: `flavorText`.
-    // v6: `habitat`, `battle`, regional dexes, battle records, tournaments.
+    // v6: `habitat`, `battle`, regional dexes, battle records, tournaments. v7: `cardFrame`, `stickers`.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
     ],
 )
 @TypeConverters(Converters::class)

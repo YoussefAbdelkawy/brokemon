@@ -43,6 +43,10 @@ data class Bro(
     val habitat: String? = null,
     /** Battle moves and battle history bits. Null = default loadout. */
     val battle: BattleLoadout? = null,
+    /** A cosmetic card frame won from a Daily Pack ("CANDY", ...). Null = the normal type frame. */
+    val cardFrame: String? = null,
+    /** Stickers stuck on the back of the card (sticker ids, in slot order). */
+    @ColumnInfo(defaultValue = "[]") val stickers: List<String> = emptyList(),
 ) {
     val dexNumber: String get() = "#%03d".format(id)
     val types: List<BroType> get() = listOfNotNull(BroType.from(type1), BroType.from(type2))

@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.home
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -46,11 +47,11 @@ fun DexNameDialog(
 ) {
     var name by rememberSaveable { mutableStateOf(initial) }
     var confirmDelete by remember { mutableStateOf(false) }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title.uppercase(), style = PixelText.Label) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(RegionalDex.MAX_NAME) },
@@ -90,7 +91,7 @@ fun BroPickerDialog(
     onDismiss: () -> Unit,
 ) {
     var chosen by remember(initial) { mutableStateOf(initial) }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title.uppercase(), style = PixelText.Label) },
         text = {
@@ -104,7 +105,7 @@ fun BroPickerDialog(
                             Modifier
                                 .fillMaxWidth()
                                 .clickable { chosen = if (checked) chosen - bro.id else chosen + bro.id }
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = Spacing.xs),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(

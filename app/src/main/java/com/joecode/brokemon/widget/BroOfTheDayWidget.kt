@@ -1,5 +1,6 @@
 package com.joecode.brokemon.widget
 
+import com.joecode.brokemon.ui.theme.Spacing
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -71,7 +72,7 @@ class BroOfTheDayWidget : GlanceAppWidget() {
                 .fillMaxSize()
                 .background(DexColors.Background)
                 .cornerRadius(18.dp)
-                .padding(12.dp)
+                .padding(Spacing.md)
                 .clickable(actionStartActivity(open)),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = GlanceModifier.fillMaxWidth()) {

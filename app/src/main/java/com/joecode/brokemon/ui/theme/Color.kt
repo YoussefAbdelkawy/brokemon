@@ -40,6 +40,9 @@ object DexColors {
     /** Cream paper used for dialogue boxes and speech bubbles. */
     val Paper = Color(0xFFF7F4E8)
     val Ink = Color(0xFF16161C)
+
+    /** Dark text/icons on bright fills (chips, yellow badges). */
+    val OnBright = Color(0xFF101014)
 }
 
 /** The ~32 colors all art is drawn from (UI, sprites, backgrounds, icons). */

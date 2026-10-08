@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.trainer
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -85,7 +86,7 @@ fun TrainerEditor(
         focusedLabelColor = DexColors.DexRedLight,
     )
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
         ScreenPanel(title = "This is you") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(

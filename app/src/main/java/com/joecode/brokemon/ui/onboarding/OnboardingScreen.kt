@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.onboarding
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.RepeatMode
@@ -204,8 +205,8 @@ private fun ProfessorTalk(onDone: () -> Unit) {
             LabScene(page)
         }
         Row(
-            Modifier.fillMaxWidth().padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            Modifier.fillMaxWidth().padding(bottom = Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm, Alignment.CenterHorizontally),
         ) {
             repeat(introPages.size) { Led(if (it == page) DexColors.LedGreen else DexColors.Outline, 1f, 10.dp) }
         }
@@ -240,7 +241,7 @@ private fun LabScene(page: Int) {
                 drawOval(Brush.radialGradient(listOf(DexColors.ScreenText.copy(alpha = 0.25f), Color.Transparent)), Offset.Zero, size)
                 drawOval(DexColors.ScreenBorder, Offset(size.width * 0.12f, size.height * 0.3f), Size(size.width * 0.76f, size.height * 0.5f))
             }
-            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(bottom = 16.dp)) {
+            Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(bottom = Spacing.lg)) {
                 BroFullBody(
                     ProfessorLook,
                     stage = 0,
@@ -288,8 +289,8 @@ private fun DialogueBox(speaker: String, text: String, fullText: String, showNex
         animationSpec = infiniteRepeatable(tween(400), RepeatMode.Reverse),
         label = "blink",
     )
-    val paper = Color(0xFFF7F4E8)
-    val ink = Color(0xFF16161C)
+    val paper = DexColors.Paper
+    val ink = DexColors.Ink
     val outer = DexShape(6.dp)
     Column {
         Text(
@@ -307,11 +308,11 @@ private fun DialogueBox(speaker: String, text: String, fullText: String, showNex
                 .heightIn(min = 112.dp)
                 .background(paper, outer)
                 .border(4.dp, ink, outer)
-                .padding(4.dp)
+                .padding(Spacing.xs)
                 .border(2.dp, DexColors.ScreenBorder, DexShape(4.dp))
                 .clickable(role = Role.Button, onClickLabel = "Next", onClick = onClick)
                 .semantics { contentDescription = "$speaker says: $fullText" }
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+                .padding(horizontal = 14.dp, vertical = Spacing.md),
         ) {
             Text(text, color = ink, style = PixelText.Label.copy(lineHeight = PixelText.Header.lineHeight))
             if (showNext) {
@@ -366,7 +367,7 @@ private fun ConsentStep(onAgree: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .clickable { agreed = !agreed }
-                .padding(vertical = 8.dp),
+                .padding(vertical = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(

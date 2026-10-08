@@ -42,6 +42,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.heightIn
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.theme.MinTouch
+import com.joecode.brokemon.ui.theme.Borders
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -108,7 +112,7 @@ private fun DexHeader(
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
+                .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (onBack != null) {
@@ -116,9 +120,9 @@ private fun DexHeader(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DexColors.Text)
                 }
             } else {
-                LensLed(Modifier.padding(start = 6.dp, end = 4.dp))
+                LensLed(Modifier.padding(start = 6.dp, end = Spacing.xs))
             }
-            LedCluster(Modifier.padding(horizontal = 8.dp))
+            LedCluster(Modifier.padding(horizontal = Spacing.sm))
             Text(
                 text = title.uppercase(),
                 style = PixelText.Header,
@@ -200,7 +204,7 @@ fun Led(color: Color, alpha: Float, size: Dp = 9.dp) {
 fun ScreenPanel(
     modifier: Modifier = Modifier,
     title: String? = null,
-    contentPadding: Dp = 12.dp,
+    contentPadding: Dp = Spacing.md,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = DexShape(topStart = 4.dp, topEnd = 4.dp, bottomStart = 14.dp, bottomEnd = 4.dp)
@@ -213,7 +217,7 @@ fun ScreenPanel(
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 2.dp),
+                .padding(horizontal = Spacing.xs, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Led(DexColors.LedRed, 0.9f, 6.dp)
@@ -238,7 +242,10 @@ fun ScreenPanel(
     }
 }
 
-/** Chunky retro button that physically "presses" down. [stacked] puts the icon above the label. */
+/**
+ * Chunky retro button. Pressed: the face drops [depth] and its shadow disappears.
+ * [stacked] puts the icon above the label. Always at least 48dp tall.
+ */
 @Composable
 fun PixelButton(
     text: String,
@@ -251,12 +258,12 @@ fun PixelButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val depth = 4.dp
-    val offset by animateFloatAsState(if (pressed) 1f else 0f, tween(60), label = "press")
-    val shape = DexShape(6.dp)
+    val depth = 3.dp
+    val offset by animateFloatAsState(if (pressed) 1f else 0f, tween(50), label = "press")
     val face = if (enabled) color else DexColors.Outline
     Box(
         modifier
+            .heightIn(min = MinTouch)
             .alpha(if (enabled) 1f else 0.6f)
             .clickable(
                 interactionSource = interaction,
@@ -266,20 +273,22 @@ fun PixelButton(
                 onClick = onClick,
             ),
     ) {
+        // The shadow: gone while pressed.
         Box(
             Modifier
                 .matchParentSize()
                 .offset(y = depth)
-                .background(Color.Black.copy(alpha = 0.55f), shape),
+                .alpha(1f - offset)
+                .clip(PixelShape(2.dp))
+                .background(Color.Black.copy(alpha = 0.55f)),
         )
         val faceModifier = Modifier
             .offset { IntOffset(0, (depth * offset).roundToPx()) }
             .fillMaxWidth()
-            .background(face, shape)
-            .border(2.dp, Color.White.copy(alpha = 0.18f), shape)
+            .pixelBox(face, Color.White.copy(alpha = 0.22f), Borders.normal, 2.dp)
         if (stacked) {
             Column(
-                faceModifier.padding(horizontal = 6.dp, vertical = 10.dp),
+                faceModifier.padding(horizontal = Spacing.sm, vertical = Spacing.md),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 if (leading != null) {
@@ -290,13 +299,13 @@ fun PixelButton(
             }
         } else {
             Row(
-                faceModifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                faceModifier.padding(horizontal = Spacing.lg, vertical = Spacing.md + 2.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (leading != null) {
                     leading()
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(Spacing.sm))
                 }
                 Text(text.uppercase(), style = PixelText.Label, color = DexColors.Text, textAlign = TextAlign.Center)
             }
@@ -310,12 +319,12 @@ fun TypeBadge(type: BroType, modifier: Modifier = Modifier, compact: Boolean = f
     Text(
         text = type.label.uppercase(),
         style = if (compact) PixelText.Tiny else PixelText.Label,
-        color = Color(0xFF101014),
+        color = DexColors.OnBright,
         maxLines = 1,
         modifier = modifier
             .background(type.color, shape)
             .border(1.dp, Color.Black.copy(alpha = 0.4f), shape)
-            .padding(horizontal = if (compact) 5.dp else 8.dp, vertical = if (compact) 3.dp else 5.dp),
+            .padding(horizontal = if (compact) 5.dp else Spacing.sm, vertical = if (compact) 3.dp else 5.dp),
     )
 }
 
@@ -386,7 +395,7 @@ fun EmptyState(
     Column(
         modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

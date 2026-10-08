@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.home
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -61,7 +62,7 @@ fun SearchBar(
     shown: Int,
     total: Int,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = query,
@@ -93,7 +94,7 @@ fun SearchBar(
                     Text(
                         filter.activeCount.toString(),
                         style = PixelText.Tiny,
-                        color = Color(0xFF101014),
+                        color = DexColors.OnBright,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .background(DexColors.LedYellow, CircleShape)
@@ -193,12 +194,12 @@ fun FilterSheet(
                     Text(
                         t.label.uppercase(),
                         style = PixelText.Tiny,
-                        color = if (selected) Color(0xFF101014) else t.color,
+                        color = if (selected) DexColors.OnBright else t.color,
                         modifier = Modifier
                             .background(if (selected) t.color else Color.Transparent, DexShape(4.dp))
                             .border(1.dp, t.color, DexShape(4.dp))
                             .clickable { onFilterChanged(filter.copy(types = filter.types.toggle(t))) }
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                            .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
                     )
                 }
             }

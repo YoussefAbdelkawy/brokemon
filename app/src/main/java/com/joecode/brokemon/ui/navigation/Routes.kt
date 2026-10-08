@@ -32,6 +32,9 @@ object Routes {
     fun replay(id: Long) = "battle/replay/$id"
     fun tournament(id: Long) = "tournament/$id"
 
+    /** Screens that get the bottom bar. */
+    val TOP_LEVEL = setOf(HOME, BATTLE_HUB, TRAINER)
+
     const val ARG_BRO_ID = "broId"
     const val ARG_SQUAD_ID = "squadId"
 

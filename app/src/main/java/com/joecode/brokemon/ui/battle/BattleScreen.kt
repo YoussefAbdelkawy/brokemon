@@ -1,5 +1,7 @@
 package com.joecode.brokemon.ui.battle
 
+import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.components.PixelChip
 import android.content.ClipData
 import android.content.Intent
 import androidx.activity.compose.BackHandler
@@ -49,7 +51,7 @@ import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -167,7 +169,7 @@ private fun BattleSetup(state: BattleUiState, viewModel: BattleViewModel, onBack
                 .padding(padding)
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(Spacing.lg),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             state.tournamentLabel?.let {
@@ -185,13 +187,13 @@ private fun BattleSetup(state: BattleUiState, viewModel: BattleViewModel, onBack
                             Text(
                                 "${f}V$f",
                                 style = PixelText.Label,
-                                color = if (on) Color(0xFF101014) else DexColors.ScreenText,
+                                color = if (on) DexColors.OnBright else DexColors.ScreenText,
                                 modifier = Modifier
-                                    .padding(start = 8.dp)
+                                    .padding(start = Spacing.sm)
                                     .background(if (on) DexColors.ScreenText else Color.Transparent, DexShape(3.dp))
                                     .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
                                     .clickable { viewModel.setFormat(f) }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    .padding(horizontal = Spacing.md, vertical = Spacing.sm),
                             )
                         }
                     }
@@ -238,14 +240,14 @@ private fun BattleSetup(state: BattleUiState, viewModel: BattleViewModel, onBack
             }
 
             // Dex filter: battle with any regional dex (or everyone).
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 item { FilterChipPixel("National", state.dexFilter == null) { viewModel.setDexFilter(null) } }
                 items(state.dexes, key = { it.id }) { d -> FilterChipPixel(d.name, state.dexFilter == d.id) { viewModel.setDexFilter(d.id) } }
             }
             if (pool.isEmpty()) {
                 Text("No bros here yet. Catch some first!", color = DexColors.TextMuted)
             }
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 pool.forEach { bro ->
                     val order = state.currentPicks.indexOf(bro.id)
                     PickTile(bro, order, onClick = { viewModel.togglePick(bro.id) })
@@ -310,7 +312,7 @@ private fun BattleSetup(state: BattleUiState, viewModel: BattleViewModel, onBack
         MovesSheet(bro, onSave = { eq, customs -> viewModel.saveLoadout(bro, eq, customs); editing = null }, onDismiss = { editing = null })
     }
     if (permissionDenied) {
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { permissionDenied = false },
             title = { Text("NEARBY NEEDS PERMISSION", style = PixelText.Label) },
             text = { Text("To find your friend's phone, Brokemon needs Nearby devices (Bluetooth / Wi-Fi) permission. It only uses it during the battle.") },
@@ -321,17 +323,7 @@ private fun BattleSetup(state: BattleUiState, viewModel: BattleViewModel, onBack
 
 @Composable
 private fun FilterChipPixel(label: String, selected: Boolean, onClick: () -> Unit) {
-    val shape = DexShape(5.dp)
-    Text(
-        label.uppercase(),
-        style = PixelText.Tiny,
-        color = if (selected) Color(0xFF101014) else DexColors.Text,
-        modifier = Modifier
-            .background(if (selected) DexColors.LedYellow else DexColors.Surface, shape)
-            .border(1.dp, if (selected) DexColors.LedYellow else DexColors.Outline, shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-    )
+    PixelChip(label, selected, onClick)
 }
 
 @Composable
@@ -354,8 +346,8 @@ private fun PickTile(bro: Bro, order: Int, onClick: () -> Unit) {
                 Text(
                     "${order + 1}",
                     style = PixelText.Tiny,
-                    color = Color(0xFF101014),
-                    modifier = Modifier.align(Alignment.TopEnd).background(DexColors.LedYellow, DexShape(2.dp)).padding(4.dp),
+                    color = DexColors.OnBright,
+                    modifier = Modifier.align(Alignment.TopEnd).background(DexColors.LedYellow, DexShape(2.dp)).padding(Spacing.xs),
                 )
             }
         }
@@ -380,7 +372,7 @@ private fun Lobby(state: BattleUiState, viewModel: BattleViewModel) {
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(Spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -391,7 +383,7 @@ private fun Lobby(state: BattleUiState, viewModel: BattleViewModel) {
                         "$ch",
                         style = PixelText.Title,
                         color = DexColors.LedYellow,
-                        modifier = Modifier.background(DexColors.Screen, DexShape(4.dp)).border(2.dp, DexColors.ScreenBorder, DexShape(4.dp)).padding(10.dp),
+                        modifier = Modifier.background(DexColors.Screen, DexShape(Spacing.xs)).border(2.dp, DexColors.ScreenBorder, DexShape(Spacing.xs)).padding(10.dp),
                     )
                 }
             }
@@ -404,7 +396,7 @@ private fun Lobby(state: BattleUiState, viewModel: BattleViewModel) {
                     contentDescription = "QR code for room ${lobby.code}",
                     filterQuality = FilterQuality.None,
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(180.dp).background(Color.White, DexShape(4.dp)).padding(6.dp),
+                    modifier = Modifier.size(180.dp).background(Color.White, DexShape(Spacing.xs)).padding(6.dp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     PixelButton(
@@ -449,7 +441,7 @@ private fun Lobby(state: BattleUiState, viewModel: BattleViewModel) {
             }
             lobby.opponentTeam?.let { team ->
                 Text("${(lobby.opponentName ?: "THEIR").uppercase()}'S TEAM", style = PixelText.Tiny, color = DexColors.TextMuted)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     team.forEach { f ->
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             BroSprite(com.joecode.brokemon.data.model.BroLook.fromList(f.look), 0, f.shiny, Modifier.size(64.dp))
@@ -530,34 +522,34 @@ private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -
             BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().graphicsLayer { translationX = shake.value * density }) {
                 if (shown.size == 2) {
                     // Opponent: top right.
-                    FighterInfo(shown[topSide], Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 8.dp))
+                    FighterInfo(shown[topSide], Modifier.align(Alignment.TopStart).padding(start = Spacing.md, top = Spacing.sm))
                     val foe = minOf(maxWidth * 0.5f, maxHeight * 0.42f)
                     val mine = minOf(maxWidth * 0.55f, maxHeight * 0.5f)
                     FighterSprite(
                         shown[topSide],
                         flash[topSide].value,
-                        Modifier.align(Alignment.TopEnd).padding(end = 12.dp, top = 40.dp).size(foe),
+                        Modifier.align(Alignment.TopEnd).padding(end = Spacing.md, top = 40.dp).size(foe),
                     )
                     // You: bottom left.
                     FighterSprite(
                         shown[bottomSide],
                         flash[bottomSide].value,
-                        Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = 8.dp).size(mine),
+                        Modifier.align(Alignment.BottomStart).padding(start = Spacing.sm, bottom = Spacing.sm).size(mine),
                         mirror = true,
                     )
-                    FighterInfo(shown[bottomSide], Modifier.align(Alignment.BottomEnd).padding(end = 12.dp, bottom = 24.dp), showHpNumbers = true)
+                    FighterInfo(shown[bottomSide], Modifier.align(Alignment.BottomEnd).padding(end = Spacing.md, bottom = Spacing.xl), showHpNumbers = true)
                     // Emote bubbles.
                     state.emotes.forEach { e ->
                         val top = if (e.side == topSide) Alignment.TopEnd else Alignment.BottomStart
                         Text(
                             e.text,
                             style = PixelText.Label,
-                            color = Color(0xFF16161C),
+                            color = DexColors.Ink,
                             modifier = Modifier
                                 .align(top)
                                 .padding(if (e.side == topSide) 40.dp else 40.dp, if (e.side == topSide) 36.dp else 190.dp)
-                                .background(Color(0xFFF7F4E8), DexShape(6.dp))
-                                .padding(8.dp),
+                                .background(DexColors.Paper, DexShape(6.dp))
+                                .padding(Spacing.sm),
                         )
                     }
                 }
@@ -567,21 +559,21 @@ private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -
                 Modifier
                     .fillMaxWidth()
                     .padding(10.dp)
-                    .background(Color(0xFFF7F4E8), DexShape(6.dp))
-                    .border(4.dp, Color(0xFF16161C), DexShape(6.dp))
-                    .padding(12.dp)
+                    .background(DexColors.Paper, DexShape(6.dp))
+                    .border(4.dp, DexColors.Ink, DexShape(6.dp))
+                    .padding(Spacing.md)
                     .heightIn(min = 96.dp),
             ) {
                 when {
                     step != null -> Typewriter(step.text, charDelay)
-                    state.phase == BattlePhase.OVER -> Text("Battle over.", color = Color(0xFF16161C), style = PixelText.Label)
+                    state.phase == BattlePhase.OVER -> Text("Battle over.", color = DexColors.Ink, style = PixelText.Label)
                     state.awaiting != null -> Commands(state, viewModel, onSwitch = { showTeam = true }, onForfeit = { confirmForfeit = true })
-                    state.waitingForOpponent -> Text("Waiting for ${state.battle?.sides?.get(1 - state.mySide)?.name ?: "them"}...", color = Color(0xFF16161C), style = PixelText.Label)
-                    else -> Text("...", color = Color(0xFF16161C), style = PixelText.Label)
+                    state.waitingForOpponent -> Text("Waiting for ${state.battle?.sides?.get(1 - state.mySide)?.name ?: "them"}...", color = DexColors.Ink, style = PixelText.Label)
+                    else -> Text("...", color = DexColors.Ink, style = PixelText.Label)
                 }
             }
             if (state.kind == BattleKind.CPU || state.kind == BattleKind.HOST || state.kind == BattleKind.JOIN) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = Spacing.xs), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     BattleLines.emotes.forEach { e ->
                         Text(
                             e,
@@ -591,7 +583,7 @@ private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -
                                 .background(DexColors.Surface, DexShape(4.dp))
                                 .border(1.dp, DexColors.Outline, DexShape(4.dp))
                                 .clickable(onClickLabel = "Send $e") { viewModel.emote(state.mySide, e) }
-                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                                .padding(horizontal = 10.dp, vertical = Spacing.sm),
                         )
                     }
                 }
@@ -636,11 +628,11 @@ private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -
         val battle = state.battle
         val side = state.awaiting
         if (battle != null && side != null) {
-            AlertDialog(
+            PixelAlertDialog(
                 onDismissRequest = { showTeam = false },
                 title = { Text("SWITCH", style = PixelText.Label) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                         battle.sides[side].fighters.forEachIndexed { i, f ->
                             val legal = BattleAction.Switch(i) in BattleEngine.legalActions(battle, side)
                             Row(
@@ -669,7 +661,7 @@ private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -
         }
     }
     if (confirmForfeit) {
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { confirmForfeit = false },
             title = { Text("FORFEIT?", style = PixelText.Label) },
             text = { Text("Leaving now counts as a loss.") },
@@ -695,7 +687,7 @@ private fun Typewriter(text: String, charDelay: Long) {
     }
     Text(
         text.take(shown),
-        color = Color(0xFF16161C),
+        color = DexColors.Ink,
         style = PixelText.Label.copy(lineHeight = PixelText.Header.lineHeight),
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite; contentDescription = text },
     )
@@ -708,19 +700,19 @@ private fun Commands(state: BattleUiState, viewModel: BattleViewModel, onSwitch:
     val side = state.awaiting ?: return
     val fighter = battle.sides[side].current
     val legal = BattleEngine.legalActions(battle, side)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("WHAT WILL ${fighter.snap.name.uppercase()} DO?", style = PixelText.Tiny, color = Color(0xFF16161C), modifier = Modifier.weight(1f))
+            Text("WHAT WILL ${fighter.snap.name.uppercase()} DO?", style = PixelText.Tiny, color = DexColors.Ink, modifier = Modifier.weight(1f))
             Text("${state.timerLeft}s", style = PixelText.Tiny, color = if (state.timerLeft <= 10) DexColors.DexRed else Color(0xFF55555F))
         }
         SegmentedBar(state.timerLeft / TURN_SECONDS.toFloat(), if (state.timerLeft <= 10) DexColors.DexRed else DexColors.LedBlue, Modifier.fillMaxWidth().height(4.dp), segments = 30)
         val panic = BattleAction.Move(-1) in legal
         if (panic) {
-            Text("Out of energy! Only a Panic Text left.", color = Color(0xFF16161C), style = MaterialTheme.typography.bodySmall)
+            Text("Out of energy! Only a Panic Text left.", color = DexColors.Ink, style = MaterialTheme.typography.bodySmall)
             PixelButton("Panic Text", { viewModel.choose(BattleAction.Move(-1)) }, Modifier.fillMaxWidth())
         } else {
             fighter.moves.chunked(2).forEachIndexed { row, pair ->
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     pair.forEachIndexed { col, move ->
                         val slot = row * 2 + col
                         val ok = BattleAction.Move(slot) in legal
@@ -735,13 +727,13 @@ private fun Commands(state: BattleUiState, viewModel: BattleViewModel, onSwitch:
                                 .background(if (ok) Color.White else Color(0xFFE2DED0), DexShape(4.dp))
                                 .border(2.dp, if (ok) color else Color(0xFFB0ACA0), DexShape(4.dp))
                                 .clickable(enabled = ok) { viewModel.choose(BattleAction.Move(slot)) }
-                                .padding(8.dp),
+                                .padding(Spacing.sm),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Icon(move.type.icon, null, tint = color, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
                             Column {
-                                Text(move.name.uppercase(), style = PixelText.Tiny, color = Color(0xFF16161C), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(move.name.uppercase(), style = PixelText.Tiny, color = DexColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Spacer(Modifier.height(4.dp))
                                 Text("${fighter.energy[slot]}/${move.energy}", style = PixelText.Tiny, color = Color(0xFF55555F))
                             }
@@ -751,7 +743,7 @@ private fun Commands(state: BattleUiState, viewModel: BattleViewModel, onSwitch:
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             val canSwitch = legal.any { it is BattleAction.Switch }
             TextButton(onClick = onSwitch, enabled = canSwitch) {
                 Icon(Icons.Filled.SwapHoriz, null, tint = if (canSwitch) DexColors.LedBlue else Color(0xFFB0ACA0))
@@ -779,13 +771,13 @@ private fun FighterInfo(f: ShownFighter, modifier: Modifier, showHpNumbers: Bool
         modifier
             .width(196.dp)
             .semantics(mergeDescendants = true) { contentDescription = "${f.name}, level ${f.level}, ${f.hp} of ${f.maxHp} HP" }
-            .background(Color(0xFFF7F4E8), DexShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 2.dp, bottomEnd = 12.dp))
-            .border(3.dp, Color(0xFF16161C), DexShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 2.dp, bottomEnd = 12.dp))
-            .padding(8.dp),
+            .background(DexColors.Paper, DexShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 2.dp, bottomEnd = 12.dp))
+            .border(3.dp, DexColors.Ink, DexShape(topStart = 2.dp, topEnd = 2.dp, bottomStart = 2.dp, bottomEnd = 12.dp))
+            .padding(Spacing.sm),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(f.name.uppercase(), style = PixelText.Tiny, color = Color(0xFF16161C), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-            Text("LV.${f.level}", style = PixelText.Tiny, color = Color(0xFF16161C))
+            Text(f.name.uppercase(), style = PixelText.Tiny, color = DexColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+            Text("LV.${f.level}", style = PixelText.Tiny, color = DexColors.Ink)
         }
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -795,8 +787,8 @@ private fun FighterInfo(f: ShownFighter, modifier: Modifier, showHpNumbers: Bool
             Spacer(Modifier.width(4.dp))
             SegmentedBar(hp, barColor, Modifier.weight(1f).height(8.dp), segments = 16)
         }
-        if (showHpNumbers) Text("${f.hp}/${f.maxHp}", style = PixelText.Tiny, color = Color(0xFF16161C), modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
-        Row(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (showHpNumbers) Text("${f.hp}/${f.maxHp}", style = PixelText.Tiny, color = DexColors.Ink, modifier = Modifier.align(Alignment.End).padding(top = 2.dp))
+        Row(Modifier.padding(top = 2.dp), horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
             repeat(f.teamSize) { i ->
                 Box(Modifier.size(7.dp).background(if (i < f.teamLeft) DexColors.DexRed else Color(0xFFB0ACA0), DexShape(1.dp)))
             }
@@ -843,7 +835,7 @@ private fun Overlay(solid: Boolean = false, content: @Composable () -> Unit) {
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { },
         contentAlignment = Alignment.Center,
     ) {
-        Column(Modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) { content() }
+        Column(Modifier.padding(Spacing.xxl), horizontalAlignment = Alignment.CenterHorizontally) { content() }
     }
 }
 

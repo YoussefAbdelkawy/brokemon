@@ -23,6 +23,7 @@ class AppContainer(context: Context) {
     val prefs = UserPrefs(appContext)
     val repository = BroRepository(database, media, prefs, onChanged = ::refreshWidgets)
     val backup = BackupManager(appContext, repository, media, prefs)
+    val broOrder = com.joecode.brokemon.data.BroOrder()
     val events = EventClock(prefs, debuggable = appContext.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
     fun refreshWidgets() {

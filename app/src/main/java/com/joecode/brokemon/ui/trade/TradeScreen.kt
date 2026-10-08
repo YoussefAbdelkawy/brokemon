@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.trade
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -19,7 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -94,8 +95,8 @@ fun TradeScreen(
     DexScaffold(title = "Trade", onBack = onBack, snackbarHostState = snackbar) { padding ->
         LazyColumn(
             Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.md),
         ) {
             item {
                 ScreenPanel(title = "Receive") {
@@ -115,7 +116,7 @@ fun TradeScreen(
                 }
             }
             item {
-                Text("SEND A CARD", style = PixelText.Label, color = DexColors.DexRedLight, modifier = Modifier.padding(top = 8.dp))
+                Text("SEND A CARD", style = PixelText.Label, color = DexColors.DexRedLight, modifier = Modifier.padding(top = Spacing.sm))
             }
             if (state.tradeable.isEmpty()) {
                 item {
@@ -134,7 +135,7 @@ fun TradeScreen(
     }
 
     state.incoming?.let { bro ->
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = viewModel::declineIncoming,
             title = { Text("INCOMING CARD!", style = PixelText.Label, color = DexColors.LedYellow) },
             text = {

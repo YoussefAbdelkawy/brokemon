@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.trainer
 
+import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -156,7 +157,7 @@ fun TrainerCard(
             Total("MEMORIES", totals.memories)
         }
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
             Text("BADGES", style = PixelText.Tiny, color = DexColors.TextMuted)
             Reward.entries.filter { it.kind == RewardKind.BADGE }.forEach { RewardIcon(it, it in unlocked, size = 26.dp) }
             if (trophies > 0) {
@@ -246,7 +247,7 @@ fun TrainerStrip(
         Column(
             Modifier
                 .clickable(role = Role.Button, onClickLabel = "Open Trainer's Journal", onClick = onOpenJournal)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = Spacing.md, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box {

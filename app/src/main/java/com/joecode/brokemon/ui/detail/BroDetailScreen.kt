@@ -1,5 +1,16 @@
 package com.joecode.brokemon.ui.detail
 
+import androidx.compose.ui.semantics.contentDescription
+import com.joecode.brokemon.ui.components.PixelIconImage
+import com.joecode.brokemon.ui.components.PixelIcon
+import com.joecode.brokemon.ui.theme.MinTouch
+import com.joecode.brokemon.ui.navigation.sharedCard
+import kotlin.math.abs
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Animatable
+import com.joecode.brokemon.ui.theme.Spacing
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
@@ -61,7 +72,7 @@ import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.filled.WavingHand
-import androidx.compose.material3.AlertDialog
+import com.joecode.brokemon.ui.components.PixelAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -230,6 +241,18 @@ fun BroDetailScreen(
     }
 
     val bro = state.bro
+    val position by viewModel.position.collectAsStateWithLifecycle()
+    // Flip animation when swiping to another bro: slide out, switch, slide back in from the other side.
+    val slide = remember { Animatable(0f) }
+    suspend fun flip(step: Int) {
+        slide.animateTo(-step * 0.25f, tween(110))
+        if (viewModel.swipe(step)) {
+            slide.snapTo(step * 0.25f)
+            slide.animateTo(0f, tween(170))
+        } else {
+            slide.animateTo(0f, spring())
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         DexScaffold(
             title = bro?.let { "${it.dexNumber} ${it.name}" } ?: "Bro",
@@ -302,9 +325,22 @@ fun BroDetailScreen(
                 else -> LazyColumn(
                     Modifier
                         .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                        .padding(padding)
+                        // Swipe anywhere outside the card to flip to the next or previous bro in the dex.
+                        .pointerInput(Unit) {
+                            var total = 0f
+                            detectHorizontalDragGestures(
+                                onDragStart = { total = 0f },
+                                onDragEnd = { if (abs(total) > 140f) scope.launch { flip(if (total < 0) 1 else -1) } },
+                                onHorizontalDrag = { _, delta -> total += delta },
+                            )
+                        }
+                        .graphicsLayer {
+                            translationX = slide.value * size.width
+                            alpha = (1f - abs(slide.value) * 2.5f).coerceIn(0f, 1f)
+                        },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.lg),
                 ) {
                     item {
                         CardShowcase(
@@ -315,13 +351,16 @@ fun BroDetailScreen(
                         )
                     }
                     item {
+                        SwipeRow(position, onPrev = { scope.launch { flip(-1) } }, onNext = { scope.launch { flip(1) } })
+                    }
+                    item {
                         CoachMark(
                             id = Hints.DETAIL_CHECK_IN,
                             text = "Talked to ${bro.name} today? Tap here!",
                             visible = seenHints != null && Hints.DETAIL_CHECK_IN !in seenHints && !CheckOnBro.checkedInToday(bro),
                             arrow = ArrowSide.BOTTOM,
                             arrowBias = 1f / 6f,
-                            modifier = Modifier.padding(bottom = 4.dp),
+                            modifier = Modifier.padding(bottom = Spacing.xs),
                         )
                         ActionRow(
                             bro = bro,
@@ -439,11 +478,11 @@ fun BroDetailScreen(
             )
         }
         if (showRarity) {
-            AlertDialog(
+            PixelAlertDialog(
                 onDismissRequest = { showRarity = false },
                 title = { Text("RARITY", style = PixelText.Header) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                         Rarity.entries.forEach { r ->
                             FilterChip(
                                 selected = bro.rarity == r,
@@ -476,7 +515,7 @@ fun BroDetailScreen(
             )
         }
         if (showDelete) {
-            AlertDialog(
+            PixelAlertDialog(
                 onDismissRequest = { showDelete = false },
                 title = { Text("RELEASE ${bro.name.uppercase()}?", style = PixelText.Label) },
                 text = { Text("This removes the card, all of its memories (photos and videos) and facts from this device. It can't be undone.") },
@@ -554,9 +593,10 @@ private fun CardShowcase(bro: Bro, evolution: EvolutionInfo, tilt: TiltState, on
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
-                .padding(vertical = 8.dp)
+                .padding(vertical = Spacing.sm)
                 .widthIn(max = 300.dp)
                 .fillMaxWidth(0.82f)
+                .sharedCard(bro.id)
                 .dragToTilt(tilt, scope),
         ) {
             BroCard(
@@ -664,20 +704,20 @@ private fun ScoreLine(label: String, count: Int, per: Int) {
 private fun StatsPanel(bro: Bro) {
     var asBars by rememberSaveable { mutableStateOf(false) }
     ScreenPanel(title = "Base stats") {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Row(Modifier.align(Alignment.End), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 listOf(false to "HEX", true to "BARS").forEach { (bars, label) ->
                     val selected = asBars == bars
                     Text(
                         label,
                         style = PixelText.Tiny,
-                        color = if (selected) Color(0xFF101014) else DexColors.TextMuted,
+                        color = if (selected) DexColors.OnBright else DexColors.TextMuted,
                         modifier = Modifier
                             .background(if (selected) DexColors.ScreenText else Color.Transparent, DexShape(3.dp))
                             .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
                             .clickable(role = Role.Tab) { asBars = bars }
                             .semantics { this.selected = selected }
-                            .padding(horizontal = 8.dp, vertical = 5.dp),
+                            .padding(horizontal = Spacing.sm, vertical = 5.dp),
                     )
                 }
             }
@@ -703,7 +743,7 @@ private fun MovesPanel(bro: Bro) {
         if (bro.moves.isEmpty()) {
             Text("No moves yet. Every bro has one though.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
         } else {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 bro.moves.forEach { move ->
                     val shape = DexShape(4.dp)
                     Text(
@@ -713,7 +753,7 @@ private fun MovesPanel(bro: Bro) {
                         modifier = Modifier
                             .background(bro.primaryType.color.copy(alpha = 0.18f), shape)
                             .border(1.dp, bro.primaryType.color, shape)
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                            .padding(horizontal = 10.dp, vertical = Spacing.sm),
                     )
                 }
             }
@@ -738,7 +778,7 @@ private fun MemoryPanel(
                 style = MaterialTheme.typography.bodySmall,
             )
         } else {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 items(memories.sortedByDescending { it.date }, key = { it.id }) { memory ->
                     Column(Modifier.width(120.dp)) {
                         MediaThumbnail(
@@ -763,7 +803,7 @@ private fun MemoryPanel(
             }
         }
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             MemoryButton("Photo", Icons.Filled.PhotoCamera, onPhoto, Modifier.weight(1f))
             MemoryButton("Video", Icons.Filled.Videocam, onVideo, Modifier.weight(1f))
             MemoryButton("Voice", Icons.Filled.Mic, onVoice, Modifier.weight(1f))
@@ -774,7 +814,7 @@ private fun MemoryPanel(
 
 @Composable
 private fun MemoryButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier) {
-    OutlinedButton(onClick = onClick, modifier = modifier, shape = DexShape(4.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(4.dp)) {
+    OutlinedButton(onClick = onClick, modifier = modifier, shape = DexShape(Spacing.xs), contentPadding = androidx.compose.foundation.layout.PaddingValues(Spacing.xs)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, contentDescription = null, tint = DexColors.ScreenText, modifier = Modifier.size(18.dp))
             Spacer(Modifier.height(4.dp))
@@ -794,7 +834,7 @@ private fun FactsPanel(facts: List<Fact>, onAdd: () -> Unit, onRemove: (Fact) ->
             )
         }
         facts.forEach { fact ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(vertical = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(fact.category.uppercase(), style = PixelText.Tiny, color = DexColors.ScreenText)
                     Spacer(Modifier.height(2.dp))
@@ -900,7 +940,7 @@ private fun TextInputDialog(
     placeholder: String? = null,
 ) {
     var text by rememberSaveable { mutableStateOf(initial) }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title.uppercase(), style = PixelText.Label) },
         text = {
@@ -932,7 +972,7 @@ private fun AddFactDialog(onConfirm: (String, String, String?) -> Unit, onDismis
     val category = if (choice == CUSTOM_CATEGORY) custom else choice
     val isBirthday = choice == FactCategories.BIRTHDAY
     val birthdayLabel = Birthdays.parse(birthday)?.format(DateTimeFormatter.ofPattern("MMMM d"))
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("NEW FACT", style = PixelText.Label) },
         text = {
@@ -1027,7 +1067,7 @@ private fun BirthdayPicker(onPicked: (String) -> Unit, onDismiss: () -> Unit) {
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     ) {
-        DatePicker(state = state, title = { Text("Birthday (the year doesn't matter)", modifier = Modifier.padding(16.dp)) })
+        DatePicker(state = state, title = { Text("Birthday (the year doesn't matter)", modifier = Modifier.padding(Spacing.lg)) })
     }
 }
 
@@ -1044,7 +1084,7 @@ private fun LookEditorDialog(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(Spacing.md)
                 .background(DexColors.Surface, DexShape(8.dp))
                 .border(2.dp, DexColors.Outline, DexShape(8.dp))
                 .padding(14.dp),
@@ -1057,7 +1097,7 @@ private fun LookEditorDialog(
             }
             Spacer(Modifier.height(12.dp))
             AvatarBuilder(look = look, onLookChange = { look = it })
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.End) {
+            Row(Modifier.fillMaxWidth().padding(top = Spacing.sm), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onDismiss) { Text("Cancel") }
                 TextButton(onClick = { onSave(look) }) { Text("Save") }
             }
@@ -1084,7 +1124,7 @@ private fun MeetDateDialog(initial: Long?, onConfirm: (Long?) -> Unit, onDismiss
             }
         },
     ) {
-        DatePicker(state = pickerState, title = { Text("When did you actually meet?", modifier = Modifier.padding(16.dp)) })
+        DatePicker(state = pickerState, title = { Text("When did you actually meet?", modifier = Modifier.padding(Spacing.lg)) })
     }
 }
 
@@ -1096,10 +1136,10 @@ private fun MemoryViewer(memory: Memory, audio: AudioPlayerState, onDelete: () -
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(Spacing.lg)
                 .background(DexColors.Surface, DexShape(8.dp))
                 .border(2.dp, DexColors.Outline, DexShape(8.dp))
-                .padding(12.dp),
+                .padding(Spacing.md),
         ) {
             Box(
                 Modifier
@@ -1147,7 +1187,7 @@ private fun MemoryViewer(memory: Memory, audio: AudioPlayerState, onDelete: () -
         }
     }
     if (confirmDelete) {
-        AlertDialog(
+        PixelAlertDialog(
             onDismissRequest = { confirmDelete = false },
             title = { Text("DELETE MEMORY?", style = PixelText.Label) },
             text = { Text("The file is removed from this device for good.") },
@@ -1166,7 +1206,7 @@ private fun formatUtcDate(millis: Long): String =
 @Composable
 private fun HabitatDialog(initial: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var text by rememberSaveable { mutableStateOf(initial) }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("HABITAT", style = PixelText.Label) },
         text = { com.joecode.brokemon.ui.catchbro.HabitatField(text, { text = it.take(Bro.MAX_HABITAT) }) },
@@ -1184,7 +1224,7 @@ private fun RegionalDexDialog(
     onDismiss: () -> Unit,
 ) {
     var newName by rememberSaveable { mutableStateOf("") }
-    AlertDialog(
+    PixelAlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("${broName.uppercase()}'S DEXES", style = PixelText.Label) },
         text = {
@@ -1213,5 +1253,38 @@ private fun RegionalDexDialog(
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+    )
+}
+
+/** Previous / next arrows with the position in the dex ("3 / 12"), the tap alternative to swiping. */
+@Composable
+private fun SwipeRow(position: Pair<Int, Int>?, onPrev: () -> Unit, onNext: () -> Unit) {
+    if (position == null || position.second < 2) return
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(MinTouch).clickable(role = Role.Button, onClickLabel = "Previous bro", onClick = onPrev),
+            contentAlignment = Alignment.Center,
+        ) { PixelIconImage(PixelIcon.BACK, tint = DexColors.Text, size = 24.dp) }
+        Text(
+            "%02d / %02d".format(position.first, position.second),
+            style = PixelText.Tiny,
+            color = DexColors.TextMuted,
+            modifier = Modifier.padding(horizontal = Spacing.md).semantics { contentDescription = "Bro ${position.first} of ${position.second}" },
+        )
+        Box(
+            Modifier.size(MinTouch).clickable(role = Role.Button, onClickLabel = "Next bro", onClick = onNext),
+            contentAlignment = Alignment.Center,
+        ) { PixelIconImage(PixelIcon.BACK, tint = DexColors.Text, size = 24.dp, modifier = Modifier.graphicsLayer { scaleX = -1f }) }
+    }
+    Text(
+        "SWIPE LEFT OR RIGHT (OUTSIDE THE CARD) TO FLIP THROUGH BROS",
+        style = PixelText.Tiny,
+        color = DexColors.Outline,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
     )
 }
