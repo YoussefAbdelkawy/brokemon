@@ -72,6 +72,7 @@ import com.joecode.brokemon.ui.theme.color
 fun SquadDetailScreen(
     onBack: () -> Unit,
     onBroClick: (Long) -> Unit,
+    onGroupPhoto: (Long) -> Unit = {},
     viewModel: SquadDetailViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -91,6 +92,11 @@ fun SquadDetailScreen(
                     text = { Text("Rename") },
                     leadingIcon = { Icon(Icons.Filled.Edit, null) },
                     onClick = { menuOpen = false; showRename = true },
+                )
+                DropdownMenuItem(
+                    text = { Text("Group photo") },
+                    leadingIcon = { Icon(Icons.Filled.Edit, null) },
+                    onClick = { menuOpen = false; squad?.let { onGroupPhoto(it.id) } },
                 )
                 DropdownMenuItem(
                     text = { Text("Disband squad", color = DexColors.LedRed) },

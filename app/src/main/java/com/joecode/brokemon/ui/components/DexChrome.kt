@@ -120,7 +120,7 @@ private fun DexHeader(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DexColors.Text)
                 }
             } else {
-                LensLed(Modifier.padding(start = 6.dp, end = Spacing.xs))
+                LensLed(Modifier.padding(start = 6.dp, end = Spacing.xs).then(rememberSecretSwipe()))
             }
             LedCluster(Modifier.padding(horizontal = Spacing.sm))
             Text(

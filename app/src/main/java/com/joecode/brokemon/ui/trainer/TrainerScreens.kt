@@ -85,6 +85,10 @@ fun TrainerScreen(
     onBack: (() -> Unit)?,
     onEdit: () -> Unit,
     onJournal: () -> Unit,
+    onPack: () -> Unit = {},
+    onCollection: () -> Unit = {},
+    onRoom: () -> Unit = {},
+    onGroupPhoto: () -> Unit = {},
     viewModel: TrainerViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val progress by viewModel.progress.collectAsStateWithLifecycle()
@@ -141,6 +145,22 @@ fun TrainerScreen(
                             stacked = true,
                             leading = { Icon(Icons.AutoMirrored.Filled.MenuBook, null, tint = DexColors.Text, modifier = Modifier.size(20.dp)) },
                         )
+                    }
+                }
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            PixelButton("Daily pack", onPack, Modifier.weight(1f), color = DexColors.SurfaceHigh, stacked = true,
+                                leading = { com.joecode.brokemon.ui.components.PixelIconImage(com.joecode.brokemon.ui.components.PixelIcon.PACK, tint = DexColors.LedYellow, size = 20.dp) })
+                            PixelButton("Collection", onCollection, Modifier.weight(1f), color = DexColors.SurfaceHigh, stacked = true,
+                                leading = { com.joecode.brokemon.ui.components.PixelIconImage(com.joecode.brokemon.ui.components.PixelIcon.STAR, tint = DexColors.LedYellow, size = 20.dp) })
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            PixelButton("Trainer room", onRoom, Modifier.weight(1f), color = DexColors.SurfaceHigh, stacked = true,
+                                leading = { com.joecode.brokemon.ui.components.PixelIconImage(com.joecode.brokemon.ui.components.PixelIcon.ROOM, tint = DexColors.LedYellow, size = 20.dp) })
+                            PixelButton("Group photo", onGroupPhoto, Modifier.weight(1f), color = DexColors.SurfaceHigh, stacked = true,
+                                leading = { com.joecode.brokemon.ui.components.PixelIconImage(com.joecode.brokemon.ui.components.PixelIcon.CAMERA, tint = DexColors.LedYellow, size = 20.dp) })
+                        }
                     }
                 }
                 item { LevelPanel(p) }

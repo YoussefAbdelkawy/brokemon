@@ -192,11 +192,20 @@ fun BrokemonApp(
                 onBack = null,
                 onEdit = { nav.navigate(Routes.TRAINER_EDIT) },
                 onJournal = { nav.navigate(Routes.JOURNAL) },
+                onPack = { nav.navigate(Routes.PACK) },
+                onCollection = { nav.navigate(Routes.COLLECTION) },
+                onRoom = { nav.navigate(Routes.TRAINER_ROOM) },
+                onGroupPhoto = { nav.navigate(Routes.groupPhoto()) },
             )
         }
         composable(Routes.PACK) {
             PackScreen(onBack = back, onCollection = { nav.navigate(Routes.COLLECTION) })
         }
+        composable(Routes.TRAINER_ROOM) { com.joecode.brokemon.ui.trainerroom.TrainerRoomScreen(onBack = back) }
+        composable(
+            Routes.GROUP_PHOTO,
+            arguments = listOf(navArgument("squadId") { type = NavType.LongType; defaultValue = 0L }),
+        ) { com.joecode.brokemon.ui.group.GroupPhotoScreen(onBack = back) }
         composable(Routes.COLLECTION) { CollectionScreen(onBack = back) }
         composable(Routes.TRAINER_EDIT) { TrainerEditScreen(onBack = back) }
         composable(Routes.JOURNAL) {
@@ -284,7 +293,7 @@ fun BrokemonApp(
             Routes.SQUAD_DETAIL,
             arguments = listOf(navArgument(Routes.ARG_SQUAD_ID) { type = NavType.LongType }),
         ) {
-            SquadDetailScreen(onBack = back, onBroClick = { nav.navigate(Routes.broDetail(it)) })
+            SquadDetailScreen(onBack = back, onBroClick = { nav.navigate(Routes.broDetail(it)) }, onGroupPhoto = { nav.navigate(Routes.groupPhoto(it)) })
         }
         composable(Routes.TRADE) {
             TradeScreen(
