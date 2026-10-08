@@ -58,6 +58,7 @@ fun CatchOverlay(result: CaughtResult, onViewBro: () -> Unit, onDone: () -> Unit
     val core = remember { Animatable(0.3f) }
     var revealed by remember { mutableStateOf(false) }
     val haptics = LocalHapticFeedback.current
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
 
     BackHandler(onBack = onDone)
 
@@ -73,6 +74,7 @@ fun CatchOverlay(result: CaughtResult, onViewBro: () -> Unit, onDone: () -> Unit
             core.animateTo(0.3f, tween(120))
         }
         delay(350)
+        feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.CATCH, 0.6f)
         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
         core.snapTo(1f)
         burst.animateTo(1f, tween(750, easing = FastOutSlowInEasing))

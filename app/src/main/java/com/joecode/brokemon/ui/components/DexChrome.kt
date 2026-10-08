@@ -258,6 +258,7 @@ fun PixelButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
     val depth = 3.dp
     val offset by animateFloatAsState(if (pressed) 1f else 0f, tween(50), label = "press")
     val face = if (enabled) color else DexColors.Outline
@@ -270,7 +271,7 @@ fun PixelButton(
                 indication = null,
                 enabled = enabled,
                 role = Role.Button,
-                onClick = onClick,
+                onClick = { feedback?.tap(); onClick() },
             ),
     ) {
         // The shadow: gone while pressed.

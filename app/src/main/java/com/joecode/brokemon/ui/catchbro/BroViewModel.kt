@@ -3,7 +3,12 @@ package com.joecode.brokemon.ui.catchbro
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.joecode.brokemon.data.BroRepository
+import com.google.gson.Gson
 import com.joecode.brokemon.data.EventClock
+import com.joecode.brokemon.data.UserPrefs
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.drop
 import com.joecode.brokemon.domain.SeasonEvents
 import java.time.LocalDate
 import com.joecode.brokemon.data.model.Bro
@@ -36,6 +41,9 @@ data class BroState(
     val look: BroLook = BroLook(),
     val isSaving: Boolean = false,
     val caught: CaughtResult? = null,
+    val step: CatchStep = CatchStep.NAME,
+    /** A saved draft waiting for "Continue catching X?". */
+    val offeredDraft: CatchDraft? = null,
 ) {
     val canSave: Boolean get() = name.isNotBlank() && type1 != null && !isSaving
     val movesFull: Boolean get() = selectedMoves.size >= MAX_MOVES
@@ -47,6 +55,30 @@ data class BroState(
         const val MAX_MOVE_LENGTH = QrCodec.MAX_MOVE_LENGTH
     }
 }
+
+/** The five steps of the catch wizard. */
+enum class CatchStep(val title: String) {
+    NAME("Name"), TYPES("Types"), AVATAR("Avatar"), MOVES("Moves"), REVEAL("Reveal");
+
+    val next: CatchStep? get() = entries.getOrNull(ordinal + 1)
+    val previous: CatchStep? get() = entries.getOrNull(ordinal - 1)
+}
+
+/** What gets auto-saved while the wizard is open, so a closed app never loses a half-made bro. */
+data class CatchDraft(
+    val name: String = "",
+    val location: String = "",
+    val habitat: String = "",
+    val flavor: String = "",
+    val type1: String? = null,
+    val type2: String? = null,
+    val rarity: String = Rarity.COMMON.name,
+    val stats: List<Int> = emptyList(),
+    val moves: List<String> = emptyList(),
+    val look: List<Int> = emptyList(),
+    val avatarSeed: Long = 0L,
+    val step: String = CatchStep.NAME.name,
+)
 
 object PresetMoves {
     val all = listOf(
@@ -69,11 +101,15 @@ object PresetMoves {
     )
 }
 
+@OptIn(FlowPreview::class)
 class BroViewModel(
     private val repository: BroRepository,
     private val events: EventClock,
+    private val prefs: UserPrefs? = null,
     private val random: Random = Random.Default,
 ) : ViewModel() {
+
+    private val gson = Gson()
 
     private val _state = MutableStateFlow(
         random.nextLong().let { seed ->
@@ -81,6 +117,63 @@ class BroViewModel(
         },
     )
     val state: StateFlow<BroState> = _state.asStateFlow()
+
+    init {
+        // Offer last time's draft, then auto-save every change (debounced) while the wizard is open.
+        viewModelScope.launch {
+            val saved = prefs?.catchDraftOnce()?.let { runCatching { gson.fromJson(it, CatchDraft::class.java) }.getOrNull() }
+            if (saved != null && saved.name.isNotBlank()) _state.update { it.copy(offeredDraft = saved) }
+            _state.drop(1).debounce(400).collect { st ->
+                if (st.caught != null || st.isSaving) return@collect
+                if (st.offeredDraft != null) return@collect // don't overwrite the draft before they choose
+                prefs?.setCatchDraft(if (st.name.isBlank()) null else gson.toJson(st.toDraft()))
+            }
+        }
+    }
+
+    private fun BroState.toDraft() = CatchDraft(
+        name, catchLocation, habitat, flavorText, type1?.name, type2?.name, rarity.name,
+        stats.toArray().toList(), selectedMoves, look.toList(), avatarSeed, step.name,
+    )
+
+    fun continueDraft() = _state.update { st ->
+        val d = st.offeredDraft ?: return@update st
+        st.copy(
+            name = d.name, catchLocation = d.location, habitat = d.habitat, flavorText = d.flavor,
+            type1 = d.type1?.let(BroType::from), type2 = d.type2?.let(BroType::from),
+            rarity = Rarity.entries.firstOrNull { it.name == d.rarity } ?: Rarity.COMMON,
+            stats = if (d.stats.size == BroStats().toArray().size) BroStats.fromArray(d.stats) else st.stats,
+            selectedMoves = d.moves, look = if (d.look.isEmpty()) st.look else BroLook.fromList(d.look),
+            avatarSeed = d.avatarSeed, step = CatchStep.entries.firstOrNull { it.name == d.step } ?: CatchStep.NAME,
+            offeredDraft = null,
+        )
+    }
+
+    fun discardDraft() {
+        _state.update { it.copy(offeredDraft = null) }
+        viewModelScope.launch { prefs?.setCatchDraft(null) }
+    }
+
+    fun goNext() = _state.update { st -> st.step.next?.takeIf { canLeave(st) }?.let { st.copy(step = it) } ?: st }
+    fun goBack(): Boolean {
+        val prev = _state.value.step.previous ?: return false
+        _state.update { it.copy(step = prev) }
+        return true
+    }
+
+    /** Name is required to leave step 1; a type is required to leave step 2. */
+    private fun canLeave(st: BroState) = when (st.step) {
+        CatchStep.NAME -> st.name.isNotBlank()
+        CatchStep.TYPES -> st.type1 != null
+        else -> true
+    }
+
+    /** Quick Catch: only a name. Type defaults to Chill Guy; everything else can be filled in later. */
+    fun quickCatch() {
+        if (_state.value.name.isBlank()) return
+        _state.update { it.copy(type1 = it.type1 ?: BroType.CHILL_GUY, selectedMoves = emptyList()) }
+        saveBro()
+    }
 
     fun onNameChanged(value: String) = _state.update { it.copy(name = value.take(BroState.MAX_NAME)) }
 
@@ -161,6 +254,7 @@ class BroViewModel(
                 habitat = current.habitat.trim().ifBlank { null },
             )
             val id = repository.insert(bro)
+            prefs?.setCatchDraft(null)
             val eventLabel = SeasonEvents.parse(eventFrame)?.label
             _state.update { it.copy(isSaving = false, caught = CaughtResult(id, bro.name, isShiny, eventLabel)) }
         }

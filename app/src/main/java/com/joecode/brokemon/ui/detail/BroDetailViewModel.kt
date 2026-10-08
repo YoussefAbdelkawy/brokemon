@@ -120,6 +120,10 @@ class BroDetailViewModel(
         viewModelScope.launch { onResult(repository.checkIn(broId)) }
     }
 
+    fun addMoves(moves: List<String>) = edit { b ->
+        b.copy(moves = (b.moves + moves.map { it.trim() }.filter { it.isNotEmpty() }).distinctBy { it.lowercase() }.take(com.joecode.brokemon.ui.catchbro.BroState.MAX_MOVES + 2))
+    }
+
     fun setTradeable(tradeable: Boolean) = edit { it.copy(isTradeable = tradeable) }
 
     fun setRealMeetDate(millis: Long?) = edit { it.copy(realMeetDate = millis) }

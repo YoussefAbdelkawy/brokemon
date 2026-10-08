@@ -1,6 +1,12 @@
 package com.joecode.brokemon.ui.catchbro
 
 import com.joecode.brokemon.ui.theme.Spacing
+import com.joecode.brokemon.ui.components.PixelAlertDialog
+import com.joecode.brokemon.ui.components.PixelPanel
+import com.joecode.brokemon.ui.components.PixelProgressBar
+import com.joecode.brokemon.ui.feedback.LocalFeedback
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.joecode.brokemon.ui.components.PixelChip
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -80,44 +86,57 @@ fun CatchBroScreen(
     viewModel: BroViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val feedback = LocalFeedback.current
+    // Back steps through the wizard first; only the first step leaves the screen.
+    androidx.activity.compose.BackHandler(enabled = state.step != CatchStep.NAME && state.caught == null) { viewModel.goBack() }
 
     Box(Modifier.fillMaxSize()) {
-        DexScaffold(title = "Catch a bro", onBack = onBack) { padding ->
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .imePadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(Spacing.lg),
-                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
-            ) {
-                AvatarPreview(state, onLookChanged = viewModel::onLookChanged, onRandomize = viewModel::randomizeLook)
-                IdentitySection(state, viewModel::onNameChanged, viewModel::onLocationChanged, viewModel::onFlavorChanged, viewModel::onHabitatChanged)
-                TypeSection(state, viewModel::onType1Selected, viewModel::onType2Selected)
-                RaritySection(state.rarity, viewModel::onRarityChanged)
-                StatsSection(state, viewModel::onStatChanged, viewModel::rerollStats)
-                MovesSection(
-                    state = state,
-                    onMoveToggled = viewModel::onMoveToggled,
-                    onCustomChanged = viewModel::onCustomMoveInputChanged,
-                    onAddCustom = viewModel::addCustomMove,
-                )
-                PixelButton(
-                    text = if (state.isSaving) "Throwing..." else "Throw the cube!",
-                    onClick = viewModel::saveBro,
-                    enabled = state.canSave,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (!state.canSave && !state.isSaving) {
-                    Text(
-                        "A bro needs a name and a type before you can catch them.",
-                        color = DexColors.TextMuted,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                    )
+        DexScaffold(title = "Catch a bro", onBack = { if (!viewModel.goBack()) onBack() }) { padding ->
+            Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
+                WizardProgress(state.step, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md))
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = Spacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.lg),
+                ) {
+                    when (state.step) {
+                        CatchStep.NAME -> {
+                            DexyHint("Who's the bro? Just a name is enough to start.")
+                            NameFields(state, viewModel::onNameChanged, viewModel::onLocationChanged)
+                        }
+                        CatchStep.TYPES -> {
+                            TypeSection(state, viewModel::onType1Selected, viewModel::onType2Selected)
+                            RaritySection(state.rarity, viewModel::onRarityChanged)
+                        }
+                        CatchStep.AVATAR ->
+                            AvatarPreview(state, onLookChanged = viewModel::onLookChanged, onRandomize = viewModel::randomizeLook)
+                        CatchStep.MOVES -> {
+                            DexyHint("Moves are optional. You can add them later from the card.")
+                            MovesSection(
+                                state = state,
+                                onMoveToggled = viewModel::onMoveToggled,
+                                onCustomChanged = viewModel::onCustomMoveInputChanged,
+                                onAddCustom = viewModel::addCustomMove,
+                            )
+                        }
+                        CatchStep.REVEAL -> RevealStep(state, viewModel)
+                    }
+                    Spacer(Modifier.height(Spacing.lg))
                 }
-                Spacer(Modifier.height(24.dp))
+                WizardButtons(state, viewModel, feedback)
             }
+        }
+
+        state.offeredDraft?.let { draft ->
+            PixelAlertDialog(
+                onDismissRequest = viewModel::discardDraft,
+                title = { Text("CONTINUE CATCHING ${draft.name.uppercase()}?", style = PixelText.Label, color = DexColors.Text) },
+                text = { Text("You didn't finish last time. Pick up where you left off?", color = DexColors.TextMuted) },
+                confirmButton = { PixelButton("Continue", onClick = viewModel::continueDraft) },
+                dismissButton = { TextButton(onClick = viewModel::discardDraft) { Text("START FRESH", style = PixelText.Tiny, color = DexColors.TextMuted) } },
+            )
         }
 
         state.caught?.let { result ->
@@ -128,6 +147,112 @@ fun CatchBroScreen(
             )
         }
     }
+}
+
+@Composable
+private fun WizardProgress(step: CatchStep, modifier: Modifier = Modifier) {
+    Column(modifier.semantics { contentDescription = "Step ${step.ordinal + 1} of ${CatchStep.entries.size}: ${step.title}" }) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("STEP ${step.ordinal + 1}/${CatchStep.entries.size}", style = PixelText.Tiny, color = DexColors.TextMuted)
+            Spacer(Modifier.width(Spacing.sm))
+            Text(step.title.uppercase(), style = PixelText.Label, color = DexColors.LedYellow)
+        }
+        Spacer(Modifier.height(Spacing.xs))
+        PixelProgressBar((step.ordinal + 1f) / CatchStep.entries.size, DexColors.LedYellow, Modifier.fillMaxWidth(), segments = CatchStep.entries.size * 4)
+    }
+}
+
+@Composable
+private fun WizardButtons(state: BroState, vm: BroViewModel, feedback: com.joecode.brokemon.ui.feedback.FeedbackController?) {
+    val last = state.step == CatchStep.REVEAL
+    val canGo = when (state.step) {
+        CatchStep.NAME -> state.name.isNotBlank()
+        CatchStep.TYPES -> state.type1 != null
+        CatchStep.REVEAL -> state.canSave
+        else -> true
+    }
+    Column(Modifier.fillMaxWidth().background(DexColors.Surface).padding(Spacing.md), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+            if (state.step != CatchStep.NAME) {
+                PixelButton("Back", onClick = { vm.goBack() }, color = DexColors.SurfaceHigh, modifier = Modifier.weight(0.6f))
+            }
+            PixelButton(
+                text = when {
+                    last && state.isSaving -> "Throwing..."
+                    last -> "Throw the cube!"
+                    else -> "Next"
+                },
+                onClick = { if (last) vm.saveBro() else vm.goNext() },
+                enabled = canGo && !state.isSaving,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        if (state.step == CatchStep.NAME) {
+            PixelButton(
+                text = "Quick catch (name only)",
+                onClick = { vm.quickCatch() },
+                enabled = state.name.isNotBlank() && !state.isSaving,
+                color = DexColors.LedBlue,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (!canGo && !state.isSaving) {
+            Text(
+                if (state.step == CatchStep.TYPES) "Pick a type to continue." else "A bro needs a name first.",
+                color = DexColors.TextMuted,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DexyHint(text: String) {
+    PixelPanel(fill = DexColors.Surface) {
+        Text(text, color = DexColors.TextMuted, style = androidx.compose.material3.MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun RevealStep(state: BroState, vm: BroViewModel) {
+    val colors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = DexColors.DexRed,
+        unfocusedBorderColor = DexColors.Outline,
+        focusedLabelColor = DexColors.DexRedLight,
+    )
+    ScreenPanel(title = "Your new bro", modifier = Modifier.rarityGlow(state.rarity)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BroSprite(state.look, 0, false, Modifier.size(104.dp))
+            Spacer(Modifier.width(Spacing.md))
+            Column {
+                Text(state.name.uppercase(), style = PixelText.Header, color = DexColors.ScreenText)
+                Spacer(Modifier.height(Spacing.xs))
+                Text(
+                    listOfNotNull(state.type1?.label, state.type2?.label).joinToString(" / ") + " · " + state.rarity.label,
+                    style = PixelText.Tiny,
+                    color = DexColors.TextMuted,
+                )
+                Text("${state.selectedMoves.size} moves", style = PixelText.Tiny, color = DexColors.TextMuted)
+            }
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        SectionTitle("Dex entry (optional)")
+        OutlinedTextField(
+            value = state.flavorText,
+            onValueChange = vm::onFlavorChanged,
+            label = { Text("Dex entry") },
+            placeholder = { Text("Can smell shawarma from 3 km away. Has never been on time.") },
+            colors = colors,
+            minLines = 2,
+            maxLines = 3,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+            supportingText = { Text("One funny line, like a real dex. ${state.flavorText.length}/${com.joecode.brokemon.data.model.Bro.MAX_FLAVOR}") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        HabitatField(state.habitat, vm::onHabitatChanged, colors)
+    }
+    StatsSection(state, vm::onStatChanged, vm::rerollStats)
 }
 
 @Composable
@@ -186,12 +311,10 @@ private fun AvatarPreview(state: BroState, onLookChanged: (BroLook) -> Unit, onR
 }
 
 @Composable
-private fun IdentitySection(
+private fun NameFields(
     state: BroState,
     onNameChanged: (String) -> Unit,
     onLocationChanged: (String) -> Unit,
-    onFlavorChanged: (String) -> Unit,
-    onHabitatChanged: (String) -> Unit,
 ) {
     val colors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = DexColors.DexRed,
@@ -199,7 +322,6 @@ private fun IdentitySection(
         focusedLabelColor = DexColors.DexRedLight,
     )
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionTitle("Identity")
         OutlinedTextField(
             value = state.name,
             onValueChange = onNameChanged,
@@ -220,19 +342,6 @@ private fun IdentitySection(
             singleLine = true,
             colors = colors,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        HabitatField(state.habitat, onHabitatChanged, colors)
-        OutlinedTextField(
-            value = state.flavorText,
-            onValueChange = onFlavorChanged,
-            label = { Text("Dex entry (optional)") },
-            placeholder = { Text("Can smell shawarma from 3 km away. Has never been on time.") },
-            colors = colors,
-            minLines = 2,
-            maxLines = 3,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            supportingText = { Text("One funny line, like a real dex. ${state.flavorText.length}/${com.joecode.brokemon.data.model.Bro.MAX_FLAVOR}") },
             modifier = Modifier.fillMaxWidth(),
         )
     }

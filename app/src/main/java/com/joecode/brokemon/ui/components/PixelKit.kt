@@ -120,11 +120,12 @@ fun PixelChip(
     icon: PixelIcon? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
     Box(
         modifier
             .heightIn(min = MinTouch)
             .semantics { this.selected = selected }
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick, role = Role.Tab),
+            .combinedClickable(onClick = { feedback?.tap(); onClick() }, onLongClick = onLongClick, role = Role.Tab),
         contentAlignment = Alignment.Center,
     ) {
         Row(

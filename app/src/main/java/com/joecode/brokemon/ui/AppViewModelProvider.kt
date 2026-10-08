@@ -28,7 +28,7 @@ import com.joecode.brokemon.ui.battle.TournamentsViewModel
 object AppViewModelProvider {
     val Factory = viewModelFactory {
         initializer { HomeViewModel(container().repository, container().events, container().prefs, container().broOrder) }
-        initializer { BroViewModel(container().repository, container().events) }
+        initializer { BroViewModel(container().repository, container().events, container().prefs) }
         initializer {
             BroDetailViewModel(createSavedStateHandle(), container().repository, container().media, container().prefs, container().broOrder)
         }

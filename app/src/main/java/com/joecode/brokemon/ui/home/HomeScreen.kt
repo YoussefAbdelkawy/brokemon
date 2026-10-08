@@ -1,5 +1,13 @@
 package com.joecode.brokemon.ui.home
 
+import com.joecode.brokemon.ui.theme.MinTouch
+import com.joecode.brokemon.ui.theme.Borders
+import com.joecode.brokemon.ui.components.pixelBox
+import com.joecode.brokemon.ui.components.PixelIconImage
+import com.joecode.brokemon.ui.components.PixelIcon
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import com.joecode.brokemon.ui.theme.Spacing
 import com.joecode.brokemon.ui.components.PixelChip
 import androidx.compose.animation.AnimatedContent
@@ -116,6 +124,8 @@ fun HomeScreen(
     onWrapped: () -> Unit,
     onSettings: () -> Unit,
     onEnterRoom: (Long) -> Unit,
+    onQuickOpen: (Long, String) -> Unit = { _, _ -> },
+    onShare: (Long) -> Unit = {},
     onTrainer: () -> Unit = {},
     onJournal: () -> Unit = {},
     onWild: () -> Unit = {},
@@ -131,6 +141,26 @@ fun HomeScreen(
     var showNewDex by rememberSaveable { mutableStateOf(false) }
     var managingDex by remember { mutableStateOf<RegionalDex?>(null) }
     var pickingFor by remember { mutableStateOf<RegionalDex?>(null) }
+    var quickFor by remember { mutableStateOf<com.joecode.brokemon.data.model.Bro?>(null) }
+    val snackbar = remember { androidx.compose.material3.SnackbarHostState() }
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    fun doCheckIn(id: Long) {
+        viewModel.checkIn(id) { name, result, undo ->
+            when (result) {
+                com.joecode.brokemon.data.CheckInResult.CHECKED_IN -> {
+                    feedback?.success("Checked in on $name")
+                    scope.launch {
+                        snackbar.currentSnackbarData?.dismiss()
+                        val r = snackbar.showSnackbar("Checked in on $name", actionLabel = "UNDO", duration = androidx.compose.material3.SnackbarDuration.Short)
+                        if (r == androidx.compose.material3.SnackbarResult.ActionPerformed) undo()
+                    }
+                }
+                com.joecode.brokemon.data.CheckInResult.ALREADY_TODAY -> feedback?.toast("Already checked in on $name today", com.joecode.brokemon.ui.feedback.ToastKind.INFO)
+                else -> Unit
+            }
+        }
+    }
 
     // Shake the phone: a wild bro appears.
     ShakeEffect(enabled = hasBros && !state.isLoading) {
@@ -153,8 +183,10 @@ fun HomeScreen(
         onBroClick = onBroClick,
         onLongPress = { id ->
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-            onEnterRoom(id)
+            quickFor = state.entries.firstOrNull { it.bro.id == id }?.bro
         },
+        onSwipeCheckIn = { id -> doCheckIn(id) },
+        onSwipeShare = onShare,
         onSquads = onSquads,
         onTrade = onTrade,
         onCheckOnBro = onCheckOnBro,
@@ -172,6 +204,7 @@ fun HomeScreen(
 
     DexScaffold(
         title = "Brodex",
+        snackbarHostState = snackbar,
         actions = {
             if (hasBros) {
                 DexViewToggle(state.view) {
@@ -235,6 +268,17 @@ fun HomeScreen(
             onDismiss = { pickingFor = null },
         )
     }
+    quickFor?.let { bro ->
+        QuickActionsSheet(
+            bro = bro,
+            onDismiss = { quickFor = null },
+            onCheckIn = { doCheckIn(bro.id); quickFor = null },
+            onMemory = { onQuickOpen(bro.id, "memory"); quickFor = null },
+            onShare = { onShare(bro.id); quickFor = null },
+            onEdit = { onQuickOpen(bro.id, "edit"); quickFor = null },
+            onRoom = { onEnterRoom(bro.id); quickFor = null },
+        )
+    }
     if (showFilters) {
         FilterSheet(
             filter = state.filter,
@@ -255,6 +299,8 @@ private class HomeActions(
     val onCatch: () -> Unit,
     val onBroClick: (Long) -> Unit,
     val onLongPress: (Long) -> Unit,
+    val onSwipeCheckIn: (Long) -> Unit,
+    val onSwipeShare: (Long) -> Unit,
     val onSquads: () -> Unit,
     val onTrade: () -> Unit,
     val onCheckOnBro: () -> Unit,
@@ -265,7 +311,7 @@ private class HomeActions(
     val onOpenFilters: () -> Unit,
 )
 
-private val listPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = 96.dp)
+private val listPadding = PaddingValues(start = Spacing.lg, end = Spacing.lg, top = Spacing.lg, bottom = Spacing.xl)
 
 @Composable
 private fun CardGrid(state: HomeUiState, activeHint: String?, actions: HomeActions, viewModel: HomeViewModel) {
@@ -303,14 +349,20 @@ private fun DexList(state: HomeUiState, activeHint: String?, actions: HomeAction
     ) {
         item { HomeHeader(state, activeHint, actions, viewModel) }
         items(state.entries, key = { it.bro.id }) { entry ->
-            DexListRow(
-                bro = entry.bro,
-                stage = entry.stage,
-                onClick = { actions.onBroClick(entry.bro.id) },
-                onLongClick = { actions.onLongPress(entry.bro.id) },
-                number = entry.number,
-                modifier = Modifier.animateItem().sharedCard(entry.bro.id),
-            )
+            SwipeRow(
+                onCheckIn = { actions.onSwipeCheckIn(entry.bro.id) },
+                onShare = { actions.onSwipeShare(entry.bro.id) },
+                modifier = Modifier.animateItem(),
+            ) {
+                DexListRow(
+                    bro = entry.bro,
+                    stage = entry.stage,
+                    onClick = { actions.onBroClick(entry.bro.id) },
+                    onLongClick = { actions.onLongPress(entry.bro.id) },
+                    number = entry.number,
+                    modifier = Modifier.sharedCard(entry.bro.id),
+                )
+            }
         }
         items(state.mysterySlots, key = { "slot$it" }) { slot ->
             MysteryRow(slot, Modifier.animateItem(), onClick = state.selectedDex?.let { d -> { actions.onAddToDex(d) } } ?: actions.onCatch)
@@ -321,6 +373,7 @@ private fun DexList(state: HomeUiState, activeHint: String?, actions: HomeAction
 /** Binder: one big card at a time, swipe left and right like flipping a card binder. */
 @Composable
 private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeViewModel) {
+    val recents by viewModel.recentSearches.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxSize()) {
         DexSwitcher(state, actions, Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.md))
         Box(Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.md)) {
@@ -333,6 +386,9 @@ private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeView
                 onClear = viewModel::clearFilters,
                 shown = state.entries.size,
                 total = state.totalCaught,
+                recents = recents,
+                onSubmit = viewModel::rememberSearch,
+                onClearRecents = viewModel::clearRecentSearches,
             )
         }
         if (state.entries.isEmpty()) {
@@ -385,6 +441,7 @@ private fun Binder(state: HomeUiState, actions: HomeActions, viewModel: HomeView
 
 @Composable
 private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeActions, viewModel: HomeViewModel) {
+    val recents by viewModel.recentSearches.collectAsStateWithLifecycle()
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         CoachMark(
             id = Hints.HOME_VIEWS,
@@ -431,6 +488,9 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
             onClear = viewModel::clearFilters,
             shown = state.entries.size,
             total = state.totalCaught,
+            recents = recents,
+            onSubmit = viewModel::rememberSearch,
+            onClearRecents = viewModel::clearRecentSearches,
         )
         if (state.showRoomHint && activeHint == null) RoomHint(viewModel::dismissRoomHint)
         when {
@@ -688,7 +748,7 @@ private fun RoomHint(onDismiss: () -> Unit) {
         Icon(Icons.Filled.TouchApp, null, tint = DexColors.LedBlue, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(10.dp))
         Text(
-            "Tip: press and hold a card to step inside their room.",
+            "Tip: press and hold a card for quick actions.",
             color = DexColors.Text,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.weight(1f),
@@ -720,4 +780,84 @@ private fun BattleBanner(onClick: () -> Unit) {
         }
         Text("FIGHT", style = PixelText.Tiny, color = DexColors.LedYellow)
     }
+}
+
+/** Long-press on a card: the five things you do most, without opening it. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickActionsSheet(
+    bro: com.joecode.brokemon.data.model.Bro,
+    onDismiss: () -> Unit,
+    onCheckIn: () -> Unit,
+    onMemory: () -> Unit,
+    onShare: () -> Unit,
+    onEdit: () -> Unit,
+    onRoom: () -> Unit,
+) {
+    androidx.compose.material3.ModalBottomSheet(onDismissRequest = onDismiss, containerColor = DexColors.Surface) {
+        Column(
+            Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = Spacing.lg).padding(bottom = Spacing.lg),
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+        ) {
+            Text(bro.name.uppercase(), style = PixelText.Label, color = DexColors.Text)
+            QuickRow("Check in", PixelIcon.CHECK_IN, onCheckIn)
+            QuickRow("Add memory", PixelIcon.CAMERA, onMemory)
+            QuickRow("Share", PixelIcon.SHARE, onShare)
+            QuickRow("Edit", PixelIcon.EDIT, onEdit)
+            QuickRow("Enter room", PixelIcon.ROOM, onRoom)
+        }
+    }
+}
+
+@Composable
+private fun QuickRow(label: String, icon: PixelIcon, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = MinTouch)
+            .pixelBox(DexColors.SurfaceHigh, DexColors.Outline, Borders.normal, 2.dp)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PixelIconImage(icon, tint = DexColors.LedYellow, size = 24.dp)
+        Spacer(Modifier.width(Spacing.md))
+        Text(label.uppercase(), style = PixelText.Label, color = DexColors.Text)
+    }
+}
+
+/** Swipe a list row right to check in, left to share. The row always snaps back. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun SwipeRow(onCheckIn: () -> Unit, onShare: () -> Unit, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    val state = androidx.compose.material3.rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                androidx.compose.material3.SwipeToDismissBoxValue.StartToEnd -> onCheckIn()
+                androidx.compose.material3.SwipeToDismissBoxValue.EndToStart -> onShare()
+                else -> Unit
+            }
+            false // never remove the row; it snaps back
+        },
+    )
+    androidx.compose.material3.SwipeToDismissBox(
+        state = state,
+        modifier = modifier,
+        backgroundContent = {
+            val right = state.dismissDirection == androidx.compose.material3.SwipeToDismissBoxValue.StartToEnd
+            val left = state.dismissDirection == androidx.compose.material3.SwipeToDismissBoxValue.EndToStart
+            if (right || left) {
+                Row(
+                    Modifier.fillMaxSize().pixelBox(if (right) DexColors.LedGreen else DexColors.LedBlue, DexColors.Outline, Borders.normal, 2.dp).padding(horizontal = Spacing.lg),
+                    horizontalArrangement = if (right) Arrangement.Start else Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PixelIconImage(if (right) PixelIcon.CHECK_IN else PixelIcon.SHARE, tint = DexColors.OnBright, size = 24.dp)
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(if (right) "CHECK IN" else "SHARE", style = PixelText.Label, color = DexColors.OnBright)
+                }
+            }
+        },
+        content = { content() },
+    )
 }

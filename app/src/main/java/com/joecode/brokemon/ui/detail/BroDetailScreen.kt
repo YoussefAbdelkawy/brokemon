@@ -1,5 +1,14 @@
 package com.joecode.brokemon.ui.detail
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.joecode.brokemon.ui.components.PixelChip
+import com.joecode.brokemon.ui.components.PixelProgressBar
+import com.joecode.brokemon.ui.components.PixelPanel
+import com.joecode.brokemon.domain.Missing
+import com.joecode.brokemon.domain.Completeness
+import com.joecode.brokemon.ui.feedback.ToastKind
+import com.joecode.brokemon.ui.feedback.LocalFeedback
 import androidx.compose.ui.semantics.contentDescription
 import com.joecode.brokemon.ui.components.PixelIconImage
 import com.joecode.brokemon.ui.components.PixelIcon
@@ -187,6 +196,8 @@ fun BroDetailScreen(
     onBack: () -> Unit,
     onShare: (Long) -> Unit,
     onVisitRoom: (Long) -> Unit = {},
+    /** Quick action from the Home long-press sheet: "memory" or "edit". */
+    focus: String? = null,
     viewModel: BroDetailViewModel = viewModel(factory = AppViewModelProvider.Factory),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -194,6 +205,8 @@ fun BroDetailScreen(
     val captionTarget by viewModel.captionTarget.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
+    val feedback = LocalFeedback.current
+    var showAddMoves by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     var menuOpen by remember { mutableStateOf(false) }
@@ -237,6 +250,17 @@ fun BroDetailScreen(
         } catch (e: ActivityNotFoundException) {
             viewModel.onCaptureResult(false)
             scope.launch { snackbar.showSnackbar("No camera app found on this device.") }
+        }
+    }
+
+    // Quick actions open the card with the right dialog already up.
+    var focusHandled by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(focus, state.bro?.id) {
+        if (focus == null || focusHandled || state.bro == null) return@LaunchedEffect
+        focusHandled = true
+        when (focus) {
+            "memory" -> pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+            "edit" -> showRename = true
         }
     }
 
@@ -354,6 +378,17 @@ fun BroDetailScreen(
                         SwipeRow(position, onPrev = { scope.launch { flip(-1) } }, onNext = { scope.launch { flip(1) } })
                     }
                     item {
+                        CompletenessNudge(bro) { missing ->
+                            when (missing) {
+                                Missing.MOVES -> showAddMoves = true
+                                Missing.FACT -> showAddFact = true
+                                Missing.MEMORY -> pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageAndVideo))
+                                Missing.DEX_ENTRY -> showDexEntry = true
+                                Missing.HABITAT -> showHabitat = true
+                            }
+                        }
+                    }
+                    item {
                         CoachMark(
                             id = Hints.DETAIL_CHECK_IN,
                             text = "Talked to ${bro.name} today? Tap here!",
@@ -367,13 +402,10 @@ fun BroDetailScreen(
                             onCheckIn = {
                                 dismissHint(Hints.DETAIL_CHECK_IN)
                                 viewModel.checkIn { result ->
-                                    scope.launch {
-                                        snackbar.showSnackbar(
-                                            when (result) {
-                                                CheckInResult.CHECKED_IN -> "Checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} pts"
-                                                else -> "Already checked in with ${bro.name} today. Come back tomorrow!"
-                                            },
-                                        )
+                                    if (result == CheckInResult.CHECKED_IN) {
+                                        feedback?.success("Checked in with ${bro.name}! +${Evolution.CHECK_IN_POINTS} pts")
+                                    } else {
+                                        feedback?.toast("Already checked in with ${bro.name} today", ToastKind.INFO)
                                     }
                                 }
                             },
@@ -383,7 +415,7 @@ fun BroDetailScreen(
                     }
                     item { EvolutionPanel(bro, state.evolution!!) }
                     item { StatsPanel(bro) }
-                    item { MovesPanel(bro) }
+                    item { MovesPanel(bro, onAddMoves = { showAddMoves = true }) }
                     item {
                         MemoryPanel(
                             memories = bro.memories,
@@ -445,7 +477,7 @@ fun BroDetailScreen(
                 label = "Name",
                 initial = bro.name,
                 confirm = "Save",
-                onConfirm = { viewModel.rename(it); showRename = false },
+                onConfirm = { viewModel.rename(it); showRename = false; feedback?.success("Renamed") },
                 onDismiss = { showRename = false },
             )
         }
@@ -461,8 +493,15 @@ fun BroDetailScreen(
         if (showHabitat) {
             HabitatDialog(
                 initial = bro.habitat.orEmpty(),
-                onConfirm = { viewModel.setHabitat(it); showHabitat = false },
+                onConfirm = { viewModel.setHabitat(it); showHabitat = false; feedback?.success("Habitat saved") },
                 onDismiss = { showHabitat = false },
+            )
+        }
+        if (showAddMoves && bro != null) {
+            AddMovesDialog(
+                existing = bro.moves,
+                onConfirm = { viewModel.addMoves(it); showAddMoves = false; feedback?.success("Moves added") },
+                onDismiss = { showAddMoves = false },
             )
         }
         if (showDexEntry) {
@@ -473,7 +512,7 @@ fun BroDetailScreen(
                 confirm = "Save",
                 maxLength = Bro.MAX_FLAVOR,
                 placeholder = "Has never once replied in under 3 hours.",
-                onConfirm = { viewModel.setFlavorText(it); showDexEntry = false },
+                onConfirm = { viewModel.setFlavorText(it); showDexEntry = false; feedback?.success("Dex entry saved") },
                 onDismiss = { showDexEntry = false },
             )
         }
@@ -532,6 +571,7 @@ fun BroDetailScreen(
                 onConfirm = { c, v, monthDay ->
                     viewModel.addFact(c, v, monthDay)
                     showAddFact = false
+                    feedback?.success("Fact added")
                     // Natural moment to ask: they just told us a date they want to remember.
                     if (monthDay != null && Build.VERSION.SDK_INT >= 33 &&
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -738,10 +778,14 @@ private fun StatsPanel(bro: Bro) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MovesPanel(bro: Bro) {
+private fun MovesPanel(bro: Bro, onAddMoves: (() -> Unit)? = null) {
     ScreenPanel(title = "Signature moves") {
         if (bro.moves.isEmpty()) {
             Text("No moves yet. Every bro has one though.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+            if (onAddMoves != null) {
+                Spacer(Modifier.height(Spacing.sm))
+                PixelButton("Add moves", onClick = onAddMoves, color = DexColors.LedBlue)
+            }
         } else {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 bro.moves.forEach { move ->
@@ -1286,5 +1330,67 @@ private fun SwipeRow(position: Pair<Int, Int>?, onPrev: () -> Unit, onNext: () -
         color = DexColors.Outline,
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+
+/** "Card 40% complete: add moves?" Tapping opens the matching editor. Disappears at 100%. */
+@Composable
+private fun CompletenessNudge(bro: Bro, onAct: (Missing) -> Unit) {
+    val c = remember(bro) { Completeness.of(bro) }
+    val next = c.missing.firstOrNull() ?: return
+    PixelPanel(
+        Modifier.fillMaxWidth().clickable(role = androidx.compose.ui.semantics.Role.Button, onClickLabel = next.action) { onAct(next) },
+        border = DexColors.LedYellow,
+        fill = DexColors.Surface,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("CARD ${c.percent}% COMPLETE", style = PixelText.Tiny, color = DexColors.LedYellow)
+                Spacer(Modifier.height(Spacing.xs))
+                PixelProgressBar(c.percent / 100f, DexColors.LedYellow, Modifier.fillMaxWidth(0.8f), segments = 20, height = 12.dp)
+                Spacer(Modifier.height(Spacing.xs))
+                Text(c.nudge.orEmpty(), color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+            }
+            PixelIconImage(PixelIcon.PLUS, tint = DexColors.LedYellow, size = 24.dp)
+        }
+    }
+}
+
+/** Pick up to a few preset moves, or type your own. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AddMovesDialog(existing: List<String>, onConfirm: (List<String>) -> Unit, onDismiss: () -> Unit) {
+    val room = (com.joecode.brokemon.ui.catchbro.BroState.MAX_MOVES - existing.size).coerceAtLeast(1)
+    var picked by rememberSaveable { mutableStateOf(listOf<String>()) }
+    var custom by rememberSaveable { mutableStateOf("") }
+    PixelAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("ADD MOVES (${picked.size}/$room)", style = PixelText.Label, color = DexColors.Text) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()).heightIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    com.joecode.brokemon.ui.catchbro.PresetMoves.all.filter { m -> existing.none { it.equals(m, true) } }.forEach { m ->
+                        PixelChip(m, m in picked, {
+                            picked = if (m in picked) picked - m else if (picked.size < room) picked + m else picked
+                        }, color = DexColors.DexRedLight)
+                    }
+                }
+                OutlinedTextField(
+                    value = custom,
+                    onValueChange = { custom = it.take(com.joecode.brokemon.share.QrCodec.MAX_MOVE_LENGTH) },
+                    label = { Text("Custom move") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            PixelButton("Add", onClick = {
+                val extra = custom.trim().takeIf { it.isNotEmpty() && picked.size < room }
+                onConfirm(picked + listOfNotNull(extra))
+            }, enabled = picked.isNotEmpty() || custom.isNotBlank())
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = PixelText.Tiny, color = DexColors.TextMuted) } },
     )
 }

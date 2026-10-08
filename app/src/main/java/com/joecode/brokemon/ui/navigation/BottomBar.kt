@@ -87,11 +87,12 @@ fun PixelBottomBar(currentRoute: String?, onTab: (Tab) -> Unit, onCatch: () -> U
 @Composable
 private fun TabItem(tab: Tab, currentRoute: String?, onTab: (Tab) -> Unit, modifier: Modifier) {
     val selected = currentRoute == tab.route
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
     Column(
         modifier
             .heightIn(min = 64.dp)
             .semantics { this.selected = selected }
-            .clickable(role = Role.Tab, onClickLabel = "Open ${tab.label}") { onTab(tab) }
+            .clickable(role = Role.Tab, onClickLabel = "Open ${tab.label}") { feedback?.tap(); onTab(tab) }
             .padding(vertical = Spacing.sm),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -114,6 +115,7 @@ private fun TabItem(tab: Tab, currentRoute: String?, onTab: (Tab) -> Unit, modif
 @Composable
 fun CatchOrb(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
     val scale = remember { Animatable(1f) }
     Box(
         modifier
@@ -121,6 +123,7 @@ fun CatchOrb(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .graphicsLayer { scaleX = scale.value; scaleY = scale.value }
             .semantics { contentDescription = "Catch a bro" }
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button) {
+                feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.TAP, 0.5f)
                 scope.launch {
                     scale.animateTo(0.78f, tween(70))
                     launch { onClick() }

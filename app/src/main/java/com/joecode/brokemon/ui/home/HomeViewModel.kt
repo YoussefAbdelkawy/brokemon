@@ -126,7 +126,7 @@ class HomeViewModel(
         combine(scope, query, filter, events.current, prefs.roomHintSeen) { sc, q, f, event, hintSeen ->
             val all = sc.entries
             val bros = all.map { it.bro }
-            val shown = all.filter { e -> (q.isBlank() || e.bro.name.contains(q.trim(), ignoreCase = true)) && f.matches(e) }
+            val shown = all.filter { e -> com.joecode.brokemon.domain.FuzzySearch.matches(q, e.bro.name) && f.matches(e) }
             val sorted = f.sorted(shown)
             // The detail screen swipes through exactly what the user is looking at.
             broOrder.set(sorted.map { it.bro.id })
@@ -202,6 +202,31 @@ class HomeViewModel(
     }
 
     fun onQueryChanged(value: String) = query.update { value }
+
+    val recentSearches: StateFlow<List<String>> =
+        prefs.recentSearches.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Remember a search once the user is done typing (keyboard Search, or tapping a result). */
+    fun rememberSearch(text: String) {
+        if (text.isBlank()) return
+        viewModelScope.launch { prefs.addRecentSearch(text) }
+    }
+
+    fun clearRecentSearches() {
+        viewModelScope.launch { prefs.clearRecentSearches() }
+    }
+
+    /** Quick actions from the long-press sheet. */
+    fun checkIn(broId: Long, onDone: (name: String, result: com.joecode.brokemon.data.CheckInResult, undo: () -> Unit) -> Unit) {
+        viewModelScope.launch {
+            val before = repository.findBro(broId) ?: return@launch
+            val result = repository.checkIn(broId)
+            onDone(before.name, result) {
+                // Undo puts the card back exactly as it was.
+                viewModelScope.launch { repository.update(before) }
+            }
+        }
+    }
 
     fun onFilterChanged(value: BroFilter) = filter.update { value }
 

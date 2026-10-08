@@ -128,6 +128,8 @@ fun BrokemonApp(
             HomeScreen(
                 onCatch = { nav.navigate(Routes.CATCH_BRO) },
                 onBroClick = { nav.navigate(Routes.broDetail(it)) },
+                onQuickOpen = { id, focus -> nav.navigate(Routes.broDetail(id, focus)) },
+                onShare = { nav.navigate(Routes.shareBro(it)) },
                 onSquads = { nav.navigate(Routes.SQUADS) },
                 onTrade = { nav.navigate(Routes.TRADE) },
                 onCheckOnBro = { nav.navigate(Routes.CHECK_ON_BRO) },
@@ -243,15 +245,19 @@ fun BrokemonApp(
         }
         composable(
             Routes.BRO_DETAIL,
-            arguments = listOf(navArgument(Routes.ARG_BRO_ID) { type = NavType.LongType }),
+            arguments = listOf(
+                navArgument(Routes.ARG_BRO_ID) { type = NavType.LongType },
+                navArgument("focus") { type = NavType.StringType; nullable = true; defaultValue = null },
+            ),
             // The card grows out of the grid (shared bounds), so the screen itself only fades.
             enterTransition = { fadeIn(tween(200)) },
             exitTransition = { fadeOut(tween(200)) },
             popEnterTransition = { fadeIn(tween(200)) },
             popExitTransition = { fadeOut(tween(250)) },
-        ) {
+        ) { entry ->
             CompositionLocalProvider(LocalNavAnimatedScope provides this) {
                 BroDetailScreen(
+                    focus = entry.arguments?.getString("focus"),
                     onBack = back,
                     onShare = { nav.navigate(Routes.shareBro(it)) },
                     onVisitRoom = { nav.navigate(Routes.room(it)) },

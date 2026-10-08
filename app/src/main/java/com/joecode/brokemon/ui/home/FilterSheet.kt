@@ -1,9 +1,12 @@
 package com.joecode.brokemon.ui.home
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,14 +64,21 @@ fun SearchBar(
     onClear: () -> Unit,
     shown: Int,
     total: Int,
+    recents: List<String> = emptyList(),
+    onSubmit: (String) -> Unit = {},
+    onClearRecents: () -> Unit = {},
 ) {
+    var focused by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChanged,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).onFocusChanged { focused = it.isFocused },
                 singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { onSubmit(query); focusManager.clearFocus() }),
                 placeholder = { Text("Search by name") },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 trailingIcon = {
@@ -101,6 +111,16 @@ fun SearchBar(
                             .padding(horizontal = 5.dp, vertical = 3.dp),
                     )
                 }
+            }
+        }
+        // Recent searches: tap to repeat one.
+        if (focused && query.isBlank() && recents.isNotEmpty()) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("RECENT", style = PixelText.Tiny, color = DexColors.TextMuted, modifier = Modifier.align(Alignment.CenterVertically))
+                recents.forEach { r ->
+                    com.joecode.brokemon.ui.components.PixelChip(r, false, { onQueryChanged(r); onSubmit(r); focusManager.clearFocus() }, color = DexColors.ScreenText)
+                }
+                TextButton(onClick = onClearRecents) { Text("CLEAR", style = PixelText.Tiny, color = DexColors.TextMuted) }
             }
         }
         // Active filters as removable chips, so nothing is hidden behind the sheet.

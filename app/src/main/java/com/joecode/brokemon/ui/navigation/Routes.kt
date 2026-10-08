@@ -4,7 +4,7 @@ object Routes {
     const val ONBOARDING = "onboarding"
     const val HOME = "home"
     const val CATCH_BRO = "catch"
-    const val BRO_DETAIL = "bro/{broId}"
+    const val BRO_DETAIL = "bro/{broId}?focus={focus}"
     const val SHARE_BRO = "bro/{broId}/share"
     const val ROOM = "bro/{broId}/room"
     const val SQUADS = "squads"
@@ -38,7 +38,7 @@ object Routes {
     const val ARG_BRO_ID = "broId"
     const val ARG_SQUAD_ID = "squadId"
 
-    fun broDetail(id: Long) = "bro/$id"
+    fun broDetail(id: Long, focus: String? = null) = if (focus == null) "bro/$id" else "bro/$id?focus=$focus"
     fun shareBro(id: Long) = "bro/$id/share"
     fun room(id: Long) = "bro/$id/room"
     fun squadDetail(id: Long) = "squad/$id"
