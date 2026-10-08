@@ -127,6 +127,7 @@ fun HomeScreen(
     onEnterRoom: (Long) -> Unit,
     onQuickOpen: (Long, String) -> Unit = { _, _ -> },
     onShare: (Long) -> Unit = {},
+    onPack: () -> Unit = {},
     onTrainer: () -> Unit = {},
     onJournal: () -> Unit = {},
     onWild: () -> Unit = {},
@@ -188,6 +189,7 @@ fun HomeScreen(
         },
         onSwipeCheckIn = { id -> doCheckIn(id) },
         onSwipeShare = onShare,
+        onPack = onPack,
         onSquads = onSquads,
         onTrade = onTrade,
         onCheckOnBro = onCheckOnBro,
@@ -304,6 +306,7 @@ private class HomeActions(
     val onLongPress: (Long) -> Unit,
     val onSwipeCheckIn: (Long) -> Unit,
     val onSwipeShare: (Long) -> Unit,
+    val onPack: () -> Unit,
     val onSquads: () -> Unit,
     val onTrade: () -> Unit,
     val onCheckOnBro: () -> Unit,
@@ -469,6 +472,8 @@ private fun HomeHeader(state: HomeUiState, activeHint: String?, actions: HomeAct
             arrow = ArrowSide.TOP,
             arrowBias = 0.93f,
         )
+        if (state.packReady) PackBanner(actions.onPack)
+        state.tip?.let { tip -> DexyTipCard(tip, viewModel::dismissTip) }
         DexSwitcher(state, actions)
         DexCounter(state.totalCaught, state.shinyCount, state.legendaryCount, state.selectedDex?.name)
         state.event?.let { EventBanner(it) }
@@ -563,6 +568,7 @@ private fun DexChip(
 @Composable
 private fun NoMatches(viewModel: HomeViewModel) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(Spacing.xl)) {
+        com.joecode.brokemon.ui.components.DexySays("Hmm, nobody matches that. Try fewer letters, I forgive typos!", mood = com.joecode.brokemon.ui.components.DexyMood.THINK)
         Text("No bros match.", color = DexColors.TextMuted, textAlign = TextAlign.Center)
         TextButton(onClick = { viewModel.onQueryChanged(""); viewModel.clearFilters() }) {
             Text("CLEAR SEARCH & FILTERS", style = PixelText.Tiny, color = DexColors.LedYellow)
@@ -609,6 +615,7 @@ private fun EmptyDex(state: HomeUiState, activeHint: String?, actions: HomeActio
                 )
                 DexCounter(0, 0, 0)
                 state.event?.let { EventBanner(it) }
+                com.joecode.brokemon.ui.components.DexySays("Hi, I'm Dexy! Let's add your first bro. Just a name is enough to start.", mood = com.joecode.brokemon.ui.components.DexyMood.HAPPY)
                 Column(Modifier.fillMaxWidth().padding(vertical = Spacing.sm), horizontalAlignment = Alignment.CenterHorizontally) {
                     PixelButton(
                         text = "Catch your first Bro",
@@ -862,5 +869,38 @@ private fun SwipeRow(onCheckIn: () -> Unit, onShare: () -> Unit, modifier: Modif
             }
         },
         content = { content() },
+    )
+}
+
+/** The Daily Pack is ready. Calm tone: no countdown, no streak. */
+@Composable
+private fun PackBanner(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = MinTouch)
+            .pixelBox(DexColors.SurfaceHigh, DexColors.LedYellow, Borders.normal, 2.dp)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClickLabel = "Open today's Daily Pack", onClick = onClick)
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PixelIconImage(PixelIcon.PACK, tint = DexColors.LedYellow, size = 28.dp)
+        Spacer(Modifier.width(Spacing.md))
+        Column(Modifier.weight(1f)) {
+            Text("DAILY PACK", style = PixelText.Label, color = DexColors.LedYellow)
+            Text("A free cosmetic is waiting. No rush.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
+        }
+        Text("OPEN", style = PixelText.Tiny, color = DexColors.LedYellow)
+    }
+}
+
+/** Dexy's tip of the day. Dismissing it hides it until tomorrow. */
+@Composable
+private fun DexyTipCard(tip: String, onDismiss: () -> Unit) {
+    com.joecode.brokemon.ui.components.DexySays(
+        text = tip,
+        trailing = {
+            TextButton(onClick = onDismiss) { Text("GOT IT", style = PixelText.Tiny, color = DexColors.LedYellow) }
+        },
     )
 }

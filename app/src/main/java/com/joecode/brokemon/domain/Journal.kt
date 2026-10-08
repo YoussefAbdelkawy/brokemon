@@ -131,6 +131,9 @@ object AvatarLocks {
         }
     }
 
+    /** Daily Pack items that unlock a character option (backdrops and hats). */
+    fun requiredCosmetic(part: LookPart, index: Int): Cosmetic? = Cosmetic.forLook(part, index)
+
     /** A sample look showing off a PART reward, for icons. */
     fun showcase(reward: Reward): com.joecode.brokemon.data.model.BroLook {
         val base = com.joecode.brokemon.data.model.BroLook(skin = 2, hair = 1, outfit = 1, outfitColor = 0)

@@ -1,5 +1,7 @@
 package com.joecode.brokemon.ui.navigation
 
+import com.joecode.brokemon.ui.pack.PackScreen
+import com.joecode.brokemon.ui.pack.CollectionScreen
 import com.joecode.brokemon.ui.theme.Spacing
 import com.joecode.brokemon.ui.feedback.PixelToastHost
 import com.joecode.brokemon.ui.feedback.LocalFeedback
@@ -130,6 +132,7 @@ fun BrokemonApp(
                 onBroClick = { nav.navigate(Routes.broDetail(it)) },
                 onQuickOpen = { id, focus -> nav.navigate(Routes.broDetail(id, focus)) },
                 onShare = { nav.navigate(Routes.shareBro(it)) },
+                onPack = { nav.navigate(Routes.PACK) },
                 onSquads = { nav.navigate(Routes.SQUADS) },
                 onTrade = { nav.navigate(Routes.TRADE) },
                 onCheckOnBro = { nav.navigate(Routes.CHECK_ON_BRO) },
@@ -191,6 +194,10 @@ fun BrokemonApp(
                 onJournal = { nav.navigate(Routes.JOURNAL) },
             )
         }
+        composable(Routes.PACK) {
+            PackScreen(onBack = back, onCollection = { nav.navigate(Routes.COLLECTION) })
+        }
+        composable(Routes.COLLECTION) { CollectionScreen(onBack = back) }
         composable(Routes.TRAINER_EDIT) { TrainerEditScreen(onBack = back) }
         composable(Routes.JOURNAL) {
             JournalScreen(

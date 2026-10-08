@@ -81,6 +81,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val claimed by prefs.claimedQuests.collectAsStateWithLifecycle(initialValue = emptySet())
                     val shinyEarned by prefs.shinyEarned.collectAsStateWithLifecycle(initialValue = false)
+                    val ownedCosmetics by prefs.ownedCosmetics.collectAsStateWithLifecycle(initialValue = emptySet())
                     val champion by prefs.tournamentWon.collectAsStateWithLifecycle(initialValue = false)
                     done?.let { isDone ->
                         onboardingKnown = true
@@ -88,6 +89,7 @@ class MainActivity : ComponentActivity() {
                         val showOnboarding = remember { !isDone }
                         CompositionLocalProvider(
                             LocalHintStore provides prefs,
+                            com.joecode.brokemon.ui.components.LocalOwnedCosmetics provides ownedCosmetics,
                             LocalFeedback provides feedback,
                             LocalReduceMotion provides reduceMotion,
                             LocalUnlockedRewards provides Journal.unlocked(claimed, shinyEarned, champion),

@@ -71,10 +71,12 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
             }
         }
         val unlocked = LocalUnlockedRewards.current
+        val owned = LocalOwnedCosmetics.current
         LazyRow(state = optionsState, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             items((0 until part.count).toList()) { i ->
                 // Journal rewards stay visible but locked until they're earned.
-                val locked = AvatarLocks.requiredReward(part, i)?.let { it !in unlocked } ?: false
+                val locked = (AvatarLocks.requiredReward(part, i)?.let { it !in unlocked } ?: false) ||
+                    (AvatarLocks.requiredCosmetic(part, i)?.let { it.id !in owned } ?: false)
                 OptionTile(look, part, i, selected = look[part] == i, locked = locked) {
                     if (!locked) onLookChange(look.with(part, i))
                 }
@@ -91,7 +93,7 @@ private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Bool
         Modifier
             .width(72.dp)
             .semantics {
-                contentDescription = "${part.label} ${label ?: "color ${index + 1}"}" + if (locked) ", locked: see Rewards on your Trainer Card" else ""
+                contentDescription = "${part.label} ${label ?: "color ${index + 1}"}" + if (locked) ", locked: earn it from the Journal or the Daily Pack" else ""
                 this.selected = selected
             }
             .clickable(onClick = onClick),
@@ -139,3 +141,7 @@ private fun OptionTile(look: BroLook, part: LookPart, index: Int, selected: Bool
         }
     }
 }
+
+
+/** Daily Pack items the user owns, by id. Unowned backdrops and hats show as locked in the avatar builder. */
+val LocalOwnedCosmetics = androidx.compose.runtime.staticCompositionLocalOf<Set<String>> { emptySet() }

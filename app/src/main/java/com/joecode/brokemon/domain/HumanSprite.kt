@@ -70,6 +70,8 @@ object HumanSprite {
     private const val HEADSET = 8
     private const val HEADPHONES = 9
     private const val NINJA_BAND = 10
+    private const val PARTY_HAT = 11
+    private const val TOP_HAT = 12
 
     // Glasses
     private const val HERO_MASK = 6
@@ -102,6 +104,10 @@ object HumanSprite {
     private const val BG_PITCH = 3
     private const val BG_SPEED = 4
     private const val BG_TROPHY = 5
+    private const val BG_SUNSET = 6
+    private const val BG_STARRY = 7
+    private const val BG_ARCADE = 8
+    private const val BG_SAKURA = 9
     private const val NEON_GREEN = 0xFF7CFF5C.toInt()
     private const val CRIMSON = 0xFFB0172F.toInt()
 
@@ -195,7 +201,7 @@ object HumanSprite {
         drawFacialHair(c, look.facialHair, p)
         drawMouth(c, look.expression)
         if (!hijab) {
-            drawFrontHair(c, look.hair, p, hatCovers = look.hat in listOf(CAP, BEANIE, BUCKET, BACKWARDS, TRAINER_CAP))
+            drawFrontHair(c, look.hair, p, hatCovers = look.hat in listOf(CAP, BEANIE, BUCKET, BACKWARDS, TRAINER_CAP, PARTY_HAT, TOP_HAT))
             c.lightHair(p.hair, p.hairLight, p.hairShade)
         }
         drawHat(c, look.hat, p)
@@ -507,6 +513,21 @@ object HumanSprite {
         val shade = p.outfitShade
         val light = p.outfitLight
         when (hat) {
+            PARTY_HAT -> {
+                // A striped paper cone with a gold pom-pom.
+                for (y in 1..8) c.row(y, 16 - y, 15 + y, color)
+                for (y in 2..8) for (x in 16 - y..15 + y) if ((x + y) % 4 == 0) c[x, y] = light
+                c.row(9, 8, 23, shade)
+                c.row(0, 15, 16, GOLD)
+            }
+            TOP_HAT -> {
+                for (y in 1..7) c.row(y, 11, 20, LEATHER)
+                for (y in 2..5) c[12, y] = 0xFF4A4A58.toInt()
+                c.row(6, 11, 20, RUBY)
+                c.row(7, 11, 20, GOLD_DARK)
+                c.row(8, 7, 24, LEATHER)
+                c.row(9, 7, 24, 0xFF14141A.toInt())
+            }
             CAP -> {
                 c.row(4, 12, 19, color)
                 c.row(5, 10, 21, color)
@@ -950,6 +971,48 @@ object HumanSprite {
                         val y = (14 + kotlin.math.sin(a) * r).toInt()
                         c[x, y] = 0xFF9AA5B8.toInt()
                     }
+                }
+            }
+            BG_SUNSET -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, when {
+                    y < 8 -> 0xFF4B3290.toInt()
+                    y < 14 -> 0xFFB04C9A.toInt()
+                    y < 20 -> 0xFFFF7A5A.toInt()
+                    else -> 0xFFFFB84D.toInt()
+                })
+                for (y in 14..28) for (x in 8..24) {
+                    val dx = x - 15.5f; val dy = y - 22f
+                    if (dx * dx + dy * dy <= 49f) c[x, y] = 0xFFFFE08A.toInt()
+                }
+            }
+            BG_STARRY -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, if (y < 16) 0xFF0B1030.toInt() else 0xFF161C48.toInt())
+                for ((x, y) in listOf(3 to 3, 9 to 7, 14 to 2, 20 to 9, 27 to 4, 5 to 13, 24 to 15, 29 to 11, 11 to 18, 2 to 22, 28 to 24, 7 to 28)) c[x, y] = WHITE
+                for ((x, y) in listOf(18 to 4, 6 to 9, 26 to 20)) c[x, y] = GOLD
+                // A little crescent moon.
+                for (y in 2..8) for (x in 22..28) {
+                    val d1 = (x - 25f) * (x - 25f) + (y - 5f) * (y - 5f)
+                    val d2 = (x - 26.5f) * (x - 26.5f) + (y - 4f) * (y - 4f)
+                    if (d1 <= 9f && d2 > 7f) c[x, y] = 0xFFF1F3D8.toInt()
+                }
+            }
+            BG_ARCADE -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, 0xFF1A0F3A.toInt())
+                val cyan = 0xFF5CE1E6.toInt()
+                val magenta = 0xFFFF4FA3.toInt()
+                c.row(3, 0, SIZE - 1, magenta)
+                c.row(4, 0, SIZE - 1, 0xFF7A2A6A.toInt())
+                for (y in listOf(18, 21, 25, 30)) c.row(y, 0, SIZE - 1, cyan)
+                for (i in -6..6) for (y in 17 until SIZE) {
+                    val x = (15.5f + i * 2.6f * (y - 12) / 10f).toInt()
+                    c[x, y] = 0xFF2E7F9C.toInt()
+                }
+            }
+            BG_SAKURA -> {
+                for (y in 0 until SIZE) c.row(y, 0, SIZE - 1, if (y < 20) 0xFFFFDCE8.toInt() else 0xFFFFC4D8.toInt())
+                for (x in 0..14) c[x, (x * 0.4f).toInt() + 1] = 0xFF6B4A2E.toInt()
+                for ((x, y) in listOf(2 to 4, 5 to 5, 8 to 4, 12 to 7, 22 to 10, 27 to 6, 25 to 17, 4 to 20, 29 to 26, 9 to 25, 18 to 28)) {
+                    c[x, y] = 0xFFFF8FB3.toInt(); c[x + 1, y] = 0xFFFFB3CB.toInt()
                 }
             }
             BG_TROPHY -> {

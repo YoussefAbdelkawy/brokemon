@@ -1,5 +1,8 @@
 package com.joecode.brokemon.ui.components
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -64,6 +67,8 @@ fun BroCard(
     showDexEntry: Boolean = false,
     /** The number to print: National by default, or the bro's number in a regional dex. */
     number: String = bro.dexNumber,
+    /** The big card on a bro's page: poking the sprite makes them react. */
+    spriteReacts: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
     val shape = DexShape(10.dp)
@@ -114,7 +119,7 @@ fun BroCard(
             RarityStars(bro.rarity, size = 10.dp)
         }
         Spacer(Modifier.height(6.dp))
-        SpriteWindow(bro, stage, Modifier.fillMaxWidth().aspectRatio(1f), eventIconSize = 16.dp, light = light)
+        SpriteWindow(bro, stage, Modifier.fillMaxWidth().aspectRatio(1f), eventIconSize = 16.dp, light = light, reacts = spriteReacts, onSpriteTap = onClick)
         event?.let {
             Spacer(Modifier.height(6.dp))
             EventRibbon(it, compact = true)
@@ -174,11 +179,40 @@ fun SpriteWindow(
     eventIconSize: Dp = 12.dp,
     light: HoloLight? = null,
     animated: Boolean = true,
+    /** Poking the sprite makes the bro react (squash, a short line, a sound). Detail page only. */
+    reacts: Boolean = false,
+    onSpriteTap: (() -> Unit)? = null,
 ) {
     val event = SeasonEvents.parse(bro.eventFrame)
     val clock = rememberClock(12)
+    val reduce = com.joecode.brokemon.ui.feedback.LocalReduceMotion.current
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val squash = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(1f) }
+    val emote = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(1f) }
+    var emoteText by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
     Box(
         modifier
+            .then(
+                if (reacts) Modifier.clickable(
+                    interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    indication = null,
+                    role = androidx.compose.ui.semantics.Role.Button,
+                    onClickLabel = "Poke ${bro.name}",
+                ) {
+                    emoteText = bro.primaryType.emote()
+                    feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.TAP, 0.5f)
+                    if (!reduce) scope.launch {
+                        launch {
+                            squash.animateTo(0.82f, androidx.compose.animation.core.tween(70))
+                            squash.animateTo(1f, androidx.compose.animation.core.spring(0.35f, 400f))
+                        }
+                        emote.snapTo(0f)
+                        emote.animateTo(1f, androidx.compose.animation.core.tween(1000))
+                    } else scope.launch { emote.snapTo(0f); emote.animateTo(1f, androidx.compose.animation.core.tween(1200)) }
+                    onSpriteTap?.invoke()
+                } else Modifier,
+            )
             .clip(DexShape(4.dp))
             .background(Brush.radialGradient(listOf(bro.primaryType.color.copy(alpha = 0.35f), DexColors.Screen)))
             .scanlines(),
@@ -191,9 +225,32 @@ fun SpriteWindow(
         )
         BroSprite(
             bro, stage.ordinal,
-            Modifier.fillMaxSize(0.86f).graphicsLayer { translationX = (light?.x ?: 0f) * 3.dp.toPx(); translationY = (light?.y ?: 0f) * 2.dp.toPx() },
+            Modifier.fillMaxSize(0.86f).graphicsLayer {
+                translationX = (light?.x ?: 0f) * 3.dp.toPx(); translationY = (light?.y ?: 0f) * 2.dp.toPx()
+                scaleY = squash.value; scaleX = 2f - squash.value
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+            },
             animated = animated,
         )
+        // Stickers on the card, bottom left.
+        if (bro.stickers.isNotEmpty()) {
+            Row(Modifier.align(Alignment.BottomStart).padding(Spacing.xs), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                bro.stickers.take(3).mapNotNull { com.joecode.brokemon.domain.Cosmetic.from(it) }.forEach { StickerImage(it, 22.dp) }
+            }
+        }
+        if (emote.value < 1f && emoteText.isNotEmpty()) {
+            Text(
+                emoteText,
+                style = PixelText.Label,
+                color = DexColors.LedYellow,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = Spacing.md)
+                    .graphicsLayer { translationY = -emote.value * 22.dp.toPx(); alpha = 1f - emote.value }
+                    .background(DexColors.Screen.copy(alpha = 0.7f))
+                    .padding(horizontal = Spacing.sm, vertical = 2.dp),
+            )
+        }
         if (bro.isShiny) {
             Sparkles(Modifier.fillMaxSize().graphicsLayer { translationX = (light?.x ?: 0f) * 8.dp.toPx() }, seed = bro.id.toInt())
         }
@@ -204,6 +261,16 @@ fun SpriteWindow(
 }
 
 /** Type-colored frame used by both the card and the list row, so the two views read as one dex. */
+/** Brushes for the Daily Pack's card frames. */
+fun cardFrameBrush(frame: String): Brush? = when (frame) {
+    "NEON" -> Brush.linearGradient(listOf(Color(0xFF5CE1E6), Color(0xFFFF4FA3), Color(0xFF5CE1E6)))
+    "WOOD" -> Brush.linearGradient(listOf(Color(0xFF8B5A2B), Color(0xFFC08A55), Color(0xFF6B4A2E)))
+    "CANDY" -> Brush.linearGradient(listOf(Color(0xFFFF9EC4), Color.White, Color(0xFFFF4FA3), Color.White))
+    "CIRCUIT" -> Brush.linearGradient(listOf(Color(0xFF0E5E3A), Color(0xFF7CFF5C), Color(0xFF0E5E3A)))
+    "SECRET" -> Brush.sweepGradient(listOf(Color(0xFFFF4FA3), Color(0xFFFFD54A), Color(0xFF7CFF5C), Color(0xFF5CE1E6), Color(0xFFB892FF), Color(0xFFFF4FA3)))
+    else -> null
+}
+
 fun Bro.frameBrush(): Brush {
     // Tournament champions wear a gold champion frame.
     if (resolvedBattle.championships > 0) {
@@ -211,6 +278,7 @@ fun Bro.frameBrush(): Brush {
     }
     val event = SeasonEvents.parse(eventFrame)
     return event?.let { Brush.linearGradient(listOf(it.event.primaryColor, it.event.accentColor, it.event.primaryColor)) }
+        ?: cardFrame?.let { cardFrameBrush(it) }
         ?: Brush.linearGradient(listOf(primaryType.color, (types.getOrNull(1) ?: primaryType).color))
 }
 

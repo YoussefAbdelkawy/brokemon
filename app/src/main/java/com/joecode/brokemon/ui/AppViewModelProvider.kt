@@ -32,6 +32,7 @@ object AppViewModelProvider {
         initializer {
             BroDetailViewModel(createSavedStateHandle(), container().repository, container().media, container().prefs, container().broOrder)
         }
+        initializer { com.joecode.brokemon.ui.pack.PackViewModel(container().prefs) }
         initializer { SquadsViewModel(container().repository) }
         initializer { SquadDetailViewModel(createSavedStateHandle(), container().repository) }
         initializer { TradeViewModel(container().repository, container().prefs) }

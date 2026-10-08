@@ -124,6 +124,16 @@ class BroDetailViewModel(
         b.copy(moves = (b.moves + moves.map { it.trim() }.filter { it.isNotEmpty() }).distinctBy { it.lowercase() }.take(com.joecode.brokemon.ui.catchbro.BroState.MAX_MOVES + 2))
     }
 
+    /** Puts a sticker in one of the three slots (or clears it with null). */
+    fun setSticker(slot: Int, id: String?) = edit { b ->
+        val list = b.stickers.toMutableList()
+        while (list.size <= slot) list.add("")
+        list[slot] = id.orEmpty()
+        b.copy(stickers = list.filter { it.isNotEmpty() }.distinct().take(3))
+    }
+
+    fun setCardFrame(frame: String?) = edit { it.copy(cardFrame = frame) }
+
     fun setTradeable(tradeable: Boolean) = edit { it.copy(isTradeable = tradeable) }
 
     fun setRealMeetDate(millis: Long?) = edit { it.copy(realMeetDate = millis) }

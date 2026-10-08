@@ -94,6 +94,10 @@ data class HomeUiState(
     val dexes: List<RegionalDex> = emptyList(),
     /** Null = the National Dex (every bro). */
     val selectedDex: RegionalDex? = null,
+    /** Today's Daily Pack hasn't been opened. Never expires: an unopened pack just waits. */
+    val packReady: Boolean = false,
+    /** Dexy's tip card, at most once a day. */
+    val tip: String? = null,
 )
 
 /** The bros in the selected dex, each with its number in that dex. */
@@ -152,8 +156,14 @@ class HomeViewModel(
         }
 
     val uiState: StateFlow<HomeUiState> =
-        combine(dexState, trainerProgressFlow(repository, prefs), prefs.dexView) { state, progress, view ->
-            state.copy(progress = progress, view = view)
+        combine(dexState, trainerProgressFlow(repository, prefs), prefs.dexView, prefs.packDay, prefs.tipDismissedDay) { state, progress, view, pack, tipDay ->
+            val today = java.time.LocalDate.now().toEpochDay()
+            state.copy(
+                progress = progress,
+                view = view,
+                packReady = pack != today,
+                tip = com.joecode.brokemon.ui.components.DexyLines.tipOfTheDay().takeIf { tipDay != today && state.nationalCount > 0 },
+            )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     fun selectDex(id: Long?) = selectedDexId.update { id }
@@ -199,6 +209,10 @@ class HomeViewModel(
 
     companion object {
         const val MIN_SLOTS = 6L
+    }
+
+    fun dismissTip() {
+        viewModelScope.launch { prefs.setTipDismissedDay(java.time.LocalDate.now().toEpochDay()) }
     }
 
     fun onQueryChanged(value: String) = query.update { value }

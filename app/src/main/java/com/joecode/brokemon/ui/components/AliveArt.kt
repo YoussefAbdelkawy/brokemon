@@ -249,3 +249,24 @@ private fun onPerimeter(d: Float, w: Float, h: Float): Offset = when {
     d < 2 * w + h -> Offset(w - (d - w - h), h)
     else -> Offset(0f, h - (d - 2 * w - h))
 }
+
+/** What a bro says when you poke their sprite. Short, silly, and tied to their main type. */
+fun BroType.emote(): String = when (this) {
+    BroType.ROAD_RAGER -> "HONK!"
+    BroType.BAD_DRIVER -> "OOPS"
+    BroType.YAPPER -> "BLAH!"
+    BroType.GHOST -> "..."
+    BroType.GYM_RAT -> "PUMP!"
+    BroType.FOODIE -> "YUM!"
+    BroType.GAMER -> "GG!"
+    BroType.NERD -> "ACTUALLY"
+    BroType.SPORTS_FAN -> "GOAL!"
+    BroType.PARTY_ANIMAL -> "WOO!"
+    BroType.CHILL_GUY -> "CHILL"
+    BroType.CHAOS_AGENT -> "HAHA!"
+    BroType.MAIN_CHARACTER -> "HI!"
+    BroType.ALWAYS_LATE -> "5 MIN"
+    BroType.CRYPTO_BRO -> "HODL"
+    BroType.OUTDOORSY -> "HIKE!"
+    BroType.WINGMAN -> "SMOOTH"
+}

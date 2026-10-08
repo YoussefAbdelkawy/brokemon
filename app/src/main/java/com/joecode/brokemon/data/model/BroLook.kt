@@ -134,7 +134,7 @@ object LookOptions {
     val expressions = listOf("Smile", "Grin", "Chill", "Smirk", "Shocked", "Sleepy")
     val facialHair = listOf("None", "Stubble", "Mustache", "Beard", "Goatee")
     val glasses = listOf("None", "Round", "Square", "Shades", "Aviators", "Thick", "Hero mask")
-    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab", "Trainer cap", "Headset", "Headphones", "Ninja band")
+    val hats = listOf("None", "Cap", "Beanie", "Headband", "Bucket", "Backwards", "Hijab", "Trainer cap", "Headset", "Headphones", "Ninja band", "Party hat", "Top hat")
 
     /** Hats you unlock through the Trainer's Journal instead of having from the start. */
     const val TRAINER_CAP = 7
@@ -144,7 +144,7 @@ object LookOptions {
         "None", "Manga", "Comic", "Football", "Controller", "Coffee", "Shawarma", "Gym bag", "Keeper gloves",
     )
     val backItems = listOf("None", "Hero cape", "Cosplay cape", "Backpack", "Scarf")
-    val backgrounds = listOf("None", "POW!", "Gaming chair", "Pitch", "Speed lines", "Trophy glow")
+    val backgrounds = listOf("None", "POW!", "Gaming chair", "Pitch", "Speed lines", "Trophy glow", "Sunset", "Starry night", "Arcade", "Sakura")
     val extras = listOf("None", "Earring", "Freckles", "Blush", "Nose ring", "Scar", "Mole")
 
     val outfitColors = listOf(

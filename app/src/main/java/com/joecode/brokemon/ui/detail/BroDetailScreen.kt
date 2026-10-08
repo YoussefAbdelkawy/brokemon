@@ -1,5 +1,11 @@
 package com.joecode.brokemon.ui.detail
 
+import androidx.compose.material.icons.filled.Style
+import com.joecode.brokemon.ui.theme.Borders
+import com.joecode.brokemon.ui.components.pixelBox
+import com.joecode.brokemon.ui.components.DexySays
+import com.joecode.brokemon.ui.components.StickerImage
+import com.joecode.brokemon.domain.Cosmetic
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.joecode.brokemon.ui.components.PixelChip
@@ -207,6 +213,9 @@ fun BroDetailScreen(
     val snackbar = remember { SnackbarHostState() }
     val feedback = LocalFeedback.current
     var showAddMoves by rememberSaveable { mutableStateOf(false) }
+    var pickingSlot by rememberSaveable { mutableStateOf(-1) }
+    var showFrames by rememberSaveable { mutableStateOf(false) }
+    val ownedCosmetics = com.joecode.brokemon.ui.components.LocalOwnedCosmetics.current
     val scope = rememberCoroutineScope()
 
     var menuOpen by remember { mutableStateOf(false) }
@@ -326,6 +335,11 @@ fun BroDetailScreen(
                             )
                         }
                         DropdownMenuItem(
+                            text = { Text("Card frame") },
+                            leadingIcon = { Icon(Icons.Filled.Style, null) },
+                            onClick = { menuOpen = false; showFrames = true },
+                        )
+                        DropdownMenuItem(
                             text = { Text("Change rarity") },
                             leadingIcon = { Icon(Icons.Filled.Star, null) },
                             onClick = { menuOpen = false; showRarity = true },
@@ -416,6 +430,7 @@ fun BroDetailScreen(
                     item { EvolutionPanel(bro, state.evolution!!) }
                     item { StatsPanel(bro) }
                     item { MovesPanel(bro, onAddMoves = { showAddMoves = true }) }
+                    item { StickerPanel(bro, onSlot = { pickingSlot = it }, onFrame = { showFrames = true }) }
                     item {
                         MemoryPanel(
                             memories = bro.memories,
@@ -495,6 +510,22 @@ fun BroDetailScreen(
                 initial = bro.habitat.orEmpty(),
                 onConfirm = { viewModel.setHabitat(it); showHabitat = false; feedback?.success("Habitat saved") },
                 onDismiss = { showHabitat = false },
+            )
+        }
+        if (pickingSlot >= 0 && bro != null) {
+            StickerPickerDialog(
+                owned = ownedCosmetics,
+                current = bro.stickers.getOrNull(pickingSlot),
+                onPick = { viewModel.setSticker(pickingSlot, it); pickingSlot = -1; feedback?.success(if (it == null) "Sticker removed" else "Sticker placed") },
+                onDismiss = { pickingSlot = -1 },
+            )
+        }
+        if (showFrames && bro != null) {
+            FramePickerDialog(
+                owned = ownedCosmetics,
+                current = bro.cardFrame,
+                onPick = { viewModel.setCardFrame(it); showFrames = false; feedback?.success("Frame changed") },
+                onDismiss = { showFrames = false },
             )
         }
         if (showAddMoves && bro != null) {
@@ -646,6 +677,7 @@ private fun CardShowcase(bro: Bro, evolution: EvolutionInfo, tilt: TiltState, on
                 tiltDegrees = 16f,
                 deviceTilt = rememberDeviceTilt(),
                 showDexEntry = true,
+                spriteReacts = true,
                 onClick = onTap,
             )
         }
@@ -1392,5 +1424,78 @@ private fun AddMovesDialog(existing: List<String>, onConfirm: (List<String>) -> 
             }, enabled = picked.isNotEmpty() || custom.isNotBlank())
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = PixelText.Tiny, color = DexColors.TextMuted) } },
+    )
+}
+
+
+/** Three sticker slots (collected from Daily Packs) and the card frame shortcut. Purely cosmetic. */
+@Composable
+private fun StickerPanel(bro: Bro, onSlot: (Int) -> Unit, onFrame: () -> Unit) {
+    PixelPanel(title = "Stickers & frame", modifier = Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+            repeat(3) { slot ->
+                val sticker = bro.stickers.getOrNull(slot)?.let { Cosmetic.from(it) }
+                Box(
+                    Modifier
+                        .size(64.dp)
+                        .semantics { contentDescription = if (sticker != null) "Sticker slot ${slot + 1}: ${sticker.label}" else "Empty sticker slot ${slot + 1}" }
+                        .pixelBox(DexColors.Screen, DexColors.ScreenBorder, Borders.normal, 2.dp)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button) { onSlot(slot) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (sticker != null) StickerImage(sticker, 48.dp) else PixelIconImage(PixelIcon.PLUS, tint = DexColors.TextMuted, size = 24.dp)
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            PixelButton("Frame", onClick = onFrame, color = DexColors.LedBlue)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StickerPickerDialog(owned: Set<String>, current: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+    val stickers = Cosmetic.stickers().filter { it.id in owned }
+    PixelAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("PICK A STICKER", style = PixelText.Label, color = DexColors.Text) },
+        text = {
+            if (stickers.isEmpty()) {
+                DexySays("No stickers yet! Open your Daily Pack to collect some.")
+            } else {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    stickers.forEach { st ->
+                        Box(
+                            Modifier
+                                .size(64.dp)
+                                .semantics { contentDescription = st.label }
+                                .pixelBox(DexColors.Screen, if (st.id == current) DexColors.LedYellow else DexColors.ScreenBorder, Borders.normal, 2.dp)
+                                .clickable(role = androidx.compose.ui.semantics.Role.Button) { onPick(st.id) },
+                            contentAlignment = Alignment.Center,
+                        ) { StickerImage(st, 48.dp) }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("CLOSE", style = PixelText.Tiny, color = DexColors.LedYellow) } },
+        dismissButton = if (current != null) ({ TextButton(onClick = { onPick(null) }) { Text("REMOVE", style = PixelText.Tiny, color = DexColors.TextMuted) } }) else null,
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FramePickerDialog(owned: Set<String>, current: String?, onPick: (String?) -> Unit, onDismiss: () -> Unit) {
+    val frames = Cosmetic.entries.filter { it.kind == com.joecode.brokemon.domain.CosmeticKind.FRAME && it.id in owned }
+    PixelAlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("CARD FRAME", style = PixelText.Label, color = DexColors.Text) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                PixelChip("Default (type colors)", current == null, { onPick(null) })
+                frames.forEach { f -> PixelChip(f.label, current == f.frame, { onPick(f.frame) }) }
+                if (frames.isEmpty()) Text("Frames come from the Daily Pack.", color = DexColors.TextMuted)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("CLOSE", style = PixelText.Tiny, color = DexColors.LedYellow) } },
     )
 }

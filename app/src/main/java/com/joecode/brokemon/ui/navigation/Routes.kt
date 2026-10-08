@@ -26,9 +26,15 @@ object Routes {
     const val BATTLE_RECORDS = "battle/records"
     const val TOURNAMENTS = "tournaments"
     const val TOURNAMENT = "tournament/{tournamentId}"
+    const val PACK = "pack"
+    const val COLLECTION = "collection"
+    const val TRAINER_ROOM = "trainer-room"
+    const val GROUP_PHOTO = "group-photo?squadId={squadId}"
+    const val WHATS_NEW = "whats-new"
 
     fun battle(kind: String, tournamentId: Long = 0, round: Int = -1, index: Int = -1) =
         "battle/play/$kind?tournamentId=$tournamentId&round=$round&index=$index"
+    fun groupPhoto(squadId: Long = 0) = "group-photo?squadId=$squadId"
     fun replay(id: Long) = "battle/replay/$id"
     fun tournament(id: Long) = "tournament/$id"
 
