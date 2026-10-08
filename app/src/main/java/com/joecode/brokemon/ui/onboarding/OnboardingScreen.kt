@@ -146,6 +146,8 @@ fun OnboardingScreen(
                         Text("TRAINER REGISTRATION", style = PixelText.Label, color = DexColors.Text)
                     }
                     Spacer(Modifier.height(16.dp))
+                    com.joecode.brokemon.ui.components.DexySays("Time to make your own card. You're the first Bro in the Brodex!")
+                    Spacer(Modifier.height(16.dp))
                     TrainerEditor(
                         initial = null,
                         saveLabel = "Create my Trainer Card",
@@ -351,6 +353,8 @@ private fun ConsentStep(onAgree: () -> Unit) {
         ) {
             BroSprite(ProfessorLook, 0, false, Modifier.fillMaxSize(0.9f))
         }
+        Spacer(Modifier.height(16.dp))
+        com.joecode.brokemon.ui.components.DexySays("Hi, I'm Dexy, your pocket guide! I'll pop up with tips. Tap me any time.")
         Spacer(Modifier.height(16.dp))
         Text("ONE RULE IN MY LAB", style = PixelText.Header, color = DexColors.LedYellow, textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))

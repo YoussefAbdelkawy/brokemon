@@ -68,6 +68,8 @@ data class HoloStyle(val level: HoloLevel, val shiny: Boolean) {
     val visible: Boolean get() = level != HoloLevel.NONE
 
     companion object {
+        val OFF = HoloStyle(HoloLevel.NONE, false)
+
         fun of(rarity: Rarity, shiny: Boolean): HoloStyle {
             val level = when (rarity) {
                 Rarity.COMMON -> HoloLevel.NONE
@@ -311,3 +313,7 @@ private class AgslFoil {
         """.trimIndent()
     }
 }
+
+
+/** Settings > Holo shine. When false, cards show no tilt foil. */
+val LocalHoloEnabled = androidx.compose.runtime.staticCompositionLocalOf { true }

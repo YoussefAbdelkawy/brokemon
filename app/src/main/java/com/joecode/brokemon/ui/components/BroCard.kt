@@ -75,7 +75,8 @@ fun BroCard(
     val event = SeasonEvents.parse(bro.eventFrame)
     // Event cards wear the event's colors as a limited-edition frame.
     val borderBrush = bro.frameBrush()
-    val holo = HoloStyle.of(bro.rarity, bro.isShiny)
+    val holoOn = LocalHoloEnabled.current
+    val holo = if (holoOn) HoloStyle.of(bro.rarity, bro.isShiny) else HoloStyle.OFF
     val light = if (tilt != null || deviceTilt != null) HoloLight(tilt, deviceTilt) else null
     val borderWidth = if (event != null) 4.dp else 3.dp
     val frameClock = if (bro.rarity == Rarity.EPIC) rememberClock(15) else null
@@ -256,7 +257,7 @@ fun SpriteWindow(
         }
         event?.let { EventCorners(it.event, Modifier.fillMaxSize(), iconSize = eventIconSize) }
         // Foil over the art only (it's clipped to the window), never over the name or types.
-        Box(Modifier.matchParentSize().holoFoil(light, HoloStyle.of(bro.rarity, bro.isShiny)))
+        Box(Modifier.matchParentSize().holoFoil(light, if (LocalHoloEnabled.current) HoloStyle.of(bro.rarity, bro.isShiny) else HoloStyle.OFF))
     }
 }
 

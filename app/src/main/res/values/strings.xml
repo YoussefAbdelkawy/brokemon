@@ -5,4 +5,7 @@
     <string name="shortcut_catch">Catch a Bro</string>
     <string name="shortcut_scan">Scan QR</string>
     <string name="shortcut_random">Random Bro</string>
+    <!-- Where "Report a bug" and "Suggest a feature" send email. Set this to your support address before
+         releasing; while it is empty, the email app opens with no recipient and the user picks one. -->
+    <string name="feedback_email" translatable="false"></string>
 </resources>

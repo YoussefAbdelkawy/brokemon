@@ -1,5 +1,8 @@
 package com.joecode.brokemon.ui.settings
 
+import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Lightbulb
 import com.joecode.brokemon.ui.theme.Spacing
 import android.Manifest
 import android.content.pm.PackageManager
@@ -82,6 +85,7 @@ fun SettingsScreen(
     var confirmWipe by rememberSaveable { mutableStateOf(false) }
     var pendingRestore by remember { mutableStateOf<Uri?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    var showWhatsNew by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -183,6 +187,13 @@ fun SettingsScreen(
                     onChange = { on -> viewModel.setWeeklyNudge(on); if (on) ensureNotificationPermission() },
                 )
             }
+            ScreenPanel(title = "Sound & feel") {
+                ReminderToggle("Sound effects", "Little 8-bit blips for taps, catches and wins.", state.sounds, viewModel::setSounds)
+                ReminderToggle("Music", "A soft chiptune loop while the app is open. Off by default.", state.music, viewModel::setMusic)
+                ReminderToggle("Haptics", "A gentle buzz when things succeed or fail.", state.haptics, viewModel::setHaptics)
+                ReminderToggle("Reduce motion", "Stills the sprites, particles and big animations. Follows your system setting too.", state.reduceMotion, viewModel::setReduceMotion)
+                ReminderToggle("Holo shine", "The tilt-reactive foil on Rare, Epic and Legendary cards.", state.holo, viewModel::setHolo)
+            }
             ScreenPanel(title = "Battle text speed") {
                 Text("How fast battle messages type out.", color = DexColors.TextMuted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(8.dp))
@@ -224,6 +235,13 @@ fun SettingsScreen(
                     }
                 }
             }
+            SettingsRow("What's new", Icons.Filled.NewReleases, DexColors.LedYellow) { showWhatsNew = true }
+            SettingsRow("Report a bug", Icons.Filled.BugReport, DexColors.LedRed) {
+                sendFeedback(context, "Bug report")
+            }
+            SettingsRow("Suggest a feature", Icons.Filled.Lightbulb, DexColors.LedBlue) {
+                sendFeedback(context, "Feature suggestion")
+            }
             SettingsRow("Privacy policy", Icons.Filled.PrivacyTip, DexColors.LedBlue, onPrivacy)
             SettingsRow("Open-source licenses", Icons.AutoMirrored.Filled.Article, DexColors.LedGreen, onLicenses)
             SettingsRow("Delete all data", Icons.Filled.DeleteForever, DexColors.LedRed) { confirmWipe = true }
@@ -240,6 +258,12 @@ fun SettingsScreen(
                 color = DexColors.TextMuted,
             )
         }
+    }
+
+    if (showWhatsNew) {
+        val code = com.joecode.brokemon.BuildConfigInfo.versionCode(context)
+        val note = com.joecode.brokemon.domain.ReleaseNotes.forVersion(code) ?: com.joecode.brokemon.domain.ReleaseNotes.all.last()
+        WhatsNewDialog(note) { showWhatsNew = false }
     }
 
     pendingRestore?.let { uri ->
@@ -317,5 +341,28 @@ private fun ReminderToggle(title: String, body: String, checked: Boolean, onChan
             onCheckedChange = onChange,
             colors = SwitchDefaults.colors(checkedTrackColor = DexColors.LedGreen.copy(alpha = 0.6f)),
         )
+    }
+}
+
+
+/**
+ * Opens the email app with a draft to the support address (from the feedback_email resource) and the
+ * app and phone model filled in. Nothing is sent by the app itself: the user reviews and presses send.
+ */
+private fun sendFeedback(context: android.content.Context, kind: String) {
+    val to = context.getString(com.joecode.brokemon.R.string.feedback_email).trim()
+    val version = com.joecode.brokemon.BuildConfigInfo.versionName(context)
+    val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+        data = android.net.Uri.parse("mailto:")
+        if (to.isNotEmpty()) putExtra(android.content.Intent.EXTRA_EMAIL, arrayOf(to))
+        putExtra(android.content.Intent.EXTRA_SUBJECT, "Brokemon $version: $kind")
+        putExtra(
+            android.content.Intent.EXTRA_TEXT,
+            "\n\nWhat happened / what would you like?\n\n\n--- App info (safe to share) ---\n" +
+                com.joecode.brokemon.BuildConfigInfo.deviceSummary(context),
+        )
+    }
+    runCatching { context.startActivity(intent) }.onFailure {
+        android.widget.Toast.makeText(context, "No email app found.", android.widget.Toast.LENGTH_SHORT).show()
     }
 }

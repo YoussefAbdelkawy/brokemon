@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import com.joecode.brokemon.domain.Journal
 import com.joecode.brokemon.ui.components.LocalHintStore
 import com.joecode.brokemon.ui.components.LocalUnlockedRewards
@@ -81,8 +82,29 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val claimed by prefs.claimedQuests.collectAsStateWithLifecycle(initialValue = emptySet())
                     val shinyEarned by prefs.shinyEarned.collectAsStateWithLifecycle(initialValue = false)
+                    val holoOn by prefs.holoEnabled.collectAsStateWithLifecycle(initialValue = true)
                     val ownedCosmetics by prefs.ownedCosmetics.collectAsStateWithLifecycle(initialValue = emptySet())
                     val champion by prefs.tournamentWon.collectAsStateWithLifecycle(initialValue = false)
+                    var whatsNew by remember { mutableStateOf<com.joecode.brokemon.domain.ReleaseNote?>(null) }
+                    androidx.compose.runtime.LaunchedEffect(done) {
+                        val isDone = done ?: return@LaunchedEffect
+                        val current = BuildConfigInfo.versionCode(this@MainActivity)
+                        val last = prefs.lastSeenVersion()
+                        if (!isDone) {
+                            // Fresh install: they'll get the intro, not release notes.
+                            prefs.setLastSeenVersion(current)
+                        } else if (com.joecode.brokemon.domain.ReleaseNotes.shouldShow(true, last, current)) {
+                            whatsNew = com.joecode.brokemon.domain.ReleaseNotes.forVersion(current)
+                        } else if (last != current) {
+                            prefs.setLastSeenVersion(current)
+                        }
+                    }
+                    whatsNew?.let { note ->
+                        com.joecode.brokemon.ui.settings.WhatsNewDialog(note) {
+                            whatsNew = null
+                            scope.launch { prefs.setLastSeenVersion(BuildConfigInfo.versionCode(this@MainActivity)) }
+                        }
+                    }
                     done?.let { isDone ->
                         onboardingKnown = true
                         // Read once: flipping the start destination later would reset the nav graph.
@@ -90,6 +112,7 @@ class MainActivity : ComponentActivity() {
                         CompositionLocalProvider(
                             LocalHintStore provides prefs,
                             com.joecode.brokemon.ui.components.LocalOwnedCosmetics provides ownedCosmetics,
+                            com.joecode.brokemon.ui.components.LocalHoloEnabled provides holoOn,
                             LocalFeedback provides feedback,
                             LocalReduceMotion provides reduceMotion,
                             LocalUnlockedRewards provides Journal.unlocked(claimed, shinyEarned, champion),

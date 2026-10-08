@@ -25,6 +25,11 @@ data class SettingsUiState(
     val message: String? = null,
     /** Battle text speed: 0 slow, 1 normal, 2 fast. */
     val textSpeed: Int = 1,
+    val sounds: Boolean = true,
+    val music: Boolean = false,
+    val haptics: Boolean = true,
+    val reduceMotion: Boolean = false,
+    val holo: Boolean = true,
 )
 
 class SettingsViewModel(
@@ -36,8 +41,15 @@ class SettingsViewModel(
     private val local = MutableStateFlow(SettingsUiState())
 
     val uiState: StateFlow<SettingsUiState> =
-        combine(local, prefs.birthdayReminders, prefs.weeklyNudge, prefs.debugEvent, prefs.textSpeed) { s, birthdays, nudge, debugEvent, speed ->
-            s.copy(birthdayReminders = birthdays, weeklyNudge = nudge, debugEvent = debugEvent, textSpeed = speed)
+        combine(
+            combine(local, prefs.birthdayReminders, prefs.weeklyNudge, prefs.debugEvent, prefs.textSpeed) { s, birthdays, nudge, debugEvent, speed ->
+                s.copy(birthdayReminders = birthdays, weeklyNudge = nudge, debugEvent = debugEvent, textSpeed = speed)
+            },
+            combine(prefs.soundsEnabled, prefs.musicEnabled, prefs.hapticsEnabled, prefs.reduceMotion, prefs.holoEnabled) { a, b, c, d, e ->
+                listOf(a, b, c, d, e)
+            },
+        ) { s, f ->
+            s.copy(sounds = f[0], music = f[1], haptics = f[2], reduceMotion = f[3], holo = f[4])
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     init {
@@ -66,6 +78,12 @@ class SettingsViewModel(
     fun setBirthdayReminders(on: Boolean) = viewModelScope.launch { prefs.setBirthdayReminders(on) }
 
     fun setWeeklyNudge(on: Boolean) = viewModelScope.launch { prefs.setWeeklyNudge(on) }
+
+    fun setSounds(on: Boolean) = viewModelScope.launch { prefs.setSounds(on) }
+    fun setMusic(on: Boolean) = viewModelScope.launch { prefs.setMusic(on) }
+    fun setHaptics(on: Boolean) = viewModelScope.launch { prefs.setHaptics(on) }
+    fun setReduceMotion(on: Boolean) = viewModelScope.launch { prefs.setReduceMotion(on) }
+    fun setHolo(on: Boolean) = viewModelScope.launch { prefs.setHolo(on) }
 
     fun setTextSpeed(value: Int) = viewModelScope.launch { prefs.setTextSpeed(value) }
 
