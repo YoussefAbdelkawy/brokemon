@@ -470,6 +470,7 @@ private fun Lobby(state: BattleUiState, viewModel: BattleViewModel) {
 @Composable
 private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -> Unit) {
     val haptics = LocalHapticFeedback.current
+    val feedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
     var stepIndex by remember(state.steps) { mutableIntStateOf(0) }
@@ -490,12 +491,19 @@ private fun Arena(state: BattleUiState, viewModel: BattleViewModel, onBack: () -
         val s = step ?: run { if (state.steps.isNotEmpty()) viewModel.onPlaybackDone(); return@LaunchedEffect }
         when (s.effect) {
             EffectKind.BIG_HIT -> {
+                feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.HIT, 0.8f)
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 launch { flash[s.effectSide].snapTo(1f); flash[s.effectSide].animateTo(0f, tween(400)) }
                 for (x in listOf(14f, -12f, 9f, -6f, 3f, 0f)) shake.animateTo(x, tween(40))
             }
-            EffectKind.HIT -> launch { flash[s.effectSide].snapTo(0.7f); flash[s.effectSide].animateTo(0f, tween(300)) }
-            EffectKind.FAINT -> haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            EffectKind.HIT -> {
+                feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.HIT, 0.5f)
+                launch { flash[s.effectSide].snapTo(0.7f); flash[s.effectSide].animateTo(0f, tween(300)) }
+            }
+            EffectKind.FAINT -> {
+                feedback?.play(com.joecode.brokemon.ui.feedback.Sfx.FAINT, 0.7f)
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
             else -> Unit
         }
         delay(s.text.length * charDelay + 650L)
@@ -847,8 +855,17 @@ private fun EndScreen(state: BattleUiState, result: BattleResult, onShare: () ->
             false -> "YOU LOST"
             null -> if (state.battle?.winner == -1) "DRAW" else "${result.winnerName.uppercase()} WINS!"
         }
+        val endFeedback = com.joecode.brokemon.ui.feedback.LocalFeedback.current
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            endFeedback?.play(if (result.youWon == false) com.joecode.brokemon.ui.feedback.Sfx.ERROR else com.joecode.brokemon.ui.feedback.Sfx.LEVEL_UP, 0.7f)
+        }
         Text(title, style = PixelText.Title, color = if (result.youWon == false) DexColors.TextMuted else DexColors.Gold)
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
+        com.joecode.brokemon.ui.components.Dexy(
+            if (result.youWon == false) com.joecode.brokemon.ui.components.DexyMood.SLEEPY else com.joecode.brokemon.ui.components.DexyMood.WOW,
+            size = 56.dp,
+        )
+        Spacer(Modifier.height(8.dp))
         Box(contentAlignment = Alignment.Center) {
             Sparkles(Modifier.size(150.dp), count = 7, seed = 3)
             BroSprite(com.joecode.brokemon.data.model.BroLook.fromList(result.mvp.look), 0, result.mvp.shiny, Modifier.size(120.dp))

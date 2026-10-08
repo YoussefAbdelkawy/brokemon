@@ -83,8 +83,7 @@ fun BroCard(
     Column(
         modifier
             .semantics(mergeDescendants = true) {
-                contentDescription = "${bro.dexNumber} ${bro.name}, ${bro.rarity.label}" +
-                    (if (bro.isShiny) ", shiny" else "") + ", ${stage.title}" +
+                contentDescription = bro.spokenSummary(number, stage.title) +
                     (event?.let { ", limited ${it.label} frame" } ?: "")
             }
             .tilt3d(tilt, tiltDegrees)
@@ -299,8 +298,7 @@ fun DexListRow(
         modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = true) {
-                contentDescription = "${bro.dexNumber} ${bro.name}, ${bro.rarity.label}" +
-                    (if (bro.isShiny) ", shiny" else "") + ", ${stage.title}. ${bro.dexEntry}"
+                contentDescription = bro.spokenSummary(number, stage.title) + ". ${bro.dexEntry}"
             }
             .rarityGlow(bro.rarity, cornerRadius = 12f)
             .clip(shape)
@@ -461,3 +459,9 @@ fun BroRow(
         trailing()
     }
 }
+
+
+/** What TalkBack reads for a card: "Omar, number 7, Fire and Chaos type, Rare, shiny, Stage 2". */
+fun Bro.spokenSummary(number: String, stageTitle: String): String =
+    "$name, number ${number.trim('#').trimStart('0').ifEmpty { "0" }}, ${types.joinToString(" and ") { it.label }} type, ${rarity.label}" +
+        (if (isShiny) ", shiny" else "") + ", $stageTitle"

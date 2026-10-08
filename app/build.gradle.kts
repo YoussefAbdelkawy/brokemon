@@ -61,6 +61,14 @@ android {
         compose = true
         resValues = true
     }
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
+    // Robolectric reads the tested variant's merged assets, so the exported Room schemas ride along in the
+    // debug build only (a few KB). Release builds don't contain them.
+    sourceSets.getByName("debug").assets.directories.add("$projectDir/schemas")
 }
 
 ksp {
@@ -108,4 +116,8 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
 
     testImplementation(libs.junit)
+    // Room migration tests run on the JVM through Robolectric, against the exported schemas.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
 }

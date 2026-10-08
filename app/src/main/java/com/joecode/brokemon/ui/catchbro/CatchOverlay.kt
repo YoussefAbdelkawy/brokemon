@@ -131,6 +131,7 @@ fun CatchOverlay(result: CaughtResult, onViewBro: () -> Unit, onDone: () -> Unit
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
+                    com.joecode.brokemon.ui.components.Dexy(com.joecode.brokemon.ui.components.DexyMood.WOW, size = 56.dp)
                     Text("GOTCHA!", style = PixelText.Title, color = DexColors.LedYellow)
                     Text(
                         "${result.name} joined your Brodex!",

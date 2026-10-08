@@ -317,16 +317,23 @@ fun PixelButton(
 @Composable
 fun TypeBadge(type: BroType, modifier: Modifier = Modifier, compact: Boolean = false) {
     val shape = DexShape(4.dp)
-    Text(
-        text = type.label.uppercase(),
-        style = if (compact) PixelText.Tiny else PixelText.Label,
-        color = DexColors.OnBright,
-        maxLines = 1,
-        modifier = modifier
+    // An icon next to the name, so a type is never told apart by color alone.
+    Row(
+        modifier
             .background(type.color, shape)
             .border(1.dp, Color.Black.copy(alpha = 0.4f), shape)
             .padding(horizontal = if (compact) 5.dp else Spacing.sm, vertical = if (compact) 3.dp else 5.dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(type.icon, contentDescription = null, tint = DexColors.OnBright, modifier = Modifier.size(if (compact) 10.dp else 14.dp))
+        Spacer(Modifier.width(if (compact) 3.dp else 5.dp))
+        Text(
+            text = type.label.uppercase(),
+            style = if (compact) PixelText.Tiny else PixelText.Label,
+            color = DexColors.OnBright,
+            maxLines = 1,
+        )
+    }
 }
 
 @Composable

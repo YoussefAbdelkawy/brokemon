@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -395,7 +396,8 @@ internal fun TypeChoice(type: BroType, selected: Boolean, enabled: Boolean, onCl
             .graphicsLayer { this.alpha = alpha }
             .background(if (selected) type.color else Color.Transparent, shape)
             .border(2.dp, type.color, shape)
-            .clickable(enabled = enabled, onClick = onClick)
+            .heightIn(min = 48.dp)
+            .clickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.RadioButton, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {

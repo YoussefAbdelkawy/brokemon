@@ -39,6 +39,7 @@ fun Modifier.rarityGlow(rarity: Rarity, cornerRadius: Float = 18f): Modifier = w
 }
 
 private fun Modifier.shimmer(): Modifier = composed {
+    if (com.joecode.brokemon.ui.feedback.LocalReduceMotion.current) return@composed this
     val transition = rememberInfiniteTransition(label = "shimmer")
     val progress by transition.animateFloat(
         initialValue = -1f,
@@ -60,19 +61,29 @@ private fun Modifier.shimmer(): Modifier = composed {
 }
 
 private fun Modifier.legendaryGlow(cornerRadius: Float): Modifier = composed {
-    val transition = rememberInfiniteTransition(label = "legendary")
-    val pulse by transition.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
-        label = "pulse",
-    )
-    val angle by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing)),
-        label = "angle",
-    )
+    val still = com.joecode.brokemon.ui.feedback.LocalReduceMotion.current
+    val pulseState: androidx.compose.runtime.State<Float>
+    val angleState: androidx.compose.runtime.State<Float>
+    if (still) {
+        pulseState = remember { androidx.compose.runtime.mutableStateOf(0.7f) }
+        angleState = remember { androidx.compose.runtime.mutableStateOf(0f) }
+    } else {
+        val transition = rememberInfiniteTransition(label = "legendary")
+        pulseState = transition.animateFloat(
+            initialValue = 0.35f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
+            label = "pulse",
+        )
+        angleState = transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing)),
+            label = "angle",
+        )
+    }
+    val pulse by pulseState
+    val angle by angleState
     this
         .drawBehind {
             // Fake bloom: stacked strokes fading outward.
@@ -118,13 +129,17 @@ fun Sparkles(
         val r = Random(seed)
         List(count) { Triple(r.nextFloat(), r.nextFloat(), r.nextFloat()) }
     }
-    val transition = rememberInfiniteTransition(label = "sparkles")
-    val t by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing)),
-        label = "sparkleTime",
-    )
+    val tState: androidx.compose.runtime.State<Float> = if (com.joecode.brokemon.ui.feedback.LocalReduceMotion.current) {
+        remember { androidx.compose.runtime.mutableStateOf(0.2f) }
+    } else {
+        rememberInfiniteTransition(label = "sparkles").animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(tween(1800, easing = LinearEasing)),
+            label = "sparkleTime",
+        )
+    }
+    val t by tState
     Canvas(modifier) {
         points.forEach { (px, py, phase) ->
             val wave = sin(((t + phase) % 1f) * Math.PI * 2).toFloat()

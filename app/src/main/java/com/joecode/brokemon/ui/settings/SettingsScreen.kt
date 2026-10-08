@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.settings
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Lightbulb
@@ -208,8 +209,9 @@ fun SettingsScreen(
                                 .semantics { this.selected = selected }
                                 .background(if (selected) DexColors.ScreenText else Color.Transparent, DexShape(3.dp))
                                 .border(1.dp, DexColors.ScreenBorder, DexShape(3.dp))
-                                .clickable { viewModel.setTextSpeed(i) }
-                                .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+                                .heightIn(min = 48.dp)
+                                .clickable(role = androidx.compose.ui.semantics.Role.RadioButton) { viewModel.setTextSpeed(i) }
+                                .padding(horizontal = Spacing.md, vertical = Spacing.md),
                         )
                     }
                 }

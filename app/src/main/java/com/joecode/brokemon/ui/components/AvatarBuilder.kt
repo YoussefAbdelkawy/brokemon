@@ -1,5 +1,6 @@
 package com.joecode.brokemon.ui.components
 
+import androidx.compose.foundation.layout.heightIn
 import com.joecode.brokemon.ui.theme.Spacing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,8 +66,9 @@ fun AvatarBuilder(look: BroLook, onLookChange: (BroLook) -> Unit, modifier: Modi
                         .semantics { this.selected = selected }
                         .background(if (selected) DexColors.LedYellow else DexColors.SurfaceHigh, shape)
                         .border(1.dp, if (selected) DexColors.LedYellow else DexColors.Outline, shape)
-                        .clickable { part = p }
-                        .padding(horizontal = 10.dp, vertical = Spacing.sm),
+                        .heightIn(min = 48.dp)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Tab) { part = p }
+                        .padding(horizontal = 10.dp, vertical = Spacing.md),
                 )
             }
         }
