@@ -10,7 +10,7 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import androidx.core.content.res.ResourcesCompat
 import android.content.Context
-import com.joecode.brokemon.ui.theme.AppStyle
+import com.joecode.brokemon.R
 import com.joecode.brokemon.data.model.BroLook
 import com.joecode.brokemon.domain.HumanSprite
 import com.joecode.brokemon.domain.battle.BattleState
@@ -23,7 +23,7 @@ object BattleRecapImage {
     fun render(context: Context, battle: BattleState, result: BattleResult): Bitmap {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
-        val font = runCatching { ResourcesCompat.getFont(context, AppStyle.displayFontRes) }.getOrNull() ?: Typeface.MONOSPACE
+        val font = runCatching { ResourcesCompat.getFont(context, R.font.press_start_2p) }.getOrNull() ?: Typeface.MONOSPACE
         val bg = Paint().apply { shader = LinearGradient(0f, 0f, 0f, H.toFloat(), 0xFF1B1036.toInt(), 0xFF0E171A.toInt(), Shader.TileMode.CLAMP) }
         c.drawRect(0f, 0f, W.toFloat(), H.toFloat(), bg)
         fun text(s: String, y: Float, size: Float, color: Int) {
@@ -60,6 +60,6 @@ object BattleRecapImage {
 
     private fun drawSprite(c: Canvas, look: BroLook, shiny: Boolean, dst: Rect, dim: Boolean = false) {
         val sprite = com.joecode.brokemon.ui.components.AvatarBitmaps.portrait(look, 0, shiny)
-        c.drawBitmap(sprite, null, dst, Paint().apply { isFilterBitmap = com.joecode.brokemon.ui.components.AvatarBitmaps.smooth; if (dim) alpha = 90 })
+        c.drawBitmap(sprite, null, dst, Paint().apply { isFilterBitmap = false; if (dim) alpha = 90 })
     }
 }

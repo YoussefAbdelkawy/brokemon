@@ -26,20 +26,6 @@ android {
         versionName = "1.2.0"
     }
 
-    // Two art styles from one codebase. Both can be installed side by side
-    // and battle each other over Nearby.
-    flavorDimensions += "style"
-    productFlavors {
-        create("classic") {
-            dimension = "style"
-        }
-        create("cosmos") {
-            dimension = "style"
-            applicationIdSuffix = ".cosmos"
-            versionNameSuffix = "-cosmos"
-        }
-    }
-
     signingConfigs {
         if (keystoreProps.isNotEmpty()) {
             create("release") {

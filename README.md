@@ -8,9 +8,9 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 |---|---|---|---|---|
 | ![](docs/screenshots/01_home.png) | ![](docs/screenshots/03_detail.png) | ![](docs/screenshots/04_room.png) | ![](docs/screenshots/02_catch.png) | ![](docs/screenshots/05_squads.png) |
 
-| Cosmos style | Cosmos battle | Classic battle | Tournament | Accessories |
-|---|---|---|---|---|
-| ![](docs/screenshots/r4_cosmos_home.png) | ![](docs/screenshots/r4_cosmos_battle.png) | ![](docs/screenshots/r4_classic_battle.png) | ![](docs/screenshots/r4_tournament.png) | ![](docs/screenshots/r4_accessories.png) |
+| Battle | Tournament | Accessories |
+|---|---|---|
+| ![](docs/screenshots/r4_classic_battle.png) | ![](docs/screenshots/r4_tournament.png) | ![](docs/screenshots/r4_accessories.png) |
 
 | Bro Prof intro | Empty dex | Pokédex list | Binder | Trainer Card | Journal | Wild bro | Stat hexagon |
 |---|---|---|---|---|---|---|---|
@@ -49,7 +49,6 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 - **Dex entries**: one funny line per bro ("Can smell shawarma from 3 km away"), set at catch or from the card menu. It shows on the big card, in the binder and as the subtitle in the list, and travels in QR trades. Bros without one fall back to their type's blurb.
 - **A wild bro appeared!**: shake the phone on Home (accelerometer, only while the screen is open) or tap WILD. A random bro, leaning toward whoever you've neglected, jumps out with a retro battle intro: flashes, closing bars, slide-in and a text box. Then you can message them on WhatsApp (falls back to the share sheet), check in, roll another, or run.
 - **Stat hexagon**: a Canvas radar chart of the six stats that grows in from the middle, with a HEX/BARS toggle.
-- **Two art styles, one codebase**: product flavors `classic` (red pixel handheld, Press Start 2P, nearest-neighbor sprites) and `cosmos` ("Brokemon Cosmos": flat vector illustration, deep-space palette, soft glows, rounded shapes, Fredoka font). Everything style-specific lives in `AppStyle` (per flavor), `FlatAvatar` and `FlatRoom`; both apps install side by side and can battle each other.
 - **Real foil holo**: the card foil is three layers driven by finger tilt + the phone's gyro (low-pass filtered, ±25°, only while a card is on screen): a rainbow band that sweeps along the diagonal, a specular glare moving opposite to the tilt (only when tilted), and a foil texture (hairlines + sparkle grain). Masked to the art and the border so text stays readable. AGSL `RuntimeShader` on Android 13+, gradient + texture fallback below. Levels: Common none, Rare band, Epic band + glare, Legendary everything + sparkles, Shiny gold/silver.
 - **Epic rarity** between Rare and Legendary.
 - **App shortcuts**: long-press the icon for Catch a Bro, Scan QR and Random Bro (pixel shortcut icons).
@@ -73,9 +72,9 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 Open the project in Android Studio (a current stable release that supports AGP 9.4), let Gradle sync, and run the `app` configuration.
 
 ```
-./gradlew :app:testClassicDebugUnitTest   # 72 unit tests (battle engine, tournaments, journal, QR, evolution, sprites...)
-./gradlew :app:assembleClassicDebug :app:assembleCosmosDebug
-./gradlew :app:bundleClassicRelease :app:bundleCosmosRelease   # Play Store .aab files (R8 + resource shrinking)
+./gradlew :app:testDebugUnitTest   # 72 unit tests (battle engine, tournaments, journal, QR, evolution, sprites...)
+./gradlew :app:assembleDebug
+./gradlew :app:bundleRelease       # Play Store .aab (R8 + resource shrinking)
 ```
 
 Release signing reads `keystore.properties` at the repo root (git-ignored):

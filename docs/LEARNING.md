@@ -73,7 +73,6 @@ Study: weighted random selection, `HorizontalPager`, and reading pager offsets i
 - Nearby: `battle/NearbyLink.kt`. Study: Google Nearby Connections (advertise/discover, connection lifecycle, byte payloads), runtime permissions that differ by Android version.
 - Foil: `ui/components/HoloFoil.kt`. Study: AGSL `RuntimeShader` + `ShaderBrush`, `BlendMode.Screen`, `clipPath` with `Path.combine` for masks, low-pass filtering sensor data.
 - Regional dexes: `data/model/RegionalDex.kt`. Study: many-to-many in Room with a cross-ref entity, `@Relation` + `Junction`, foreign keys with cascade.
-- Two styles: `src/classic` / `src/cosmos` `AppStyle`, `FlatAvatar`, `FlatRoom`. Study: Gradle product flavors and flavor source sets, `androidComponents.onVariants` resValues (app shortcuts need the final package name).
 
 ## M9–M10: Privacy and publishing
 See `docs/PLAY_STORE.md` and `docs/privacy-policy.md`.

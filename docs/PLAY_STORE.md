@@ -37,7 +37,6 @@ Google Play's UGC policy requires terms of use, in-app report/block and moderati
 - `RECORD_AUDIO`: voice memories and voice lines, recorded only when the user taps record and kept on-device. Declare it in Data safety as "audio, not collected" (it never leaves the device unless the user exports a backup).
 - `POST_NOTIFICATIONS`: birthday and weekly check-in reminders.
 - `BLUETOOTH_SCAN` / `BLUETOOTH_ADVERTISE` / `BLUETOOTH_CONNECT` / `NEARBY_WIFI_DEVICES` (+ `ACCESS_FINE_LOCATION`, max SDK 32, which old Android requires for Bluetooth scanning): Nearby battles between two phones. Requested only when the user hosts or joins a Nearby battle. Location is never read or stored. In Data safety: no location collected; the battle card exchanged phone-to-phone is user-initiated sharing, not collection.
-- Two app styles ship as separate listings/APKs from one codebase: `com.joecode.brokemon` (classic pixel) and `com.joecode.brokemon.cosmos` (flat space style). Each needs its own store listing, screenshots and Data safety form (identical answers).
 
 ## Open product decisions that affect the listing
 - Private friend-group app vs. public release changes how strongly you word the photo-consent language.

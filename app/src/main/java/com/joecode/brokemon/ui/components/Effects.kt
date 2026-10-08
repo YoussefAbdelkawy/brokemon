@@ -147,7 +147,7 @@ private fun DrawScope.drawPixelStar(center: Offset, strength: Float, color: Colo
 }
 
 /** Faint horizontal scanlines for the LCD "screen" panels. */
-fun Modifier.scanlines(alpha: Float = 0.07f): Modifier = if (com.joecode.brokemon.ui.theme.AppStyle.flat) this else drawWithContent {
+fun Modifier.scanlines(alpha: Float = 0.07f): Modifier = drawWithContent {
     drawContent()
     val step = 3.dp.toPx()
     var y = 0f

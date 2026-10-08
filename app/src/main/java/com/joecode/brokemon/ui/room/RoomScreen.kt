@@ -358,9 +358,9 @@ private fun RoomDecorator(room: BroRoom, onRoomChange: (BroRoom) -> Unit) {
     }
 }
 
-/** The room in the current art style: pixel art (classic) or flat vector (cosmos). */
+/** The room as pixel art. */
 private fun roomImage(room: com.joecode.brokemon.data.model.BroRoom): ImageBitmap =
-    if (AvatarBitmaps.smooth) FlatRoom.render(room).asImageBitmap() else pixels(RoomRenderer.render(room), RoomRenderer.W, RoomRenderer.H)
+    pixels(RoomRenderer.render(room), RoomRenderer.W, RoomRenderer.H)
 
 private fun pixels(px: IntArray, w: Int, h: Int): ImageBitmap =
     Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888).asImageBitmap()

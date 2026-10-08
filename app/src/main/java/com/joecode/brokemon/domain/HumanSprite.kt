@@ -106,13 +106,18 @@ object HumanSprite {
     private const val CRIMSON = 0xFFB0172F.toInt()
 
     /** Card portrait, 32x32. */
-    fun render(look: BroLook, stage: Int, shiny: Boolean): IntArray {
+    /** Idle animation frame flags: [FRAME_BOB] dips the head a pixel (breathing), [FRAME_BLINK] closes the eyes. */
+    const val FRAME_BOB = 1
+    const val FRAME_BLINK = 2
+    const val FRAMES = 4
+
+    fun render(look: BroLook, stage: Int, shiny: Boolean, frame: Int = 0): IntArray {
         val c = Canvas(SIZE, SIZE)
         val p = Palette(look, shiny)
         drawBackBehind(c, look.back, p, fullBody = false)
         drawBody(c, look, p, bottom = 31, fullBody = false)
         drawBackFront(c, look.back, p, fullBody = false)
-        drawHead(c, look, p)
+        drawHead(c, look, p, blink = frame and FRAME_BLINK != 0, bob = frame and FRAME_BOB != 0)
         if (stage >= 1) drawChain(c)
         if (stage >= 2) drawCrown(c)
         drawHandItem(c, look.hand, p, hx = 24, hy = 29)
@@ -171,11 +176,21 @@ object HumanSprite {
         return w > 0 && x in (16 - w)..(15 + w)
     }
 
-    private fun drawHead(c: Canvas, look: BroLook, p: Palette) {
+    private fun drawHead(c: Canvas, look: BroLook, p: Palette, blink: Boolean = false, bob: Boolean = false) {
+        if (bob) {
+            // Draw the head on its own layer, then drop it one pixel onto the shoulders.
+            val layer = Canvas(c.w, c.h)
+            drawHead(layer, look, p, blink, bob = false)
+            for (y in c.h - 2 downTo 0) for (x in 0 until c.w) {
+                val px = layer[x, y]
+                if (px != CLEAR) c[x, y + 1] = px
+            }
+            return
+        }
         val hijab = look.hat == HIJAB
         if (!hijab) drawBackHair(c, look.hair, p)
         drawNeckAndHead(c, p)
-        drawFace(c, look, p)
+        drawFace(c, look, p, blink)
         drawExtras(c, look.extra, p, hijab)
         drawFacialHair(c, look.facialHair, p)
         drawMouth(c, look.expression)
@@ -205,12 +220,12 @@ object HumanSprite {
         c[7, 14] = p.skinShade
     }
 
-    private fun drawFace(c: Canvas, look: BroLook, p: Palette) {
+    private fun drawFace(c: Canvas, look: BroLook, p: Palette, blink: Boolean = false) {
         val brow = if (look.hair == BALD) blend(p.skin, BLACK, 0.4f) else blend(p.hair, BLACK, 0.2f)
         val browY = if (look.expression == 4) 11 else 12
         c.row(browY, 10, 12, brow)
         c.row(browY, 19, 21, brow)
-        when (look.expression) {
+        when (if (blink) 5 else look.expression) {
             2 -> { // Chill: half-closed
                 c.row(14, 11, 12, p.skinShade); c.row(14, 19, 20, p.skinShade)
                 c.row(15, 11, 12, EYE); c.row(15, 19, 20, EYE)

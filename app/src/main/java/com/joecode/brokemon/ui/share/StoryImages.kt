@@ -37,7 +37,7 @@ import kotlin.random.Random
  */
 class StoryImages(private val context: Context) {
     private val pixelFont: Typeface =
-        ResourcesCompat.getFont(context, com.joecode.brokemon.ui.theme.AppStyle.displayFontRes) ?: Typeface.MONOSPACE
+        ResourcesCompat.getFont(context, R.font.press_start_2p) ?: Typeface.MONOSPACE
 
     private val bg = DexColors.Background.toArgb()
     private val surface = DexColors.Surface.toArgb()
@@ -236,8 +236,7 @@ class StoryImages(private val context: Context) {
         val side = minOf(box.width(), box.height()) - inset * 2
         val dst = RectF(box.centerX() - side / 2, box.centerY() - side / 2, box.centerX() + side / 2, box.centerY() + side / 2)
         // Nearest-neighbor: keep the pixels crisp.
-        val smooth = com.joecode.brokemon.ui.components.AvatarBitmaps.smooth
-        c.drawBitmap(sprite, Rect(0, 0, s, s), dst, Paint().apply { isFilterBitmap = smooth; isAntiAlias = smooth })
+        c.drawBitmap(sprite, Rect(0, 0, s, s), dst, Paint().apply { isFilterBitmap = false; isAntiAlias = false })
     }
 
     private fun pixelIcon(c: Canvas, icon: EventIcon, left: Float, top: Float, px: Float, primary: Int, accent: Int) {

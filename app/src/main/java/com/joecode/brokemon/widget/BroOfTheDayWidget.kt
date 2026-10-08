@@ -161,7 +161,7 @@ class BroOfTheDayWidget : GlanceAppWidget() {
         /** Pre-scaled with nearest neighbor so the launcher can't blur the pixels much. */
         private fun spriteBitmap(bro: Bro): Bitmap {
             val bmp = com.joecode.brokemon.ui.components.AvatarBitmaps.portrait(bro.resolvedLook, Evolution.info(bro).stage.ordinal, bro.isShiny)
-            return if (com.joecode.brokemon.ui.components.AvatarBitmaps.smooth) bmp else bmp.scale(bmp.width * 8, bmp.height * 8, filter = false)
+            return bmp.scale(bmp.width * 8, bmp.height * 8, filter = false)
         }
     }
 }

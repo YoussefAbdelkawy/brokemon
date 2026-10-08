@@ -68,7 +68,6 @@ fun LicensesScreen(onBack: () -> Unit) {
             "Press Start 2P" to "Copyright 2012 The Press Start 2P Project Authors (cody@zone38.net), with Reserved Font Name " +
                 "\"Press Start 2P\". Licensed under the SIL Open Font License, Version 1.1 (scripts.sil.org/OFL).",
             "ZXing" to "QR code generation by ZXing (\"Zebra Crossing\"). Licensed under the Apache License 2.0.",
-            "Fredoka (Cosmos style)" to "Fredoka font by The Fredoka Project Authors. Licensed under the SIL Open Font License 1.1.",
             "Gson" to "Copyright Google LLC. Licensed under the Apache License 2.0.",
             "AndroidX & Jetpack Compose" to "Copyright The Android Open Source Project. Licensed under the Apache License 2.0.",
             "Google Play services code scanner" to "Subject to the Google APIs Terms of Service.",
