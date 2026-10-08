@@ -16,6 +16,10 @@ Package: `com.joecode.brokemon` · Kotlin + Jetpack Compose · MVVM · Room · m
 |---|---|---|---|---|---|---|---|
 | ![](docs/screenshots/r3_intro1.png) | ![](docs/screenshots/r3_home_empty.png) | ![](docs/screenshots/r3_home_list.png) | ![](docs/screenshots/r3_home_binder.png) | ![](docs/screenshots/r3_trainer_gold.png) | ![](docs/screenshots/r3_journal.png) | ![](docs/screenshots/r3_wild.png) | ![](docs/screenshots/r3_hex.png) |
 
+## What's new in 1.3.0
+
+Bottom bar navigation, a 5-step catch wizard with Quick Catch and drafts, Dexy the guide, the Daily Pack (stickers, frames, backdrops, hats; cosmetics only, no streaks), idle sprite animation and type particles, illustrated rarity frames, Trainer Room, group photos, sound/haptics/reduce-motion settings, and a feedback email button. See [CHANGELOG.md](CHANGELOG.md).
+
 ## Features
 
 - **Character builder**: bros are people. Build a 32×32 pixel portrait (plus a full-body sprite for their room) from 8 skin tones, 16 hairstyles (fade, waves, afro, braids, locs...), hair color, 6 faces, beards, 6 glasses, 7 hats (incl. bucket hat, backwards cap, hijab), 6 fits (incl. galabeya, leather jacket), fit color and extras (earring, freckles, scar...). Every option tile is a live preview. You can edit the look later from the card's menu.

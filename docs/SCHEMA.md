@@ -41,3 +41,8 @@ Room database `brokemon.db`, currently **version 6**. Schemas are exported to `a
 3. **Data inside JSON columns** (memories, facts, stats, look) can gain optional fields without a migration. Gson leaves missing fields at default. Never reuse or reorder enum names or option indices.
 4. Never ship `fallbackToDestructiveMigration()`. Losing someone's Brodex is the one-star review.
 5. When the schema changes, also update `BackupManager` (files referenced by new fields) and `QrCodec` (only if the field should travel in a trade).
+
+
+## Version 7
+
+`bros.cardFrame` (nullable text) and `bros.stickers` (JSON list, default `[]`), added by `AutoMigration(6, 7)`. Daily Pack ownership lives in DataStore, not Room.

@@ -77,10 +77,10 @@ fun PixelBottomBar(currentRoute: String?, onTab: (Tab) -> Unit, onCatch: () -> U
         ) {
             TabItem(Tab.BRODEX, currentRoute, onTab, Modifier.weight(1f))
             TabItem(Tab.BATTLE, currentRoute, onTab, Modifier.weight(1f))
-            Spacer(Modifier.width(88.dp)) // room for the raised button
+            Spacer(Modifier.width(100.dp)) // room for the raised button
             TabItem(Tab.TRAINER, currentRoute, onTab, Modifier.weight(1f))
         }
-        CatchOrb(onCatch, Modifier.align(Alignment.TopCenter).offset(y = (-22).dp))
+        CatchOrb(onCatch, Modifier.align(Alignment.TopCenter).offset(y = (-32).dp))
     }
 }
 
